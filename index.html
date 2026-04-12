@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applied Economics Club</title>
+  <style>
+    :root {
+      --bg: #031a40;
+      --surface: #0f2b62;
+      --text: #ffffff;
+      --muted: #a8c4ef;
+      --accent: #70b1ff;
+      --border: rgba(255,255,255,0.12);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #05153a 0%, #031a40 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    .hero {
+      padding: 64px 0 48px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-size: clamp(3rem, 4vw, 5rem);
+      letter-spacing: -0.05em;
+      max-width: 14ch;
+    }
+
+    .lead {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .card {
+      background: rgba(11, 37, 85, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .section-title {
+      display: inline-block;
+      margin-bottom: 18px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .mission {
+      display: grid;
+      gap: 18px;
+    }
+
+    .mission p {
+      font-size: 1rem;
+      max-width: 760px;
+    }
+
+    .board-grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .board-card {
+      background: #0b2f74;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 24px;
+      min-height: 220px;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .board-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(112, 177, 255, 0.5);
+    }
+
+    .board-card h3 {
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+
+    .board-card span {
+      display: inline-block;
+      margin-bottom: 16px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .board-card p {
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .footer {
+      margin-top: 48px;
+      text-align: center;
+      color: rgba(255,255,255,0.68);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <span class="eyebrow">Applied Economics Club</span>
+      <h1>Applied Economics</h1>
+      <p class="lead">We bridge the gap between economic theory and career-ready skills. Through real-world projects, industry connections, and skill-building events, we help members turn economic concepts into the tools employers value.</p>
+    </section>
+
+    <section class="card mission">
+      <span class="section-title">Our Mission</span>
+      <p>Applied Economics Club is dedicated to empowering ambitious students with practical economic insight and job-related skills. We translate classroom learning into meaningful experiences, internships, and leadership opportunities so members can confidently enter careers in consulting, finance, policy, and beyond.</p>
+      <p>From data-driven analysis to professional communication, our club helps members build the bridge from concept to impact.</p>
+    </section>
+
+    <section style="margin-top: 40px;">
+      <span class="section-title">Meet the Board</span>
+      <div class="board-grid">
+        <article class="board-card">
+          <span>President</span>
+          <h3>Jordan Lee</h3>
+          <p>Leads club vision, builds partner relationships, and organizes events that connect members with employers and applied economics projects.</p>
+        </article>
+        <article class="board-card">
+          <span>Vice President</span>
+          <h3>Riley Chen</h3>
+          <p>Coordinates workshops, speaker sessions, and research opportunities that turn economic ideas into career-ready expertise.</p>
+        </article>
+        <article class="board-card">
+          <span>Outreach Director</span>
+          <h3>Samira Patel</h3>
+          <p>Drives community growth through networking, industry engagement, and student outreach initiatives.</p>
+        </article>
+        <article class="board-card">
+          <span>Programs Director</span>
+          <h3>Alex Morgan</h3>
+          <p>Designs hands-on programs and case-study challenges that help members apply economics to real business and policy questions.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
+    </footer>
+  </main>
+</body>
+</html>
