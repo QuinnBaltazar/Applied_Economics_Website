@@ -54,36 +54,35 @@
 
     .hero {
       position: relative;
-      min-height: 100vh;
+      min-height: 220vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 0;
+      padding: 100px 24px 80px;
       border-radius: 0 0 40px 40px;
       overflow: hidden;
       background-color: #031a40;
-    }
-
-    .hero-chart {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      opacity: 0.95;
-      filter: saturate(120%) contrast(110%);
-    }
-
-    .hero-chart iframe,
-    .hero-chart .tradingview-widget-container {
-      width: 100%;
-      height: 100%;
+      background-image: linear-gradient(180deg, rgba(3, 26, 64, 0.16), rgba(3, 26, 64, 0.92)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 900'%3E%3Cdefs%3E%3ClinearGradient id='g1' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2370b1ff' stop-opacity='0.22'/%3E%3Cstop offset='1' stop-color='%2303153a' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='g2' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%235a7eff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='g3' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='900' fill='%2303153a'/%3E%3Cg stroke='%23ffffff' stroke-opacity='0.14' stroke-width='1'%3E%3Cpath d='M80 820H1120M80 720H1120M80 620H1120M80 520H1120M80 420H1120M80 320H1120M80 220H1120'/%3E%3Cpath d='M200 900V0M400 900V0M600 900V0M800 900V0M1000 900V0'/%3E%3C/g%3E%3Cpath d='M80 730C160 700 240 640 320 660C400 690 480 560 560 600C640 650 720 520 800 540C880 575 960 470 1040 420L1120 370' fill='none' stroke='%2370b1ff' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M80 730L160 700L240 640L320 660L400 690L480 560L560 600L640 650L720 520L800 540L880 575L960 470L1040 420L1120 370L1120 900L80 900Z' fill='url(%23g1)' opacity='0.45'/%3E%3Ccircle cx='1120' cy='370' r='12' fill='%23ffffff' opacity='0.95'/%3E%3Cpath d='M160 690L160 630M320 660L320 620M480 560L480 520M640 650L640 590M800 540L800 500M960 470L960 430' stroke='%23ffffff' stroke-opacity='0.18' stroke-width='3'/%3E%3Crect x='60' y='200' width='1080' height='540' fill='url(%23g3)' opacity='0.06'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center top;
     }
 
     .hero::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: rgba(3, 26, 64, 0.45);
+      background: radial-gradient(circle at 50% 30%, rgba(112, 177, 255, 0.16), transparent 28%), linear-gradient(180deg, rgba(3, 26, 64, 0.1), rgba(3, 26, 64, 0.88));
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(112, 177, 255, 0.18);
+      border-radius: 32px;
+      box-shadow: inset 0 0 120px rgba(112, 177, 255, 0.08), 0 0 120px rgba(0, 0, 0, 0.18);
       pointer-events: none;
     }
 
@@ -265,6 +264,8 @@
       display: grid;
       gap: 18px;
       transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      background: linear-gradient(180deg, rgba(11, 47, 100, 0.95), rgba(8, 35, 75, 0.95));
+      border: 1px solid rgba(112, 177, 255, 0.24);
     }
 
     .mission:hover {
@@ -357,61 +358,16 @@
     </header>
 
     <section class="hero">
-      <div class="hero-chart">
-        <div id="tv_chart"></div>
-      </div>
       <div class="hero-content">
         <span class="eyebrow">UCSB Applied Economics Club</span>
         <h1>UCSB Applied Economics Club</h1>
-        <p class="lead">A year-to-date QQQ Nasdaq trend line renders behind the title to reinforce the club’s finance-focused mission.</p>
+        <p class="lead">A large trading desk-style chart fills the background with the title centered over the price action.</p>
         <div class="hero-actions">
           <a class="button" href="#mission">Our Mission</a>
           <a class="button button-secondary" href="#board">Meet the Board</a>
         </div>
       </div>
     </section>
-    <script>
-      function initTradingView() {
-        if (!window.TradingView) return;
-
-        new TradingView.widget({
-          autosize: true,
-          symbol: 'NASDAQ:QQQ',
-          interval: 'D',
-          timezone: 'Etc/UTC',
-          theme: 'dark',
-          style: '1',
-          locale: 'en',
-          toolbar_bg: '#031a40',
-          hide_top_toolbar: true,
-          hide_side_toolbar: true,
-          allow_symbol_change: false,
-          details: false,
-          studies: [],
-          container_id: 'tv_chart',
-          withdateranges: false,
-          hide_legend: true,
-          enabled_features: ['hide_left_toolbar_by_default'],
-          overrides: {
-            'paneProperties.background': '#031a40',
-            'paneProperties.backgroundType': 'solid',
-            'paneProperties.vertGridProperties.color': '#0b2f74',
-            'paneProperties.horzGridProperties.color': '#0b2f74',
-            'scalesProperties.textColor': '#8be2ff',
-            'symbolWatermarkProperties.transparency': 90,
-            'mainSeriesProperties.candleStyle.wickUpColor': '#70b1ff',
-            'mainSeriesProperties.candleStyle.wickDownColor': '#70b1ff'
-          }
-        });
-      }
-
-      window.addEventListener('load', function() {
-        var script = document.createElement('script');
-        script.src = 'https://s3.tradingview.com/tv.js';
-        script.onload = initTradingView;
-        document.body.appendChild(script);
-      });
-    </script>
 
     <section id="mission" class="card mission reveal">
       <span class="section-title">Our Mission</span>
@@ -440,30 +396,30 @@
     <section id="board" class="reveal" style="margin-top: 40px;">
       <span class="section-title">Meet the Board</span>
       <div class="board-grid">
-        <article class="board-card">
+        <section class="board-card board-member">
           <span>Executive</span>
           <h3>Atticus</h3>
-        </article>
-        <article class="board-card">
+        </section>
+        <section class="board-card board-member">
           <span>Executive</span>
           <h3>Sam</h3>
-        </article>
-        <article class="board-card">
+        </section>
+        <section class="board-card board-member">
           <span>Executive</span>
           <h3>Aiddan</h3>
-        </article>
-        <article class="board-card">
+        </section>
+        <section class="board-card board-member">
           <span>Executive</span>
           <h3>Quinn</h3>
-        </article>
-        <article class="board-card">
+        </section>
+        <section class="board-card board-member">
           <span>Executive</span>
           <h3>Kristo</h3>
-        </article>
-        <article class="board-card">
+        </section>
+        <section class="board-card board-member">
           <span>Executive</span>
           <h3>Luca</h3>
-        </article>
+        </section>
       </div>
     </section>
 
