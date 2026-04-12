@@ -95,6 +95,106 @@
       box-shadow: 0 26px 60px rgba(0, 0, 0, 0.18);
     }
 
+    .vote-card {
+      margin: 32px 24px 24px;
+      padding: 34px;
+      background: rgba(7, 22, 48, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.18);
+    }
+
+    .vote-form {
+      display: grid;
+      gap: 24px;
+      margin-top: 18px;
+    }
+
+    .vote-options {
+      display: grid;
+      gap: 14px;
+    }
+
+    .vote-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .vote-option:hover {
+      border-color: rgba(112, 177, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .vote-option input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .vote-button {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 14px 22px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #031a40;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .vote-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .vote-note {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.95rem;
+    }
+
+    .results-section {
+      margin-top: 24px;
+      padding: 26px 20px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .results-section h2 {
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+    }
+
+    .result-label {
+      color: rgba(255,255,255,0.9);
+    }
+
+    .result-count {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
     h1 {
       font-size: clamp(2.8rem, 4vw, 4.6rem);
       margin-bottom: 18px;
@@ -135,13 +235,152 @@
       </nav>
     </header>
 
-    <section class="content-card">
-      <h1>Voting</h1>
-      <p>Welcome to the voting page. This is where club members can cast votes on upcoming initiatives, events, and strategic priorities. In the future, this page can be connected to a secure voting system that tracks participation and feedback.</p>
-      <p>For now, use this space to present current ballots, explain club decisions, and gather member input on the next meeting agenda.</p>
+    <section class="vote-card">
+      <h1>Vote on Next Topic</h1>
+      <p>One vote per member. Select the topic you want the club to cover next, then submit. Your choice helps shape the next lecture and industry speaker session.</p>
+
+      <form id="vote-form" class="vote-form">
+        <div class="vote-options">
+          <label class="vote-option">
+            <input type="radio" name="topic" value="Venture Capital" />
+            Venture Capital
+          </label>
+          <label class="vote-option">
+            <input type="radio" name="topic" value="Wealth Management" />
+            Wealth Management
+          </label>
+          <label class="vote-option">
+            <input type="radio" name="topic" value="Trading" />
+            Trading
+          </label>
+          <label class="vote-option">
+            <input type="radio" name="topic" value="Current Market Bull and Bear Cases" />
+            Current Market Bull and Bear Cases
+          </label>
+          <label class="vote-option">
+            <input type="radio" name="topic" value="Investment Banking" />
+            Investment Banking
+          </label>
+        </div>
+
+        <label class="vote-note">
+          <input type="checkbox" id="member-confirm" /> I confirm I am a current club member and eligible to vote.
+        </label>
+
+        <button type="submit" class="vote-button">Submit Vote</button>
+
+        <p id="vote-message" class="vote-note"></p>
+      </form>
+
+      <div id="results" class="results-section" aria-live="polite">
+        <h2>Current Vote Totals</h2>
+        <div class="result-row"><span class="result-label">Venture Capital</span><span class="result-count" id="count-vc">0</span></div>
+        <div class="result-row"><span class="result-label">Wealth Management</span><span class="result-count" id="count-wm">0</span></div>
+        <div class="result-row"><span class="result-label">Trading</span><span class="result-count" id="count-trading">0</span></div>
+        <div class="result-row"><span class="result-label">Current Market Bull and Bear Cases</span><span class="result-count" id="count-bullbear">0</span></div>
+        <div class="result-row"><span class="result-label">Investment Banking</span><span class="result-count" id="count-ib">0</span></div>
+      </div>
     </section>
 
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
   </main>
+  <script>
+    const topics = [
+      'Venture Capital',
+      'Wealth Management',
+      'Trading',
+      'Current Market Bull and Bear Cases',
+      'Investment Banking'
+    ];
+
+    const storageKey = 'aec-vote-topic';
+    const countsKey = 'aec-vote-counts';
+
+    function loadCounts() {
+      const stored = localStorage.getItem(countsKey);
+      if (!stored) {
+        const initial = {
+          'Venture Capital': 0,
+          'Wealth Management': 0,
+          'Trading': 0,
+          'Current Market Bull and Bear Cases': 0,
+          'Investment Banking': 0
+        };
+        localStorage.setItem(countsKey, JSON.stringify(initial));
+        return initial;
+      }
+      return JSON.parse(stored);
+    }
+
+    function saveCounts(counts) {
+      localStorage.setItem(countsKey, JSON.stringify(counts));
+    }
+
+    function updateResults(counts) {
+      document.getElementById('count-vc').textContent = counts['Venture Capital'];
+      document.getElementById('count-wm').textContent = counts['Wealth Management'];
+      document.getElementById('count-trading').textContent = counts['Trading'];
+      document.getElementById('count-bullbear').textContent = counts['Current Market Bull and Bear Cases'];
+      document.getElementById('count-ib').textContent = counts['Investment Banking'];
+    }
+
+    function showMessage(text, isError = false) {
+      const message = document.getElementById('vote-message');
+      message.textContent = text;
+      message.style.color = isError ? '#ffb3b3' : '#d0f4ff';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const counts = loadCounts();
+      updateResults(counts);
+
+      const savedVote = localStorage.getItem(storageKey);
+      if (savedVote) {
+        showMessage(`You already voted for "${savedVote}". Thank you!`);
+        document.querySelectorAll('[name="topic"]').forEach(input => {
+          input.disabled = true;
+          if (input.value === savedVote) {
+            input.checked = true;
+          }
+        });
+        document.getElementById('member-confirm').disabled = true;
+        document.querySelector('.vote-button').disabled = true;
+        document.querySelector('.vote-button').style.opacity = '0.65';
+      }
+
+      document.getElementById('vote-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const selected = document.querySelector('[name="topic"]:checked');
+        const memberConfirm = document.getElementById('member-confirm');
+
+        if (!memberConfirm.checked) {
+          showMessage('Please confirm you are a current club member before voting.', true);
+          return;
+        }
+
+        if (!selected) {
+          showMessage('Please select one topic to vote for.', true);
+          return;
+        }
+
+        if (localStorage.getItem(storageKey)) {
+          showMessage('You have already submitted your vote.', true);
+          return;
+        }
+
+        const topicValue = selected.value;
+        counts[topicValue] += 1;
+        saveCounts(counts);
+        localStorage.setItem(storageKey, topicValue);
+        updateResults(counts);
+        showMessage(`Thanks — your vote for "${topicValue}" has been recorded.`);
+        document.querySelectorAll('[name="topic"]').forEach(input => input.disabled = true);
+        memberConfirm.disabled = true;
+        document.querySelector('.vote-button').disabled = true;
+        document.querySelector('.vote-button').style.opacity = '0.65';
+      });
+    });
+  </script>
 </body>
 </html>
