@@ -39,17 +39,46 @@
 
     .topbar {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
-      padding: 20px 24px;
+      gap: 12px;
+      padding: 24px 24px 16px;
+      text-align: center;
     }
 
     .brand {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--accent);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ffffff;
       letter-spacing: 0.22em;
       text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .main-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .main-nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      color: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .main-nav a:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
     }
 
     .hero {
@@ -61,7 +90,7 @@
       padding: 32px 24px 42px;
       border-radius: 0 0 40px 40px;
       overflow: hidden;
-      background: #031a40;
+      background: transparent;
     }
 
     .hero-chart {
@@ -90,10 +119,32 @@
       min-height: 520px;
       border-radius: 32px;
       overflow: hidden;
-      box-shadow: 0 42px 110px rgba(0, 0, 0, 0.32);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+      border: none;
       z-index: 0;
-      background: #031a40;
+      background: transparent;
+    }
+
+    .hero-title-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-title {
+      color: #ffffff;
+      font-size: clamp(3rem, 6vw, 6rem);
+      letter-spacing: -0.04em;
+      font-weight: 900;
+      text-align: center;
+      line-height: 0.96;
+      text-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      max-width: 100%;
     }
 
     .hero::before {
@@ -344,12 +395,20 @@
 <body>
   <main class="page">
     <header class="topbar">
-      <span class="brand">Applied Economics Club</span>
+      <span class="brand">UCSB Applied Economics Club</span>
+      <nav class="main-nav">
+        <a href="#vote">Voting</a>
+        <a href="#signin">Sign In</a>
+        <a href="#topics">Topics Covered</a>
+      </nav>
     </header>
 
     <section class="hero">
       <div class="hero-chart">
         <div id="tv_chart_container"></div>
+      </div>
+      <div class="hero-title-wrap">
+        <h1 class="hero-title">Applied Economics Club</h1>
       </div>
     </section>
 
@@ -413,6 +472,21 @@
       </div>
     </section>
 
+    <section id="vote" class="card reveal" style="margin-top: 40px;">
+      <span class="section-title">Voting</span>
+      <p>Visit this section to cast club votes, rank priorities, and help shape upcoming meetings.</p>
+    </section>
+
+    <section id="signin" class="card reveal" style="margin-top: 24px;">
+      <span class="section-title">Sign In</span>
+      <p>Members can sign in here to access exclusive event details, resources, and collaboration tools.</p>
+    </section>
+
+    <section id="topics" class="card reveal" style="margin-top: 24px;">
+      <span class="section-title">Topics Covered</span>
+      <p>Explore our focus areas: market analysis, economic policy, data-driven strategy, and professional development.</p>
+    </section>
+
     <footer class="footer">
       Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
     </footer>
@@ -423,7 +497,7 @@
       if (window.TradingView && typeof window.TradingView.widget === 'function') {
         new TradingView.widget({
           "autosize": true,
-          "symbol": "NASDAQ:QQQ",
+          "symbol": "BATS_DLY:QQQ",
           "interval": "30",
           "timezone": "America/New_York",
           "theme": "dark",
@@ -431,12 +505,27 @@
           "locale": "en",
           "toolbar_bg": "#0b1f44",
           "enable_publishing": false,
-          "allow_symbol_change": true,
-          "hide_side_toolbar": false,
-          "details": true,
-          "hotlist": true,
-          "news": ["stocktwits"],
-          "container_id": "tv_chart_container"
+          "allow_symbol_change": false,
+          "hide_side_toolbar": true,
+          "hide_top_toolbar": true,
+          "hide_legend": true,
+          "hide_ideas": true,
+          "details": false,
+          "hotlist": false,
+          "news": [],
+          "save_image": false,
+          "container_id": "tv_chart_container",
+          "disabled_features": [
+            "header_compare",
+            "header_symbol_search",
+            "header_undo_redo",
+            "header_screenshot",
+            "header_settings",
+            "header_interval_dialog_button",
+            "header_resolutions",
+            "header_indicators",
+            "control_bar"
+          ]
         });
       } else {
         setTimeout(initTradingViewWidget, 100);
