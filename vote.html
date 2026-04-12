@@ -160,9 +160,8 @@
     }
 
     .vote-count {
-      position: absolute;
-      right: 18px;
-      bottom: 18px;
+      align-self: flex-end;
+      margin-top: auto;
       background: rgba(112, 177, 255, 0.14);
       color: var(--accent);
       padding: 8px 12px;
@@ -194,6 +193,36 @@
     .vote-note {
       color: rgba(255,255,255,0.75);
       font-size: 0.95rem;
+    }
+
+    .other-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .other-input,
+    .other-textarea {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .other-input::placeholder,
+    .other-textarea::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .other-input:focus,
+    .other-textarea:focus {
+      border-color: var(--accent);
     }
 
     h1 {
@@ -292,6 +321,20 @@
             </div>
             <span class="vote-count" id="count-ib">0 votes</span>
           </label>
+          <label class="vote-option">
+            <div class="option-head">
+              <input type="radio" name="topic" value="Other" />
+              <div>
+                <div class="option-title">Other</div>
+                <div class="option-desc">Have a different topic in mind? Select this and tell us what you'd like to see covered.</div>
+              </div>
+            </div>
+            <div class="other-fields" id="other-fields" style="display:none;">
+              <input type="text" id="other-topic-name" class="other-input" placeholder="Topic name" maxlength="60" />
+              <textarea id="other-topic-desc" class="other-textarea" placeholder="Brief description (optional)" maxlength="200" rows="2"></textarea>
+            </div>
+            <span class="vote-count" id="count-other">0 votes</span>
+          </label>
         </div>
 
         <label class="vote-note">
@@ -307,14 +350,6 @@
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
   </main>
   <script>
-    const topics = [
-      'Venture Capital',
-      'Wealth Management',
-      'Trading',
-      'Current Market Bull and Bear Cases',
-      'Investment Banking'
-    ];
-
     const storageKey = 'aec-vote-topic';
     const countsKey = 'aec-vote-counts';
 
@@ -326,12 +361,15 @@
           'Wealth Management': 0,
           'Trading': 0,
           'Current Market Bull and Bear Cases': 0,
-          'Investment Banking': 0
+          'Investment Banking': 0,
+          'Other': 0
         };
         localStorage.setItem(countsKey, JSON.stringify(initial));
         return initial;
       }
-      return JSON.parse(stored);
+      const counts = JSON.parse(stored);
+      if (!('Other' in counts)) counts['Other'] = 0;
+      return counts;
     }
 
     function saveCounts(counts) {
@@ -348,6 +386,22 @@
       document.getElementById('count-trading').textContent = formatVotes(counts['Trading']);
       document.getElementById('count-bullbear').textContent = formatVotes(counts['Current Market Bull and Bear Cases']);
       document.getElementById('count-ib').textContent = formatVotes(counts['Investment Banking']);
+      document.getElementById('count-other').textContent = formatVotes(counts['Other']);
+    }
+
+    function lockForm(savedVote) {
+      document.querySelectorAll('[name="topic"]').forEach(input => {
+        input.disabled = true;
+        if (input.value === savedVote) input.checked = true;
+      });
+      if (savedVote === 'Other') {
+        document.getElementById('other-fields').style.display = 'flex';
+      }
+      document.getElementById('member-confirm').disabled = true;
+      document.getElementById('other-topic-name').disabled = true;
+      document.getElementById('other-topic-desc').disabled = true;
+      document.querySelector('.vote-button').disabled = true;
+      document.querySelector('.vote-button').style.opacity = '0.65';
     }
 
     function showMessage(text, isError = false) {
@@ -362,17 +416,20 @@
 
       const savedVote = localStorage.getItem(storageKey);
       if (savedVote) {
-        showMessage(`You already voted for "${savedVote}". Thank you!`);
-        document.querySelectorAll('[name="topic"]').forEach(input => {
-          input.disabled = true;
-          if (input.value === savedVote) {
-            input.checked = true;
-          }
-        });
-        document.getElementById('member-confirm').disabled = true;
-        document.querySelector('.vote-button').disabled = true;
-        document.querySelector('.vote-button').style.opacity = '0.65';
+        const label = savedVote === 'Other'
+          ? `"Other: ${localStorage.getItem('aec-vote-other-name') || 'custom topic'}"`
+          : `"${savedVote}"`;
+        showMessage(`You already voted for ${label}. Thank you!`);
+        lockForm(savedVote);
       }
+
+      // Show/hide Other fields when radio changes
+      document.querySelectorAll('[name="topic"]').forEach(input => {
+        input.addEventListener('change', function() {
+          document.getElementById('other-fields').style.display =
+            this.value === 'Other' ? 'flex' : 'none';
+        });
+      });
 
       document.getElementById('vote-form').addEventListener('submit', function(event) {
         event.preventDefault();
@@ -396,15 +453,28 @@
         }
 
         const topicValue = selected.value;
+
+        if (topicValue === 'Other') {
+          const otherName = document.getElementById('other-topic-name').value.trim();
+          if (!otherName) {
+            showMessage('Please enter a topic name for your "Other" suggestion.', true);
+            return;
+          }
+          localStorage.setItem('aec-vote-other-name', otherName);
+          const otherDesc = document.getElementById('other-topic-desc').value.trim();
+          if (otherDesc) localStorage.setItem('aec-vote-other-desc', otherDesc);
+        }
+
         counts[topicValue] += 1;
         saveCounts(counts);
         localStorage.setItem(storageKey, topicValue);
         updateResults(counts);
-        showMessage(`Thanks — your vote for "${topicValue}" has been recorded.`);
-        document.querySelectorAll('[name="topic"]').forEach(input => input.disabled = true);
-        memberConfirm.disabled = true;
-        document.querySelector('.vote-button').disabled = true;
-        document.querySelector('.vote-button').style.opacity = '0.65';
+
+        const displayName = topicValue === 'Other'
+          ? `Other: ${localStorage.getItem('aec-vote-other-name')}`
+          : topicValue;
+        showMessage(`Thanks — your vote for "${displayName}" has been recorded.`);
+        lockForm(topicValue);
       });
     });
   </script>
