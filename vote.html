@@ -112,29 +112,64 @@
 
     .vote-options {
       display: grid;
-      gap: 14px;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
 
     .vote-option {
+      position: relative;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 14px;
-      padding: 16px 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.03);
-      transition: border-color 0.2s ease, transform 0.2s ease;
+      padding: 26px 22px 22px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.04);
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
     }
 
     .vote-option:hover {
-      border-color: rgba(112, 177, 255, 0.4);
-      transform: translateY(-1px);
+      border-color: rgba(112, 177, 255, 0.5);
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .vote-option input {
       width: 18px;
       height: 18px;
       accent-color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .option-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .option-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .option-desc {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+
+    .vote-count {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      background: rgba(112, 177, 255, 0.14);
+      color: var(--accent);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      white-space: nowrap;
     }
 
     .vote-button {
@@ -159,40 +194,6 @@
     .vote-note {
       color: rgba(255,255,255,0.75);
       font-size: 0.95rem;
-    }
-
-    .results-section {
-      margin-top: 24px;
-      padding: 26px 20px;
-      border-radius: 24px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .results-section h2 {
-      margin-bottom: 16px;
-      font-size: 1.2rem;
-    }
-
-    .result-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .result-row:last-child {
-      border-bottom: none;
-    }
-
-    .result-label {
-      color: rgba(255,255,255,0.9);
-    }
-
-    .result-count {
-      color: var(--accent);
-      font-weight: 700;
     }
 
     h1 {
@@ -242,24 +243,54 @@
       <form id="vote-form" class="vote-form">
         <div class="vote-options">
           <label class="vote-option">
-            <input type="radio" name="topic" value="Venture Capital" />
-            Venture Capital
+            <div class="option-head">
+              <input type="radio" name="topic" value="Venture Capital" />
+              <div>
+                <div class="option-title">Venture Capital</div>
+                <div class="option-desc">Explore early-stage investing and real-world startup funding strategies for scaling companies.</div>
+              </div>
+            </div>
+            <span class="vote-count" id="count-vc">0 votes</span>
           </label>
           <label class="vote-option">
-            <input type="radio" name="topic" value="Wealth Management" />
-            Wealth Management
+            <div class="option-head">
+              <input type="radio" name="topic" value="Wealth Management" />
+              <div>
+                <div class="option-title">Wealth Management</div>
+                <div class="option-desc">Learn how high-net-worth strategies, portfolio construction, and client advisory work together.</div>
+              </div>
+            </div>
+            <span class="vote-count" id="count-wm">0 votes</span>
           </label>
           <label class="vote-option">
-            <input type="radio" name="topic" value="Trading" />
-            Trading
+            <div class="option-head">
+              <input type="radio" name="topic" value="Trading" />
+              <div>
+                <div class="option-title">Trading</div>
+                <div class="option-desc">Study market mechanics, risk management, and practical trade execution across equities and derivatives.</div>
+              </div>
+            </div>
+            <span class="vote-count" id="count-trading">0 votes</span>
           </label>
           <label class="vote-option">
-            <input type="radio" name="topic" value="Current Market Bull and Bear Cases" />
-            Current Market Bull and Bear Cases
+            <div class="option-head">
+              <input type="radio" name="topic" value="Current Market Bull and Bear Cases" />
+              <div>
+                <div class="option-title">Current Market Bull and Bear Cases</div>
+                <div class="option-desc">Debate today's macro outlook with real examples of bullish and bearish theses from recent markets.</div>
+              </div>
+            </div>
+            <span class="vote-count" id="count-bullbear">0 votes</span>
           </label>
           <label class="vote-option">
-            <input type="radio" name="topic" value="Investment Banking" />
-            Investment Banking
+            <div class="option-head">
+              <input type="radio" name="topic" value="Investment Banking" />
+              <div>
+                <div class="option-title">Investment Banking</div>
+                <div class="option-desc">Review deal sourcing, modeling, and advisory best practices used in real M&A and capital markets work.</div>
+              </div>
+            </div>
+            <span class="vote-count" id="count-ib">0 votes</span>
           </label>
         </div>
 
@@ -271,15 +302,6 @@
 
         <p id="vote-message" class="vote-note"></p>
       </form>
-
-      <div id="results" class="results-section" aria-live="polite">
-        <h2>Current Vote Totals</h2>
-        <div class="result-row"><span class="result-label">Venture Capital</span><span class="result-count" id="count-vc">0</span></div>
-        <div class="result-row"><span class="result-label">Wealth Management</span><span class="result-count" id="count-wm">0</span></div>
-        <div class="result-row"><span class="result-label">Trading</span><span class="result-count" id="count-trading">0</span></div>
-        <div class="result-row"><span class="result-label">Current Market Bull and Bear Cases</span><span class="result-count" id="count-bullbear">0</span></div>
-        <div class="result-row"><span class="result-label">Investment Banking</span><span class="result-count" id="count-ib">0</span></div>
-      </div>
     </section>
 
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
@@ -316,12 +338,16 @@
       localStorage.setItem(countsKey, JSON.stringify(counts));
     }
 
+    function formatVotes(count) {
+      return `${count} vote${count === 1 ? '' : 's'}`;
+    }
+
     function updateResults(counts) {
-      document.getElementById('count-vc').textContent = counts['Venture Capital'];
-      document.getElementById('count-wm').textContent = counts['Wealth Management'];
-      document.getElementById('count-trading').textContent = counts['Trading'];
-      document.getElementById('count-bullbear').textContent = counts['Current Market Bull and Bear Cases'];
-      document.getElementById('count-ib').textContent = counts['Investment Banking'];
+      document.getElementById('count-vc').textContent = formatVotes(counts['Venture Capital']);
+      document.getElementById('count-wm').textContent = formatVotes(counts['Wealth Management']);
+      document.getElementById('count-trading').textContent = formatVotes(counts['Trading']);
+      document.getElementById('count-bullbear').textContent = formatVotes(counts['Current Market Bull and Bear Cases']);
+      document.getElementById('count-ib').textContent = formatVotes(counts['Investment Banking']);
     }
 
     function showMessage(text, isError = false) {
