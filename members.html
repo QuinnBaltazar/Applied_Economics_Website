@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Board | UCSB Applied Economics Club</title>
+  <title>Members | UCSB Applied Economics Club</title>
   <style>
     :root {
       --bg: #031a40;
@@ -85,23 +85,50 @@
       transform: translateY(-1px);
     }
 
-    .board-grid {
-      display: grid;
-      gap: 24px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      margin: 32px 24px 48px;
+    .hero-block {
+      margin: 32px 24px 12px;
+      padding: 34px;
+      background: rgba(7, 22, 48, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.18);
     }
 
-    .board-card {
+    .hero-block h1 {
+      font-size: clamp(2.8rem, 4vw, 4.6rem);
+      margin-bottom: 18px;
+    }
+
+    .hero-block p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      line-height: 1.8;
+      max-width: 860px;
+    }
+
+    .members-grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      margin: 24px;
+    }
+
+    .member-card {
       background: rgba(7, 22, 48, 0.96);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 24px;
       padding: 26px;
-      min-height: 240px;
+      min-height: 220px;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
 
-    .board-card span {
+    .member-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(112, 177, 255, 0.5);
+    }
+
+    .member-card span {
       display: inline-block;
       margin-bottom: 14px;
       color: var(--accent);
@@ -111,28 +138,29 @@
       font-weight: 700;
     }
 
-    .board-card h3 {
-      margin-bottom: 14px;
+    .member-card h3 {
+      margin-bottom: 12px;
       font-size: 1.3rem;
       color: #ffffff;
     }
 
-    .board-card p {
+    .member-card p {
       color: rgba(255, 255, 255, 0.84);
       font-size: 1rem;
       line-height: 1.75;
     }
 
     .footer {
-      margin: 0 24px 42px;
+      margin: 24px 24px 42px;
       text-align: center;
       color: rgba(255, 255, 255, 0.66);
       font-size: 0.95rem;
     }
 
     @media (max-width: 760px) {
-      .board-grid {
-        margin: 24px 16px 36px;
+      .hero-block,
+      .members-grid {
+        margin: 24px 16px;
       }
     }
   </style>
@@ -151,40 +179,45 @@
       </nav>
     </header>
 
-    <section class="board-grid">
-      <div class="board-card">
-        <span>President</span>
-        <h3>Atticus Nguyen</h3>
-        <p>Atticus leads club strategy and speaker programming, organizing market analysis sessions and ensuring every member gains hands-on exposure to applied economics.</p>
-      </div>
-      <div class="board-card">
-        <span>Vice President</span>
-        <h3>Sam Carter</h3>
-        <p>Sam coordinates partnerships and career events, manages external relations, and curates industry panels for finance and economic research careers.</p>
-      </div>
-      <div class="board-card">
-        <span>Research Director</span>
-        <h3>Aiddan Ramirez</h3>
-        <p>Aiddan develops data-driven case work and study groups, leading team research projects focused on market trends, policy effects, and forecasting.</p>
-      </div>
-      <div class="board-card">
-        <span>Programming Lead</span>
-        <h3>Quinn Lee</h3>
-        <p>Quinn builds workshop series and skill sessions, creating practical learning experiences around economic modeling, trading desk concepts, and analytics tools.</p>
-      </div>
-      <div class="board-card">
-        <span>Operations</span>
-        <h3>Kristo Patel</h3>
-        <p>Kristo keeps the club running smoothly by managing event logistics, communications, and onboarding for new members across campus.</p>
-      </div>
-      <div class="board-card">
-        <span>Community Manager</span>
-        <h3>Luca Taylor</h3>
-        <p>Luca curates member engagement and club culture, supporting collaborative research teams and fostering discussion around economics and markets.</p>
-      </div>
+    <section class="hero-block">
+      <h1>Members</h1>
+      <p>Meet the students powering UCSB Applied Economics Club. This page highlights the active membership team and the roles they play in event planning, research, finance education, and community engagement.</p>
     </section>
 
-    <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
+    <section class="members-grid">
+      <article class="member-card">
+        <span>Club Lead</span>
+        <h3>Ari Patel</h3>
+        <p>Ari coordinates club strategy, guest speakers, and research workshops while making sure every member has a path to applied economics experience.</p>
+      </article>
+      <article class="member-card">
+        <span>Research Coordinator</span>
+        <h3>Zoe Malik</h3>
+        <p>Zoe leads student research teams, develops case studies, and helps members turn economic data into insight-driven presentations.</p>
+      </article>
+      <article class="member-card">
+        <span>Events Manager</span>
+        <h3>Nico Jones</h3>
+        <p>Nico plans club events, manages logistics, and ensures each workshop and networking session runs smoothly for members and industry partners.</p>
+      </article>
+      <article class="member-card">
+        <span>Outreach</span>
+        <h3>Emilia Chen</h3>
+        <p>Emilia supports club growth and community outreach, bringing new students into applied economics programming and campus engagement.</p>
+      </article>
+      <article class="member-card">
+        <span>Content Lead</span>
+        <h3>Jacob Silva</h3>
+        <p>Jacob creates club content, social updates, and educational resources that keep members informed about markets, policy, and data tools.</p>
+      </article>
+      <article class="member-card">
+        <span>Member Support</span>
+        <h3>Riya Singh</h3>
+        <p>Riya helps new members onboard, answers questions, and connects students with the right workshops and project teams.</p>
+      </article>
+    </section>
+
+    <footer class="footer">Built for the Applied Economics Club — clean, page-based site navigation for an active student network.</footer>
   </main>
 </body>
 </html>
