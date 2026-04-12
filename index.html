@@ -171,6 +171,30 @@
       pointer-events: none;
     }
 
+    .mission-section {
+      margin: 32px 24px 18px;
+      padding: 32px;
+      display: grid;
+      gap: 16px;
+      background: rgba(7, 22, 48, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    }
+
+    .mission-section h2 {
+      font-size: clamp(2rem, 3vw, 3rem);
+      margin-bottom: 10px;
+      letter-spacing: -0.03em;
+    }
+
+    .mission-section p {
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 1rem;
+      line-height: 1.8;
+      max-width: 840px;
+    }
+
     .button {
       display: inline-flex;
       align-items: center;
@@ -422,9 +446,11 @@
       </div>
     </section>
 
-    <footer class="footer">
-      Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
-    </footer>
+    <section class="mission-section">
+      <h2>Our Mission</h2>
+      <p>Our mission is to take big ideas and ground them in reality through practical use. We teach a topic chosen by club vote, then bring in an industry speaker to show members how that concept works in the real world.</p>
+      <p>We also keep everyone connected after graduation. The Members page lets club members update their goals, share what they’re interested in, and contact one another so the network stays active.</p>
+    </section>
 
     <footer class="footer">
       Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
