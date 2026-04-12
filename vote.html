@@ -198,7 +198,32 @@
     .other-fields {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
+    }
+
+    .other-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .other-field-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .other-required {
+      color: var(--accent);
+    }
+
+    .other-optional {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(255, 255, 255, 0.38);
     }
 
     .other-input,
@@ -207,8 +232,8 @@
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 10px;
       color: #fff;
-      padding: 8px 12px;
-      font-size: 0.92rem;
+      padding: 10px 14px;
+      font-size: 0.95rem;
       font-family: inherit;
       resize: none;
       outline: none;
@@ -330,8 +355,14 @@
               </div>
             </div>
             <div class="other-fields" id="other-fields" style="display:none;">
-              <input type="text" id="other-topic-name" class="other-input" placeholder="Topic name" maxlength="60" />
-              <textarea id="other-topic-desc" class="other-textarea" placeholder="Brief description (optional)" maxlength="200" rows="2"></textarea>
+              <div class="other-field-group">
+                <span class="other-field-label">Topic Title <span class="other-required">*</span></span>
+                <input type="text" id="other-topic-name" class="other-input" placeholder="e.g. Hedge Funds, Real Estate Investing…" maxlength="60" />
+              </div>
+              <div class="other-field-group">
+                <span class="other-field-label">Brief Description <span class="other-optional">(optional)</span></span>
+                <textarea id="other-topic-desc" class="other-textarea" placeholder="What should the club cover about this topic?" maxlength="200" rows="3"></textarea>
+              </div>
             </div>
             <span class="vote-count" id="count-other">0 votes</span>
           </label>
