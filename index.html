@@ -54,25 +54,53 @@
 
     .hero {
       position: relative;
-      min-height: 72vh;
+      min-height: 70vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 60px 24px 42px;
+      padding: 32px 24px 42px;
       border-radius: 0 0 40px 40px;
       overflow: hidden;
-      background-color: #031a40;
-      background-image: linear-gradient(180deg, rgba(3, 26, 64, 0.16), rgba(3, 26, 64, 0.92)),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 900'%3E%3Cdefs%3E%3ClinearGradient id='g1' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2370b1ff' stop-opacity='0.22'/%3E%3Cstop offset='1' stop-color='%2303153a' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='g2' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%235a7eff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='g3' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffffff' stop-opacity='0.18'/%3E%3Cstop offset='1' stop-color='%23ffffff' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='900' fill='%2303153a'/%3E%3Cg stroke='%23ffffff' stroke-opacity='0.14' stroke-width='1'%3E%3Cpath d='M80 820H1120M80 720H1120M80 620H1120M80 520H1120M80 420H1120M80 320H1120M80 220H1120'/%3E%3Cpath d='M200 900V0M400 900V0M600 900V0M800 900V0M1000 900V0'/%3E%3C/g%3E%3Cpath d='M80 730C160 700 240 640 320 660C400 690 480 560 560 600C640 650 720 520 800 540C880 575 960 470 1040 420L1120 370' fill='none' stroke='%2370b1ff' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M80 730L160 700L240 640L320 660L400 690L480 560L560 600L640 650L720 520L800 540L880 575L960 470L1040 420L1120 370L1120 900L80 900Z' fill='url(%23g1)' opacity='0.45'/%3E%3Ccircle cx='1120' cy='370' r='12' fill='%23ffffff' opacity='0.95'/%3E%3Cpath d='M160 690L160 630M320 660L320 620M480 560L480 520M640 650L640 590M800 540L800 500M960 470L960 430' stroke='%23ffffff' stroke-opacity='0.18' stroke-width='3'/%3E%3Crect x='60' y='200' width='1080' height='540' fill='url(%23g3)' opacity='0.06'/%3E%3C/svg%3E");
-      background-size: cover;
-      background-position: center center;
+      background: #031a40;
+    }
+
+    .hero-chart {
+      position: absolute;
+      inset: 0;
+      padding: 18px;
+      z-index: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-chart::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 40px 40px 0 0;
+      background: linear-gradient(180deg, rgba(3, 26, 64, 0.35), rgba(3, 26, 64, 0.78));
+      pointer-events: none;
+    }
+
+    #tv_chart_container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 520px;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 42px 110px rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      z-index: 0;
+      background: #031a40;
     }
 
     .hero::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 30%, rgba(112, 177, 255, 0.16), transparent 28%), linear-gradient(180deg, rgba(3, 26, 64, 0.1), rgba(3, 26, 64, 0.88));
+      background: radial-gradient(circle at 50% 30%, rgba(112, 177, 255, 0.1), transparent 28%), linear-gradient(180deg, rgba(3, 26, 64, 0.08), rgba(3, 26, 64, 0.88));
       pointer-events: none;
     }
 
@@ -90,13 +118,13 @@
       position: relative;
       z-index: 1;
       text-align: center;
-      max-width: 760px;
-      padding: 56px 38px;
+      max-width: 720px;
+      padding: 46px 34px;
       border-radius: 28px;
-      background: rgba(3, 26, 64, 0.92);
+      background: rgba(2, 18, 44, 0.94);
       box-shadow: 0 34px 90px rgba(0, 0, 0, 0.32);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(18px);
     }
 
     .eyebrow {
@@ -297,6 +325,10 @@
       transition: transform 0.25s ease, border-color 0.25s ease;
     }
 
+    .board-card {
+      background: linear-gradient(180deg, #102f62 0%, #0a2858 100%);
+    }
+
     .feature-card:hover,
     .board-card:hover {
       transform: translateY(-4px);
@@ -309,11 +341,22 @@
       font-size: 1.2rem;
     }
 
+    .board-card h3 {
+      color: #ffffff;
+    }
+
     .feature-card p,
     .board-card p {
-      color: var(--muted);
       font-size: 0.96rem;
       line-height: 1.7;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+    }
+
+    .board-card p {
+      color: rgba(255, 255, 255, 0.84);
     }
 
     .feature-card span,
@@ -358,10 +401,13 @@
     </header>
 
     <section class="hero">
+      <div class="hero-chart">
+        <div id="tv_chart_container"></div>
+      </div>
       <div class="hero-content">
-        <span class="eyebrow">UCSB Applied Economics Club</span>
+        <span class="eyebrow">Live NASDAQ QQQ Market View</span>
         <h1>UCSB Applied Economics Club</h1>
-        <p class="lead">A large trading desk-style chart fills the background with the title centered over the price action.</p>
+        <p class="lead">Interactive QQQ market data runs live behind the club introduction. Scroll down to read our mission and meet the board.</p>
         <div class="hero-actions">
           <a class="button" href="#mission">Our Mission</a>
           <a class="button button-secondary" href="#board">Meet the Board</a>
@@ -397,28 +443,34 @@
       <span class="section-title">Meet the Board</span>
       <div class="board-grid">
         <section class="board-card board-member">
-          <span>Executive</span>
-          <h3>Atticus</h3>
+          <span>President</span>
+          <h3>Atticus Nguyen</h3>
+          <p>Atticus leads club strategy and speaker programming. He organizes market analysis sessions and ensures every member gains hands-on exposure to applied economics.</p>
         </section>
         <section class="board-card board-member">
-          <span>Executive</span>
-          <h3>Sam</h3>
+          <span>Vice President</span>
+          <h3>Sam Carter</h3>
+          <p>Sam coordinates partnerships and career events. She manages external relations and curates industry panels for finance and economic research careers.</p>
         </section>
         <section class="board-card board-member">
-          <span>Executive</span>
-          <h3>Aiddan</h3>
+          <span>Research Director</span>
+          <h3>Aiddan Ramirez</h3>
+          <p>Aiddan develops data-driven case work and study groups. He leads team research projects focused on market trends, policy effects, and applied forecasting.</p>
         </section>
         <section class="board-card board-member">
-          <span>Executive</span>
-          <h3>Quinn</h3>
+          <span>Programming Lead</span>
+          <h3>Quinn Lee</h3>
+          <p>Quinn builds workshop series and skill sessions. He creates practical learning experiences around economic modeling, trading desk concepts, and analytics tools.</p>
         </section>
         <section class="board-card board-member">
-          <span>Executive</span>
-          <h3>Kristo</h3>
+          <span>Operations</span>
+          <h3>Kristo Patel</h3>
+          <p>Kristo keeps the club running smoothly. He manages event logistics, communications, and onboarding for new members across our campus community.</p>
         </section>
         <section class="board-card board-member">
-          <span>Executive</span>
-          <h3>Luca</h3>
+          <span>Community Manager</span>
+          <h3>Luca Taylor</h3>
+          <p>Luca curates member engagement and club culture. He supports collaborative research teams and fosters discussion around economics, markets, and career development.</p>
         </section>
       </div>
     </section>
@@ -427,6 +479,24 @@
       Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
     </footer>
   </main>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script>
+    new TradingView.widget({
+      "width": "100%",
+      "height": "100%",
+      "symbol": "NASDAQ:QQQ",
+      "interval": "60",
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "en",
+      "toolbar_bg": "#0b1f44",
+      "enable_publishing": false,
+      "allow_symbol_change": true,
+      "hideideas": true,
+      "container_id": "tv_chart_container"
+    });
+  </script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var revealElements = document.querySelectorAll('.reveal');
