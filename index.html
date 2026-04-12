@@ -23,9 +23,14 @@
 
     body {
       min-height: 100vh;
-      background: linear-gradient(180deg, #05153a 0%, #031a40 100%);
       color: var(--text);
       line-height: 1.6;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(180deg, rgba(3, 26, 64, 0.96) 0%, rgba(1, 12, 34, 0.96) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%2370b1ff' stop-opacity='0.36'/%3E%3Cstop offset='1' stop-color='%2303153a' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='800' fill='%2303153a'/%3E%3Cg stroke='%23ffffff' stroke-width='1' opacity='0.12'%3E%3Cpath d='M0 720 L1200 720'/%3E%3Cpath d='M0 620 L1200 620'/%3E%3Cpath d='M0 520 L1200 520'/%3E%3Cpath d='M0 420 L1200 420'/%3E%3Cpath d='M0 320 L1200 320'/%3E%3Cpath d='M0 220 L1200 220'/%3E%3Cpath d='M0 120 L1200 120'/%3E%3Cpath d='M240 800 L240 0'/%3E%3Cpath d='M480 800 L480 0'/%3E%3Cpath d='M720 800 L720 0'/%3E%3Cpath d='M960 800 L960 0'/%3E%3C/g%3E%3Cpath d='M0 560 L140 540 L280 460 L420 512 L560 470 L700 520 L840 430 L980 460 L1120 380 L1200 328' fill='none' stroke='%2370b1ff' stroke-width='4' opacity='0.95'/%3E%3Cpath d='M0 560 L140 540 L280 460 L420 512 L560 470 L700 520 L840 430 L980 460 L1120 380 L1200 328 L1200 800 L0 800Z' fill='url(%23g)' opacity='0.3'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-attachment: fixed;
     }
 
     .page {
@@ -34,10 +39,31 @@
       padding: 32px 24px 48px;
     }
 
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+    }
+
+    .brand {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
     .hero {
-      padding: 64px 0 48px;
+      padding: 56px 0 40px;
       display: grid;
-      gap: 24px;
+      grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+      gap: 32px;
+      align-items: center;
+    }
+
+    .hero-copy {
+      max-width: 620px;
     }
 
     .eyebrow {
@@ -47,18 +73,53 @@
       color: var(--accent);
       font-size: 0.8rem;
       font-weight: 700;
+      margin-bottom: 18px;
     }
 
     h1 {
       font-size: clamp(3rem, 4vw, 5rem);
       letter-spacing: -0.05em;
       max-width: 14ch;
+      margin-bottom: 24px;
+      line-height: 1.02;
     }
 
     .lead {
       max-width: 760px;
       color: var(--muted);
       font-size: 1.05rem;
+      margin-bottom: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 140px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      font-weight: 700;
+      text-decoration: none;
+      background: var(--accent);
+      color: #031a40;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+
+    .button-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
     }
 
     .card {
@@ -68,6 +129,72 @@
       padding: 28px;
       backdrop-filter: blur(18px);
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+    }
+
+    .hero-card {
+      display: grid;
+      gap: 20px;
+      min-height: 360px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .panel-label {
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .panel-value {
+      font-size: 2.3rem;
+      letter-spacing: -0.03em;
+    }
+
+    .panel-growth {
+      color: #8be2ff;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .hero-card p {
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .market-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .market-stats div {
+      background: rgba(112, 177, 255, 0.08);
+      border: 1px solid rgba(112, 177, 255, 0.12);
+      border-radius: 18px;
+      padding: 16px;
+      min-height: 96px;
+    }
+
+    .market-stats span {
+      display: block;
+      color: var(--accent);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .market-stats strong {
+      font-size: 1.4rem;
+      display: block;
     }
 
     .section-title {
@@ -90,12 +217,14 @@
       max-width: 760px;
     }
 
+    .feature-grid,
     .board-grid {
       display: grid;
       gap: 20px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
 
+    .feature-card,
     .board-card {
       background: #0b2f74;
       border-radius: 20px;
@@ -105,16 +234,26 @@
       transition: transform 0.25s ease, border-color 0.25s ease;
     }
 
+    .feature-card:hover,
     .board-card:hover {
       transform: translateY(-4px);
       border-color: rgba(112, 177, 255, 0.5);
     }
 
+    .feature-card h3,
     .board-card h3 {
       margin-bottom: 10px;
       font-size: 1.2rem;
     }
 
+    .feature-card p,
+    .board-card p {
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.7;
+    }
+
+    .feature-card span,
     .board-card span {
       display: inline-block;
       margin-bottom: 16px;
@@ -125,34 +264,81 @@
       letter-spacing: 0.12em;
     }
 
-    .board-card p {
-      color: var(--muted);
-      font-size: 0.96rem;
-    }
-
     .footer {
       margin-top: 48px;
       text-align: center;
       color: rgba(255,255,255,0.68);
       font-size: 0.95rem;
     }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .market-stats {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <main class="page">
+    <header class="topbar">
+      <span class="brand">Applied Economics Club</span>
+    </header>
+
     <section class="hero">
-      <span class="eyebrow">Applied Economics Club</span>
-      <h1>Applied Economics</h1>
-      <p class="lead">We bridge the gap between economic theory and career-ready skills. Through real-world projects, industry connections, and skill-building events, we help members turn economic concepts into the tools employers value.</p>
+      <div class="hero-copy">
+        <span class="eyebrow">Applied Economics Club</span>
+        <h1>Applied economics prepared for today’s markets.</h1>
+        <p class="lead">We bridge economic theory and career-ready skills with real-world analysis, finance-focused projects, and professional experience built for the modern student.</p>
+        <div class="hero-actions">
+          <a class="button" href="#mission">Our Mission</a>
+          <a class="button button-secondary" href="#board">Meet the Board</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel card hero-card">
+        <div class="panel-header">
+          <span class="panel-label">NASDAQ Composite</span>
+          <span class="panel-value">14,231.84</span>
+        </div>
+        <div class="panel-growth">+0.84% intraday</div>
+        <p>Today’s market-inspired chart background keeps the homepage aligned with finance energy while preserving the same deep blue palette and modern layout.</p>
+        <div class="market-stats">
+          <div><span>Programs</span><strong>12+</strong></div>
+          <div><span>Speakers</span><strong>30+</strong></div>
+          <div><span>Projects</span><strong>18</strong></div>
+        </div>
+      </aside>
     </section>
 
-    <section class="card mission">
+    <section id="mission" class="card mission">
       <span class="section-title">Our Mission</span>
-      <p>Applied Economics Club is dedicated to empowering ambitious students with practical economic insight and job-related skills. We translate classroom learning into meaningful experiences, internships, and leadership opportunities so members can confidently enter careers in consulting, finance, policy, and beyond.</p>
+      <p>Applied Economics Club is dedicated to empowering ambitious students with practical economic insight and job-ready skills. We translate classroom learning into meaningful experiences, internships, and leadership opportunities so members can confidently pursue careers in consulting, finance, policy, and beyond.</p>
       <p>From data-driven analysis to professional communication, our club helps members build the bridge from concept to impact.</p>
     </section>
 
-    <section style="margin-top: 40px;">
+    <section class="feature-grid" style="margin-top: 40px;">
+      <article class="feature-card">
+        <span>Real Experience</span>
+        <h3>Hands-on economic analysis</h3>
+        <p>Work with real datasets, case studies, and financial market themes that mirror the same applied focus as the homepage design you like.</p>
+      </article>
+      <article class="feature-card">
+        <span>Career Ready</span>
+        <h3>Industry connections</h3>
+        <p>Build networks and learn from professionals so members leave with practical tools employers recognize.</p>
+      </article>
+      <article class="feature-card">
+        <span>Market Focus</span>
+        <h3>Finance and policy insights</h3>
+        <p>Explore stock-market dynamics, economic trends, and policy impacts through events, research, and club programming.</p>
+      </article>
+    </section>
+
+    <section id="board" style="margin-top: 40px;">
       <span class="section-title">Meet the Board</span>
       <div class="board-grid">
         <article class="board-card">
@@ -179,7 +365,7 @@
     </section>
 
     <footer class="footer">
-      Built for the Applied Economics Club � modern, clean, and ready to support your next career move.
+      Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
     </footer>
   </main>
 </body>
