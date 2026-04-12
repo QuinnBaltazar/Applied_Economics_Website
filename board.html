@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Board | UCSB Applied Economics Club</title>
+  <style>
+    :root {
+      --bg: #031a40;
+      --text: #ffffff;
+      --accent: #70b1ff;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      scroll-behavior: smooth;
+    }
+
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 24px 16px;
+      text-align: center;
+      width: 100%;
+      background: rgba(3, 26, 64, 0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      line-height: 1.1;
+      text-decoration: none;
+    }
+
+    .main-nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .main-nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      color: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .main-nav a:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .board-grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin: 32px 24px 48px;
+    }
+
+    .board-card {
+      background: rgba(7, 22, 48, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 26px;
+      min-height: 240px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    }
+
+    .board-card span {
+      display: inline-block;
+      margin-bottom: 14px;
+      color: var(--accent);
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .board-card h3 {
+      margin-bottom: 14px;
+      font-size: 1.3rem;
+      color: #ffffff;
+    }
+
+    .board-card p {
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .footer {
+      margin: 0 24px 42px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.66);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 760px) {
+      .board-grid {
+        margin: 24px 16px 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="vote.html">Voting</a>
+        <a href="signin.html">Sign In</a>
+        <a href="topics.html">Topics Covered</a>
+        <a href="board.html">Board</a>
+      </nav>
+    </header>
+
+    <section class="board-grid">
+      <div class="board-card">
+        <span>President</span>
+        <h3>Atticus Nguyen</h3>
+        <p>Atticus leads club strategy and speaker programming, organizing market analysis sessions and ensuring every member gains hands-on exposure to applied economics.</p>
+      </div>
+      <div class="board-card">
+        <span>Vice President</span>
+        <h3>Sam Carter</h3>
+        <p>Sam coordinates partnerships and career events, manages external relations, and curates industry panels for finance and economic research careers.</p>
+      </div>
+      <div class="board-card">
+        <span>Research Director</span>
+        <h3>Aiddan Ramirez</h3>
+        <p>Aiddan develops data-driven case work and study groups, leading team research projects focused on market trends, policy effects, and forecasting.</p>
+      </div>
+      <div class="board-card">
+        <span>Programming Lead</span>
+        <h3>Quinn Lee</h3>
+        <p>Quinn builds workshop series and skill sessions, creating practical learning experiences around economic modeling, trading desk concepts, and analytics tools.</p>
+      </div>
+      <div class="board-card">
+        <span>Operations</span>
+        <h3>Kristo Patel</h3>
+        <p>Kristo keeps the club running smoothly by managing event logistics, communications, and onboarding for new members across campus.</p>
+      </div>
+      <div class="board-card">
+        <span>Community Manager</span>
+        <h3>Luca Taylor</h3>
+        <p>Luca curates member engagement and club culture, supporting collaborative research teams and fostering discussion around economics and markets.</p>
+      </div>
+    </section>
+
+    <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
+  </main>
+</body>
+</html>

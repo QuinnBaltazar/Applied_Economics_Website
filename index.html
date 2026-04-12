@@ -44,10 +44,17 @@
       gap: 12px;
       padding: 24px 24px 16px;
       text-align: center;
+      width: 100%;
+      background: rgba(3, 26, 64, 0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 15;
     }
 
     .brand {
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       font-weight: 800;
       color: #ffffff;
       letter-spacing: 0.22em;
@@ -395,11 +402,13 @@
 <body>
   <main class="page">
     <header class="topbar">
-      <span class="brand">UCSB Applied Economics Club</span>
+      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
       <nav class="main-nav">
-        <a href="#vote">Voting</a>
-        <a href="#signin">Sign In</a>
-        <a href="#topics">Topics Covered</a>
+        <a href="index.html">Home</a>
+        <a href="vote.html">Voting</a>
+        <a href="signin.html">Sign In</a>
+        <a href="topics.html">Topics Covered</a>
+        <a href="board.html">Board</a>
       </nav>
     </header>
 
@@ -412,80 +421,9 @@
       </div>
     </section>
 
-    <section id="mission" class="card mission reveal">
-      <span class="section-title">Our Mission</span>
-      <p>Applied Economics Club is dedicated to empowering ambitious students with practical economic insight and job-ready skills. We translate classroom learning into meaningful experiences, internships, and leadership opportunities so members can confidently pursue careers in consulting, finance, policy, and beyond.</p>
-      <p>From data-driven analysis to professional communication, our club helps members build the bridge from concept to impact.</p>
-    </section>
-
-    <section class="feature-grid reveal" style="margin-top: 40px;">
-      <article class="feature-card">
-        <span>Real Experience</span>
-        <h3>Hands-on economic analysis</h3>
-        <p>Work with real datasets, case studies, and financial market themes that mirror the same applied focus as the homepage design you like.</p>
-      </article>
-      <article class="feature-card">
-        <span>Career Ready</span>
-        <h3>Industry connections</h3>
-        <p>Build networks and learn from professionals so members leave with practical tools employers recognize.</p>
-      </article>
-      <article class="feature-card">
-        <span>Market Focus</span>
-        <h3>Finance and policy insights</h3>
-        <p>Explore stock-market dynamics, economic trends, and policy impacts through events, research, and club programming.</p>
-      </article>
-    </section>
-
-    <section id="board" class="reveal" style="margin-top: 40px;">
-      <span class="section-title">Meet the Board</span>
-      <div class="board-grid">
-        <section class="board-card board-member">
-          <span>President</span>
-          <h3>Atticus Nguyen</h3>
-          <p>Atticus leads club strategy and speaker programming. He organizes market analysis sessions and ensures every member gains hands-on exposure to applied economics.</p>
-        </section>
-        <section class="board-card board-member">
-          <span>Vice President</span>
-          <h3>Sam Carter</h3>
-          <p>Sam coordinates partnerships and career events. She manages external relations and curates industry panels for finance and economic research careers.</p>
-        </section>
-        <section class="board-card board-member">
-          <span>Research Director</span>
-          <h3>Aiddan Ramirez</h3>
-          <p>Aiddan develops data-driven case work and study groups. He leads team research projects focused on market trends, policy effects, and applied forecasting.</p>
-        </section>
-        <section class="board-card board-member">
-          <span>Programming Lead</span>
-          <h3>Quinn Lee</h3>
-          <p>Quinn builds workshop series and skill sessions. He creates practical learning experiences around economic modeling, trading desk concepts, and analytics tools.</p>
-        </section>
-        <section class="board-card board-member">
-          <span>Operations</span>
-          <h3>Kristo Patel</h3>
-          <p>Kristo keeps the club running smoothly. He manages event logistics, communications, and onboarding for new members across our campus community.</p>
-        </section>
-        <section class="board-card board-member">
-          <span>Community Manager</span>
-          <h3>Luca Taylor</h3>
-          <p>Luca curates member engagement and club culture. He supports collaborative research teams and fosters discussion around economics, markets, and career development.</p>
-        </section>
-      </div>
-    </section>
-
-    <section id="vote" class="card reveal" style="margin-top: 40px;">
-      <span class="section-title">Voting</span>
-      <p>Visit this section to cast club votes, rank priorities, and help shape upcoming meetings.</p>
-    </section>
-
-    <section id="signin" class="card reveal" style="margin-top: 24px;">
-      <span class="section-title">Sign In</span>
-      <p>Members can sign in here to access exclusive event details, resources, and collaboration tools.</p>
-    </section>
-
-    <section id="topics" class="card reveal" style="margin-top: 24px;">
-      <span class="section-title">Topics Covered</span>
-      <p>Explore our focus areas: market analysis, economic policy, data-driven strategy, and professional development.</p>
-    </section>
+    <footer class="footer">
+      Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
+    </footer>
 
     <footer class="footer">
       Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
