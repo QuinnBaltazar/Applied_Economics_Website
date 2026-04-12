@@ -344,6 +344,9 @@
         <button type="submit" class="vote-button">Submit Vote</button>
 
         <p id="vote-message" class="vote-note"></p>
+
+        <!-- TEMP: remove before launch -->
+        <button type="button" onclick="localStorage.removeItem('aec-vote-topic');localStorage.removeItem('aec-vote-counts');localStorage.removeItem('aec-vote-other-name');localStorage.removeItem('aec-vote-other-desc');location.reload();" style="margin-top:8px;padding:8px 16px;border-radius:999px;border:1px dashed rgba(255,100,100,0.5);background:transparent;color:rgba(255,120,120,0.8);font-size:0.85rem;cursor:pointer;">Reset Vote (testing only)</button>
       </form>
     </section>
 
