@@ -9,30 +9,26 @@
       --bg: #031a40;
       --text: #ffffff;
       --accent: #70b1ff;
+      --border: rgba(255,255,255,0.12);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       min-height: 100vh;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      scroll-behavior: smooth;
     }
 
     .page {
       max-width: 1080px;
       margin: 0 auto;
-      padding: 0;
       overflow-x: hidden;
     }
 
+    /* ── Topbar ── */
     .topbar {
       display: flex;
       flex-direction: column;
@@ -40,10 +36,9 @@
       gap: 12px;
       padding: 24px 24px 16px;
       text-align: center;
-      width: 100%;
-      background: rgba(3, 26, 64, 0.96);
+      background: rgba(3,26,64,0.96);
       backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       position: sticky;
       top: 0;
       z-index: 20;
@@ -52,7 +47,7 @@
     .brand {
       font-size: 1.4rem;
       font-weight: 800;
-      color: #ffffff;
+      color: #fff;
       letter-spacing: 0.22em;
       text-transform: uppercase;
       line-height: 1.1;
@@ -69,54 +64,212 @@
     .main-nav a {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       padding: 10px 18px;
-      color: rgba(255, 255, 255, 0.92);
-      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.08);
       border-radius: 999px;
       text-decoration: none;
       font-size: 0.95rem;
       letter-spacing: 0.04em;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition: background 0.2s, transform 0.2s;
     }
 
     .main-nav a:hover {
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(255,255,255,0.18);
       transform: translateY(-1px);
     }
 
-    .content-card {
-      margin: 32px 24px 48px;
-      padding: 34px;
-      background: rgba(7, 22, 48, 0.96);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+    /* ── Auth card ── */
+    .auth-card {
+      margin: 40px auto 60px;
+      padding: 40px 44px;
+      max-width: 540px;
+      background: rgba(7,22,48,0.96);
+      border: 1px solid var(--border);
       border-radius: 28px;
-      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 26px 60px rgba(0,0,0,0.2);
     }
 
-    h1 {
-      font-size: clamp(2.8rem, 4vw, 4.6rem);
-      margin-bottom: 18px;
+    .auth-card h1 {
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      margin-bottom: 10px;
     }
 
-    p {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 1rem;
-      line-height: 1.8;
+    .auth-card > div > p.subtitle {
+      color: rgba(255,255,255,0.78);
+      font-size: 0.97rem;
+      line-height: 1.7;
+      margin-bottom: 28px;
     }
+
+    /* ── Form elements ── */
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.58);
+    }
+
+    .req { color: var(--accent); }
+    .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.35); }
+
+    .auth-input,
+    .auth-textarea {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      color: #fff;
+      padding: 12px 16px;
+      font-size: 0.97rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .auth-textarea {
+      resize: none;
+    }
+
+    .auth-input::placeholder,
+    .auth-textarea::placeholder {
+      color: rgba(255,255,255,0.32);
+    }
+
+    .auth-input:focus,
+    .auth-textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .auth-input.error-field {
+      border-color: rgba(255,100,100,0.7);
+    }
+
+    /* Large centered code input */
+    .code-input {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-align: center;
+      padding: 16px;
+    }
+
+    /* ── Button ── */
+    .auth-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 22px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #031a40;
+      font-weight: 700;
+      font-size: 0.97rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.2s, filter 0.2s;
+    }
+
+    .auth-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; filter: none; }
+
+    /* ── Link-style buttons ── */
+    .auth-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .auth-sep { color: rgba(255,255,255,0.3); }
+
+    /* ── Messages ── */
+    .auth-msg {
+      font-size: 0.92rem;
+      min-height: 1.2em;
+    }
+
+    .auth-msg.error  { color: #ffb3b3; }
+    .auth-msg.success { color: #d0f4ff; }
+    .auth-msg.info   { color: rgba(255,255,255,0.65); }
+
+    /* ── Profile card (welcome back) ── */
+    .profile-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 24px 0;
+      padding: 22px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+    }
+
+    .profile-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .profile-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      min-width: 80px;
+      padding-top: 2px;
+    }
+
+    .profile-value {
+      color: rgba(255,255,255,0.92);
+      font-size: 0.97rem;
+    }
+
+    /* ── Divider ── */
+    .form-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin: 4px 0;
+    }
+
+    .hidden { display: none; }
 
     .footer {
-      margin: 32px 24px 42px;
+      margin: 0 24px 42px;
       text-align: center;
-      color: rgba(255, 255, 255, 0.66);
-      font-size: 0.95rem;
+      color: rgba(255,255,255,0.45);
+      font-size: 0.9rem;
     }
 
-    @media (max-width: 760px) {
-      .content-card {
-        margin: 24px 16px 36px;
-        padding: 28px;
-      }
+    @media (max-width: 600px) {
+      .auth-card { margin: 24px 16px 40px; padding: 28px 22px; }
     }
   </style>
 </head>
@@ -134,13 +287,299 @@
       </nav>
     </header>
 
-    <section class="content-card">
-      <h1>Sign In</h1>
-      <p>This sign-in page is the entry point for members to access your club’s resources and secure community features. In a full implementation, it would link to a protected login flow and member dashboard.</p>
-      <p>For now, this page can act as a placeholder for future authentication and member access controls.</p>
+    <section class="auth-card">
+
+      <!-- STEP 1: Email -->
+      <div id="step-email">
+        <h1>Sign In</h1>
+        <p class="subtitle">Enter your UCSB email address. We'll send you a 6-digit verification code.</p>
+        <form id="email-form" class="auth-form" novalidate>
+          <div class="field-group">
+            <label class="field-label" for="email-input">UCSB Email <span class="req">*</span></label>
+            <input type="email" id="email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
+          </div>
+          <button type="submit" class="auth-btn">Send Verification Code</button>
+          <p class="auth-msg" id="email-msg"></p>
+        </form>
+      </div>
+
+      <!-- STEP 2: Code -->
+      <div id="step-code" class="hidden">
+        <h1>Check Your Email</h1>
+        <p class="subtitle">We sent a 6-digit code to <strong id="display-email"></strong>. It may take a moment to arrive.</p>
+        <form id="code-form" class="auth-form" novalidate>
+          <div class="field-group">
+            <label class="field-label" for="code-input">Verification Code</label>
+            <input type="text" id="code-input" class="auth-input code-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+          </div>
+          <button type="submit" class="auth-btn">Verify Code</button>
+          <p class="auth-msg" id="code-msg"></p>
+          <div class="auth-links">
+            <button type="button" id="resend-btn" class="link-btn">Resend code</button>
+            <span class="auth-sep">·</span>
+            <button type="button" id="change-email-btn" class="link-btn">Change email</button>
+          </div>
+          <p class="auth-msg info" id="resend-msg"></p>
+        </form>
+      </div>
+
+      <!-- STEP 3a: New member form -->
+      <div id="step-new-member" class="hidden">
+        <h1>Join AEC</h1>
+        <p class="subtitle">You're not in our system yet. Fill this out to complete your membership.</p>
+        <form id="new-member-form" class="auth-form" novalidate>
+          <div class="field-group">
+            <label class="field-label" for="nm-name">Full Name <span class="req">*</span></label>
+            <input type="text" id="nm-name" class="auth-input" placeholder="Your full name" maxlength="80" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="nm-subject">Area of Interest <span class="req">*</span></label>
+            <input type="text" id="nm-subject" class="auth-input" placeholder="e.g. Finance, Macroeconomics, Policy…" maxlength="80" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="nm-learn">What do you want to learn? <span class="req">*</span></label>
+            <textarea id="nm-learn" class="auth-textarea" placeholder="Topics, skills, or concepts you're hoping to develop through the club." maxlength="400" rows="3"></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="nm-goal">What do you want out of the club? <span class="req">*</span></label>
+            <textarea id="nm-goal" class="auth-textarea" placeholder="Networking, research experience, career prep, community…" maxlength="400" rows="3"></textarea>
+          </div>
+          <hr class="form-divider" />
+          <div class="field-group">
+            <label class="field-label" for="nm-email">Preferred Email <span class="req">*</span></label>
+            <input type="email" id="nm-email" class="auth-input" placeholder="Best email to reach you" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="nm-field">Field / Employer <span class="opt">(optional)</span></label>
+            <input type="text" id="nm-field" class="auth-input" placeholder="Where you work or what field you're interested in" maxlength="100" />
+          </div>
+          <button type="submit" class="auth-btn">Complete Registration</button>
+          <p class="auth-msg" id="nm-msg"></p>
+        </form>
+      </div>
+
+      <!-- STEP 3b: Welcome back -->
+      <div id="step-welcome" class="hidden">
+        <h1 id="welcome-heading">Welcome back!</h1>
+        <p class="subtitle" id="welcome-sub">You're verified and signed in.</p>
+        <div class="profile-grid">
+          <div class="profile-row"><span class="profile-label">Name</span><span id="p-name" class="profile-value"></span></div>
+          <div class="profile-row"><span class="profile-label">Interest</span><span id="p-subject" class="profile-value"></span></div>
+          <div class="profile-row"><span class="profile-label">Field</span><span id="p-field" class="profile-value"></span></div>
+          <div class="profile-row"><span class="profile-label">Email</span><span id="p-email" class="profile-value"></span></div>
+        </div>
+      </div>
+
     </section>
 
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
   </main>
+
+  <!--
+    EMAIL SETUP (EmailJS — free, no backend needed):
+    1. Sign up at https://www.emailjs.com
+    2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
+    3. Create a template with these variables: {{to_email}}, {{code}}, {{club_name}}
+       Subject: "Your AEC verification code"
+       Body:    "Your UCSB Applied Economics Club verification code is: {{code}}"
+    4. Copy your Public Key from Account > API Keys
+    5. Replace the three placeholder values below
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    const EMAILJS_PUBLIC_KEY   = 'YOUR_PUBLIC_KEY';
+    const EMAILJS_SERVICE_ID   = 'YOUR_SERVICE_ID';
+    const EMAILJS_TEMPLATE_ID  = 'YOUR_TEMPLATE_ID';
+    const EMAILJS_READY = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
+
+    if (EMAILJS_READY) emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    const MEMBERS_KEY = 'aec-members';
+    let currentCode  = null;
+    let currentEmail = null;
+    let resendTimer  = 0;
+
+    // ── Helpers ──────────────────────────────────────────────
+    function generateCode() {
+      return String(Math.floor(100000 + Math.random() * 900000));
+    }
+
+    function loadMembers() {
+      try { return JSON.parse(localStorage.getItem(MEMBERS_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function getMember(email) {
+      return loadMembers().find(m => m.email === email) || null;
+    }
+
+    function saveMember(member) {
+      const list = loadMembers();
+      const idx = list.findIndex(m => m.email === member.email);
+      if (idx >= 0) list[idx] = member; else list.push(member);
+      localStorage.setItem(MEMBERS_KEY, JSON.stringify(list));
+    }
+
+    function showStep(id) {
+      ['step-email','step-code','step-new-member','step-welcome'].forEach(s => {
+        document.getElementById(s).classList.toggle('hidden', s !== id);
+      });
+    }
+
+    function setMsg(id, text, type = 'info') {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'auth-msg ' + type;
+    }
+
+    async function sendVerificationCode(email) {
+      currentCode = generateCode();
+
+      if (!EMAILJS_READY) {
+        // Dev mode — show code on screen when EmailJS isn't configured
+        setMsg('resend-msg', `Dev mode — code: ${currentCode}`, 'info');
+        return true;
+      }
+
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email:  email,
+          code:      currentCode,
+          club_name: 'UCSB Applied Economics Club'
+        });
+        return true;
+      } catch (err) {
+        console.error('EmailJS error:', err);
+        return false;
+      }
+    }
+
+    // ── Step 1: Email ─────────────────────────────────────────
+    document.getElementById('email-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email-input').value.trim().toLowerCase();
+
+      if (!email.endsWith('@ucsb.edu')) {
+        setMsg('email-msg', 'Please enter a valid @ucsb.edu email address.', 'error');
+        document.getElementById('email-input').classList.add('error-field');
+        return;
+      }
+      document.getElementById('email-input').classList.remove('error-field');
+
+      const btn = this.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      currentEmail = email;
+      const sent = await sendVerificationCode(email);
+
+      btn.disabled = false;
+      btn.textContent = 'Send Verification Code';
+
+      if (!sent) {
+        setMsg('email-msg', 'Could not send the email. Please try again.', 'error');
+        return;
+      }
+
+      document.getElementById('display-email').textContent = email;
+      setMsg('email-msg', '', 'info');
+      showStep('step-code');
+    });
+
+    // ── Step 2: Code ──────────────────────────────────────────
+    document.getElementById('code-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const entered = document.getElementById('code-input').value.trim();
+
+      if (!/^\d{6}$/.test(entered)) {
+        setMsg('code-msg', 'Please enter the 6-digit code from your email.', 'error');
+        return;
+      }
+
+      if (entered !== currentCode) {
+        setMsg('code-msg', 'Incorrect code — please try again.', 'error');
+        document.getElementById('code-input').classList.add('error-field');
+        return;
+      }
+
+      document.getElementById('code-input').classList.remove('error-field');
+      setMsg('code-msg', '', 'info');
+
+      const member = getMember(currentEmail);
+      if (member) {
+        document.getElementById('welcome-heading').textContent = `Welcome back, ${member.name}!`;
+        document.getElementById('welcome-sub').textContent = `You're verified and signed in as ${currentEmail}.`;
+        document.getElementById('p-name').textContent    = member.name;
+        document.getElementById('p-subject').textContent = member.subject;
+        document.getElementById('p-field').textContent   = member.field || '—';
+        document.getElementById('p-email').textContent   = member.preferredEmail;
+        showStep('step-welcome');
+      } else {
+        document.getElementById('nm-email').value = currentEmail;
+        showStep('step-new-member');
+      }
+    });
+
+    // Resend code
+    document.getElementById('resend-btn').addEventListener('click', async function() {
+      if (resendTimer > 0) return;
+      this.disabled = true;
+      setMsg('resend-msg', 'Sending…', 'info');
+
+      const sent = await sendVerificationCode(currentEmail);
+      setMsg('resend-msg', sent ? 'Code resent — check your inbox.' : 'Failed to resend. Try again.', sent ? 'success' : 'error');
+
+      resendTimer = 60;
+      const btn = this;
+      const iv = setInterval(() => {
+        resendTimer--;
+        if (resendTimer <= 0) { clearInterval(iv); btn.disabled = false; btn.textContent = 'Resend code'; }
+        else btn.textContent = `Resend (${resendTimer}s)`;
+      }, 1000);
+    });
+
+    // Change email
+    document.getElementById('change-email-btn').addEventListener('click', function() {
+      currentCode = null;
+      currentEmail = null;
+      document.getElementById('code-input').value = '';
+      document.getElementById('code-input').classList.remove('error-field');
+      setMsg('code-msg', '', 'info');
+      setMsg('resend-msg', '', 'info');
+      showStep('step-email');
+    });
+
+    // ── Step 3a: New member form ──────────────────────────────
+    document.getElementById('new-member-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name           = document.getElementById('nm-name').value.trim();
+      const subject        = document.getElementById('nm-subject').value.trim();
+      const learn          = document.getElementById('nm-learn').value.trim();
+      const goal           = document.getElementById('nm-goal').value.trim();
+      const preferredEmail = document.getElementById('nm-email').value.trim();
+      const field          = document.getElementById('nm-field').value.trim();
+
+      if (!name || !subject || !learn || !goal || !preferredEmail) {
+        setMsg('nm-msg', 'Please fill in all required fields.', 'error');
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(preferredEmail)) {
+        setMsg('nm-msg', 'Please enter a valid preferred email address.', 'error');
+        return;
+      }
+
+      saveMember({ email: currentEmail, name, subject, learn, goal, preferredEmail, field });
+
+      document.getElementById('welcome-heading').textContent = `Welcome, ${name}!`;
+      document.getElementById('welcome-sub').textContent = `You're now registered as a member. See you at the next meeting.`;
+      document.getElementById('p-name').textContent    = name;
+      document.getElementById('p-subject').textContent = subject;
+      document.getElementById('p-field').textContent   = field || '—';
+      document.getElementById('p-email').textContent   = preferredEmail;
+      showStep('step-welcome');
+    });
+  </script>
 </body>
 </html>

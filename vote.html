@@ -250,6 +250,26 @@
       border-color: var(--accent);
     }
 
+    .edit-btn {
+      align-self: flex-start;
+      background: transparent;
+      border: 1px solid rgba(112, 177, 255, 0.4);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      margin-top: 4px;
+    }
+
+    .edit-btn:hover {
+      background: rgba(112, 177, 255, 0.12);
+      border-color: var(--accent);
+    }
+
     h1 {
       font-size: clamp(2.8rem, 4vw, 4.6rem);
       margin-bottom: 18px;
@@ -431,14 +451,16 @@
       const otherLabel = document.querySelector('[name="topic"][value="Other"]').closest('label');
       const card = document.createElement('label');
       card.className = 'vote-option';
+      card.id = 'custom-topic-card';
       card.innerHTML = `
         <div class="option-head">
           <input type="radio" name="topic" value="${escapeHtml(name)}" disabled checked />
           <div>
-            <div class="option-title">${escapeHtml(name)}</div>
-            <div class="option-desc">${desc ? escapeHtml(desc) : 'Member-suggested topic.'}</div>
+            <div class="option-title" id="custom-card-title">${escapeHtml(name)}</div>
+            <div class="option-desc" id="custom-card-desc">${desc ? escapeHtml(desc) : 'Member-suggested topic.'}</div>
           </div>
         </div>
+        <button type="button" class="edit-btn" id="edit-custom-btn">Edit</button>
         <span class="vote-count">1 vote</span>
       `;
       otherLabel.parentNode.insertBefore(card, otherLabel);
@@ -447,8 +469,51 @@
       document.getElementById('other-fields').style.display = 'none';
       document.getElementById('other-topic-name').value = '';
       document.getElementById('other-topic-desc').value = '';
-      const otherRadio = document.querySelector('[name="topic"][value="Other"]');
-      otherRadio.checked = false;
+      document.querySelector('[name="topic"][value="Other"]').checked = false;
+
+      setupEditButton();
+    }
+
+    function setupEditButton() {
+      const editBtn = document.getElementById('edit-custom-btn');
+      if (!editBtn) return;
+      let editing = false;
+
+      editBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const titleEl = document.getElementById('custom-card-title');
+        const descEl = document.getElementById('custom-card-desc');
+
+        if (!editing) {
+          const currentName = localStorage.getItem('aec-vote-other-name') || titleEl.textContent;
+          const currentDesc = localStorage.getItem('aec-vote-other-desc') || '';
+          titleEl.innerHTML = `<input type="text" class="other-input" id="edit-title-input" value="${escapeHtml(currentName)}" maxlength="60" style="width:100%;margin-top:2px" />`;
+          descEl.innerHTML = `<textarea class="other-textarea" id="edit-desc-input" maxlength="200" rows="2" style="width:100%;margin-top:6px">${escapeHtml(currentDesc)}</textarea>`;
+          editBtn.textContent = 'Save';
+          editing = true;
+        } else {
+          const newName = document.getElementById('edit-title-input').value.trim();
+          const newDesc = document.getElementById('edit-desc-input').value.trim();
+
+          if (!newName) {
+            document.getElementById('edit-title-input').style.borderColor = 'rgba(255,100,100,0.7)';
+            return;
+          }
+
+          localStorage.setItem('aec-vote-other-name', newName);
+          if (newDesc) localStorage.setItem('aec-vote-other-desc', newDesc);
+          else localStorage.removeItem('aec-vote-other-desc');
+
+          document.getElementById('custom-card-title').textContent = newName;
+          document.getElementById('custom-card-desc').textContent = newDesc || 'Member-suggested topic.';
+          document.getElementById('custom-topic-card').querySelector('input[type="radio"]').value = escapeHtml(newName);
+
+          editBtn.textContent = 'Edit';
+          editing = false;
+        }
+      });
     }
 
     function lockForm() {
