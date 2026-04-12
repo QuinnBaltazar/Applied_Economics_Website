@@ -220,6 +220,23 @@
     .auth-msg.success { color: #d0f4ff; }
     .auth-msg.info   { color: rgba(255,255,255,0.65); }
 
+    .secondary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.65);
+      font-weight: 600;
+      font-size: 0.92rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .secondary-btn:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
+
     /* ── Profile card (welcome back) ── */
     .profile-grid {
       display: flex;
@@ -368,6 +385,7 @@
           <div class="profile-row"><span class="profile-label">Field</span><span id="p-field" class="profile-value"></span></div>
           <div class="profile-row"><span class="profile-label">Email</span><span id="p-email" class="profile-value"></span></div>
         </div>
+        <button type="button" id="signout-btn" class="secondary-btn" style="margin-top:20px;">Sign Out</button>
       </div>
 
     </section>
@@ -398,6 +416,32 @@
     let currentCode  = null;
     let currentEmail = null;
     let resendTimer  = 0;
+
+    // ── Session ───────────────────────────────────────────────
+    function getSession() {
+      try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
+    }
+    function setSession(m) { localStorage.setItem('aec-session', JSON.stringify(m)); }
+    function clearSession() { localStorage.removeItem('aec-session'); }
+
+    function fillWelcome(member, isNew) {
+      document.getElementById('welcome-heading').textContent = isNew ? `Welcome, ${member.name}!` : `Welcome back, ${member.name}!`;
+      document.getElementById('welcome-sub').textContent = isNew
+        ? `You're now registered as a member. See you at the next meeting.`
+        : `You're signed in as ${member.email}.`;
+      document.getElementById('p-name').textContent    = member.name;
+      document.getElementById('p-subject').textContent = member.subject;
+      document.getElementById('p-field').textContent   = member.field || '—';
+      document.getElementById('p-email').textContent   = member.preferredEmail;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const session = getSession();
+      if (session) {
+        fillWelcome(session, false);
+        showStep('step-welcome');
+      }
+    });
 
     // ── Helpers ──────────────────────────────────────────────
     function generateCode() {
@@ -449,7 +493,8 @@
         });
         return true;
       } catch (err) {
-        console.error('EmailJS error:', err);
+        console.error('EmailJS error status:', err.status);
+        console.error('EmailJS error text:', err.text);
         return false;
       }
     }
@@ -507,12 +552,8 @@
 
       const member = getMember(currentEmail);
       if (member) {
-        document.getElementById('welcome-heading').textContent = `Welcome back, ${member.name}!`;
-        document.getElementById('welcome-sub').textContent = `You're verified and signed in as ${currentEmail}.`;
-        document.getElementById('p-name').textContent    = member.name;
-        document.getElementById('p-subject').textContent = member.subject;
-        document.getElementById('p-field').textContent   = member.field || '—';
-        document.getElementById('p-email').textContent   = member.preferredEmail;
+        setSession(member);
+        fillWelcome(member, false);
         showStep('step-welcome');
       } else {
         document.getElementById('nm-email').value = currentEmail;
@@ -570,15 +611,18 @@
         return;
       }
 
-      saveMember({ email: currentEmail, name, subject, learn, goal, preferredEmail, field });
-
-      document.getElementById('welcome-heading').textContent = `Welcome, ${name}!`;
-      document.getElementById('welcome-sub').textContent = `You're now registered as a member. See you at the next meeting.`;
-      document.getElementById('p-name').textContent    = name;
-      document.getElementById('p-subject').textContent = subject;
-      document.getElementById('p-field').textContent   = field || '—';
-      document.getElementById('p-email').textContent   = preferredEmail;
+      const member = { email: currentEmail, name, subject, learn, goal, preferredEmail, field };
+      saveMember(member);
+      setSession(member);
+      fillWelcome(member, true);
       showStep('step-welcome');
+    });
+
+    document.getElementById('signout-btn').addEventListener('click', function() {
+      clearSession();
+      document.getElementById('email-input').value = '';
+      setMsg('email-msg', '', 'info');
+      showStep('step-email');
     });
   </script>
 </body>

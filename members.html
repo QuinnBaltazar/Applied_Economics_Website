@@ -121,6 +121,8 @@
       min-height: 220px;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
       transition: transform 0.2s ease, border-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
     }
 
     .member-card:hover {
@@ -155,6 +157,84 @@
       text-align: center;
       color: rgba(255, 255, 255, 0.66);
       font-size: 0.95rem;
+    }
+
+    .edit-member-btn {
+      margin-top: auto;
+      align-self: flex-start;
+      padding-top: 16px;
+      background: transparent;
+      border: 1px solid rgba(112, 177, 255, 0.35);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      margin-top: 18px;
+    }
+    .edit-member-btn:hover { background: rgba(112,177,255,0.1); border-color: var(--accent); }
+
+    .member-edit-form { display: flex; flex-direction: column; gap: 12px; }
+
+    .member-field-group { display: flex; flex-direction: column; gap: 5px; }
+
+    .member-field-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.48);
+    }
+
+    .member-input,
+    .member-textarea {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      color: #fff;
+      padding: 9px 12px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    .member-input:focus, .member-textarea:focus { border-color: var(--accent); }
+    .member-input::placeholder, .member-textarea::placeholder { color: rgba(255,255,255,0.28); }
+
+    .member-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+    .save-member-btn {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #031a40;
+      font-weight: 700;
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .cancel-member-btn {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.65);
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .edit-msg {
+      font-size: 0.88rem;
+      color: #ffb3b3;
+      min-height: 1em;
     }
 
     @media (max-width: 760px) {
@@ -219,5 +299,105 @@
 
     <footer class="footer">Built for the Applied Economics Club — clean, page-based site navigation for an active student network.</footer>
   </main>
+  <script>
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function getSession() {
+      try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
+    }
+    function setSession(m) { localStorage.setItem('aec-session', JSON.stringify(m)); }
+    function loadMembers() {
+      try { return JSON.parse(localStorage.getItem('aec-members')) || []; } catch { return []; }
+    }
+    function getMember(email) { return loadMembers().find(m => m.email === email) || null; }
+    function saveMemberLocally(member) {
+      const list = loadMembers();
+      const idx = list.findIndex(m => m.email === member.email);
+      if (idx >= 0) list[idx] = member; else list.push(member);
+      localStorage.setItem('aec-members', JSON.stringify(list));
+    }
+
+    function createMemberCard(member, isOwner) {
+      const article = document.createElement('article');
+      article.className = 'member-card';
+      article.dataset.email = member.email;
+      article.innerHTML = `
+        <span>${escapeHtml(member.subject)}</span>
+        <h3>${escapeHtml(member.name)}</h3>
+        <p>${escapeHtml(member.learn)}</p>
+      `;
+      if (isOwner) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'edit-member-btn';
+        btn.textContent = 'Edit my card';
+        btn.addEventListener('click', () => makeEditable(article, member));
+        article.appendChild(btn);
+      }
+      return article;
+    }
+
+    function makeEditable(card, member) {
+      card.innerHTML = `
+        <div class="member-edit-form">
+          <div class="member-field-group">
+            <label class="member-field-label">Name <span style="color:var(--accent)">*</span></label>
+            <input type="text" class="member-input" id="edit-name" value="${escapeHtml(member.name)}" maxlength="80" />
+          </div>
+          <div class="member-field-group">
+            <label class="member-field-label">Area of Interest <span style="color:var(--accent)">*</span></label>
+            <input type="text" class="member-input" id="edit-subject" value="${escapeHtml(member.subject)}" maxlength="80" />
+          </div>
+          <div class="member-field-group">
+            <label class="member-field-label">About / What you want to learn <span style="color:var(--accent)">*</span></label>
+            <textarea class="member-textarea" id="edit-learn" maxlength="400" rows="3">${escapeHtml(member.learn)}</textarea>
+          </div>
+          <div class="member-field-group">
+            <label class="member-field-label">Field / Employer</label>
+            <input type="text" class="member-input" id="edit-field" value="${escapeHtml(member.field || '')}" maxlength="100" />
+          </div>
+          <div class="member-edit-actions">
+            <button type="button" class="save-member-btn" id="save-member-btn">Save</button>
+            <button type="button" class="cancel-member-btn" id="cancel-member-btn">Cancel</button>
+          </div>
+          <p class="edit-msg" id="edit-msg"></p>
+        </div>
+      `;
+      document.getElementById('save-member-btn').addEventListener('click', () => saveEdits(card, member));
+      document.getElementById('cancel-member-btn').addEventListener('click', () => {
+        const fresh = getMember(member.email) || member;
+        card.parentNode.replaceChild(createMemberCard(fresh, true), card);
+      });
+    }
+
+    function saveEdits(card, member) {
+      const newName    = document.getElementById('edit-name').value.trim();
+      const newSubject = document.getElementById('edit-subject').value.trim();
+      const newLearn   = document.getElementById('edit-learn').value.trim();
+      const newField   = document.getElementById('edit-field').value.trim();
+
+      if (!newName || !newSubject || !newLearn) {
+        document.getElementById('edit-msg').textContent = 'Name, interest, and description are required.';
+        return;
+      }
+
+      const updated = { ...member, name: newName, subject: newSubject, learn: newLearn, field: newField };
+      saveMemberLocally(updated);
+      setSession(updated);
+      card.parentNode.replaceChild(createMemberCard(updated, true), card);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const session = getSession();
+      if (!session) return;
+
+      const member = getMember(session.email);
+      if (!member) return;
+
+      const grid = document.querySelector('.members-grid');
+      grid.appendChild(createMemberCard(member, true));
+    });
+  </script>
 </body>
 </html>

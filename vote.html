@@ -312,6 +312,7 @@
 
     <section class="vote-card">
       <h1>Vote on Next Topic</h1>
+      <p id="session-note" class="vote-note" style="display:none;"></p>
       <p>One vote per member. Select the topic you want the club to cover next, then submit. Your choice helps shape the next lecture and industry speaker session.</p>
 
       <form id="vote-form" class="vote-form">
@@ -404,8 +405,12 @@
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
   </main>
   <script>
-    const storageKey = 'aec-vote-topic';
+    let storageKey = 'aec-vote-topic';
     const countsKey = 'aec-vote-counts';
+
+    function getSession() {
+      try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
+    }
 
     function loadCounts() {
       const stored = localStorage.getItem(countsKey);
@@ -532,6 +537,14 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      const session = getSession();
+      if (session) {
+        storageKey = `aec-vote-topic-${session.email}`;
+        const note = document.getElementById('session-note');
+        note.textContent = `Signed in as ${session.email}`;
+        note.style.display = 'block';
+      }
+
       const counts = loadCounts();
       updateResults(counts);
 
