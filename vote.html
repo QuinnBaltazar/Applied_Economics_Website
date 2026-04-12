@@ -385,7 +385,6 @@
                 <textarea id="other-topic-desc" class="other-textarea" placeholder="What should the club cover about this topic?" maxlength="200" rows="3"></textarea>
               </div>
             </div>
-            <span class="vote-count" id="count-other">0 votes</span>
           </label>
         </div>
 
@@ -396,228 +395,246 @@
         <button type="submit" class="vote-button">Submit Vote</button>
 
         <p id="vote-message" class="vote-note"></p>
-
-        <!-- TEMP: remove before launch -->
-        <button type="button" onclick="localStorage.removeItem('aec-vote-topic');localStorage.removeItem('aec-vote-counts');localStorage.removeItem('aec-vote-other-name');localStorage.removeItem('aec-vote-other-desc');location.reload();" style="margin-top:8px;padding:8px 16px;border-radius:999px;border:1px dashed rgba(255,100,100,0.5);background:transparent;color:rgba(255,120,120,0.8);font-size:0.85rem;cursor:pointer;">Reset Vote (testing only)</button>
       </form>
     </section>
 
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
   </main>
   <script>
-    let storageKey = 'aec-vote-topic';
-    const countsKey = 'aec-vote-counts';
+    // ── Firebase Config ───────────────────────────────────────
+    // 1. console.firebase.google.com → create project → Realtime Database
+    // 2. Copy the Database URL (https://your-project-default-rtdb.firebaseio.com)
+    // 3. Rules tab → set { "rules": { ".read": true, ".write": true } }
+    // 4. Replace the value below
+    const DB_URL = 'YOUR_FIREBASE_DB_URL';
+    const FB_READY = DB_URL !== 'YOUR_FIREBASE_DB_URL';
+    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+    const BASE_TOPICS = [
+      'Venture Capital','Wealth Management','Trading',
+      'Current Market Bull and Bear Cases','Investment Banking'
+    ];
 
-    function getSession() {
-      try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
+    // ── Helpers ───────────────────────────────────────────────
+    function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
+    function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmt(n) { return `${n||0} vote${(n||0)===1?'':'s'}`; }
+    function eKey(email) { return email.replace(/[.@#$[\]/]/g,'_'); }
+
+    // ── Firebase REST ─────────────────────────────────────────
+    async function fbGet(p) {
+      if (!FB_READY) return null;
+      try { const r = await fetch(`${DB_URL}/${p}.json`); return r.ok ? r.json() : null; } catch { return null; }
+    }
+    async function fbSet(p, d) {
+      if (!FB_READY) return false;
+      try { return (await fetch(`${DB_URL}/${p}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) })).ok; } catch { return false; }
+    }
+    async function fbPatch(p, d) {
+      if (!FB_READY) return false;
+      try { return (await fetch(`${DB_URL}/${p}.json`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) })).ok; } catch { return false; }
+    }
+    async function fbPost(p, d) {
+      if (!FB_READY) return null;
+      try { const r = await fetch(`${DB_URL}/${p}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) }); return r.ok ? r.json() : null; } catch { return null; }
     }
 
-    function loadCounts() {
-      const stored = localStorage.getItem(countsKey);
-      if (!stored) {
-        const initial = {
-          'Venture Capital': 0,
-          'Wealth Management': 0,
-          'Trading': 0,
-          'Current Market Bull and Bear Cases': 0,
-          'Investment Banking': 0,
-          'Other': 0
-        };
-        localStorage.setItem(countsKey, JSON.stringify(initial));
-        return initial;
+    // ── Vote counts ───────────────────────────────────────────
+    async function loadCounts() {
+      if (!FB_READY) {
+        const s = localStorage.getItem('aec-vote-counts');
+        if (s) return JSON.parse(s);
+        const init = {}; BASE_TOPICS.forEach(t => init[t] = 0); return init;
       }
-      const counts = JSON.parse(stored);
-      if (!('Other' in counts)) counts['Other'] = 0;
-      return counts;
+      let c = await fbGet('vote-counts') || {};
+      const n = {}; BASE_TOPICS.forEach(t => { if (!(t in c)) n[t] = 0; });
+      if (Object.keys(n).length) await fbPatch('vote-counts', n);
+      return { ...n, ...c };
     }
-
-    function saveCounts(counts) {
-      localStorage.setItem(countsKey, JSON.stringify(counts));
+    async function incrementCount(topic) {
+      if (!FB_READY) {
+        const c = JSON.parse(localStorage.getItem('aec-vote-counts')||'{}');
+        c[topic] = (c[topic]||0) + 1;
+        localStorage.setItem('aec-vote-counts', JSON.stringify(c)); return;
+      }
+      const c = await fbGet('vote-counts') || {};
+      await fbPatch('vote-counts', { [topic]: (c[topic]||0) + 1 });
     }
-
-    function formatVotes(count) {
-      return `${count} vote${count === 1 ? '' : 's'}`;
-    }
-
     function updateResults(counts) {
-      document.getElementById('count-vc').textContent = formatVotes(counts['Venture Capital']);
-      document.getElementById('count-wm').textContent = formatVotes(counts['Wealth Management']);
-      document.getElementById('count-trading').textContent = formatVotes(counts['Trading']);
-      document.getElementById('count-bullbear').textContent = formatVotes(counts['Current Market Bull and Bear Cases']);
-      document.getElementById('count-ib').textContent = formatVotes(counts['Investment Banking']);
-      document.getElementById('count-other').textContent = formatVotes(counts['Other']);
+      document.getElementById('count-vc').textContent       = fmt(counts['Venture Capital']);
+      document.getElementById('count-wm').textContent       = fmt(counts['Wealth Management']);
+      document.getElementById('count-trading').textContent  = fmt(counts['Trading']);
+      document.getElementById('count-bullbear').textContent = fmt(counts['Current Market Bull and Bear Cases']);
+      document.getElementById('count-ib').textContent       = fmt(counts['Investment Banking']);
     }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // ── Custom topics ─────────────────────────────────────────
+    async function loadCustomTopics() {
+      if (!FB_READY) { const s = localStorage.getItem('aec-custom-topics'); return s ? JSON.parse(s) : []; }
+      const d = await fbGet('custom-topics');
+      return d ? Object.entries(d).map(([k,v]) => ({ key:k, ...v })) : [];
+    }
+    async function addCustomTopic(name, desc, email) {
+      const t = { name, desc: desc||'', votes:1, createdBy: email||'anonymous' };
+      if (!FB_READY) {
+        const list = JSON.parse(localStorage.getItem('aec-custom-topics')||'[]');
+        const e = { ...t, key: Date.now().toString() }; list.push(e);
+        localStorage.setItem('aec-custom-topics', JSON.stringify(list)); return e;
+      }
+      const r = await fbPost('custom-topics', t);
+      return r ? { key: r.name, ...t } : null;
+    }
+    async function saveTopicEdit(key, name, desc) {
+      if (!FB_READY) {
+        const list = JSON.parse(localStorage.getItem('aec-custom-topics')||'[]');
+        const i = list.findIndex(t => t.key === key);
+        if (i >= 0) { list[i].name = name; list[i].desc = desc; }
+        localStorage.setItem('aec-custom-topics', JSON.stringify(list)); return;
+      }
+      await fbPatch(`custom-topics/${key}`, { name, desc });
     }
 
-    function insertCustomTopicCard(name, desc) {
-      const otherLabel = document.querySelector('[name="topic"][value="Other"]').closest('label');
-      const card = document.createElement('label');
-      card.className = 'vote-option';
-      card.id = 'custom-topic-card';
-      card.innerHTML = `
-        <div class="option-head">
-          <input type="radio" name="topic" value="${escapeHtml(name)}" disabled checked />
-          <div>
-            <div class="option-title" id="custom-card-title">${escapeHtml(name)}</div>
-            <div class="option-desc" id="custom-card-desc">${desc ? escapeHtml(desc) : 'Member-suggested topic.'}</div>
+    // ── Vote records ──────────────────────────────────────────
+    async function getUserVote(session) {
+      if (session && FB_READY) {
+        const r = await fbGet(`vote-records/${eKey(session.email)}`);
+        return r ? r.topic : null;
+      }
+      return localStorage.getItem('aec-vote-anon');
+    }
+    async function saveUserVote(session, topic) {
+      if (session && FB_READY) await fbSet(`vote-records/${eKey(session.email)}`, { topic, ts: Date.now() });
+      else localStorage.setItem('aec-vote-anon', topic);
+    }
+
+    // ── Render custom topic cards ─────────────────────────────
+    function renderCustomTopics(topics, session, userVote) {
+      const anchor = document.querySelector('[name="topic"][value="Other"]').closest('label');
+      document.querySelectorAll('.dynamic-topic').forEach(el => el.remove());
+      topics.forEach(t => {
+        const isOwner = session && t.createdBy === session.email;
+        const voted = userVote === t.name;
+        const card = document.createElement('label');
+        card.className = 'vote-option dynamic-topic';
+        card.innerHTML = `
+          <div class="option-head">
+            <input type="radio" name="topic" value="${escapeHtml(t.name)}" data-key="${escapeHtml(t.key)}"
+              ${userVote ? 'disabled' : ''} ${voted ? 'checked' : ''} />
+            <div>
+              <div class="option-title" id="ct-title-${t.key}">${escapeHtml(t.name)}</div>
+              <div class="option-desc"  id="ct-desc-${t.key}">${escapeHtml(t.desc||'Member-suggested topic.')}</div>
+            </div>
           </div>
-        </div>
-        <button type="button" class="edit-btn" id="edit-custom-btn">Edit</button>
-        <span class="vote-count">1 vote</span>
-      `;
-      otherLabel.parentNode.insertBefore(card, otherLabel);
-
-      // Reset the Other card to its blank state
-      document.getElementById('other-fields').style.display = 'none';
-      document.getElementById('other-topic-name').value = '';
-      document.getElementById('other-topic-desc').value = '';
-      document.querySelector('[name="topic"][value="Other"]').checked = false;
-
-      setupEditButton();
+          ${isOwner ? `<button type="button" class="edit-btn" id="edit-btn-${t.key}">Edit</button>` : ''}
+          <span class="vote-count">${fmt(t.votes)}</span>
+        `;
+        anchor.parentNode.insertBefore(card, anchor);
+        if (isOwner) setupTopicEditBtn(t.key, t.name, t.desc||'');
+      });
     }
 
-    function setupEditButton() {
-      const editBtn = document.getElementById('edit-custom-btn');
-      if (!editBtn) return;
+    function setupTopicEditBtn(key, name, desc) {
+      const btn = document.getElementById(`edit-btn-${key}`);
+      if (!btn) return;
       let editing = false;
-
-      editBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const titleEl = document.getElementById('custom-card-title');
-        const descEl = document.getElementById('custom-card-desc');
-
+      btn.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        const titleEl = document.getElementById(`ct-title-${key}`);
+        const descEl  = document.getElementById(`ct-desc-${key}`);
         if (!editing) {
-          const currentName = localStorage.getItem('aec-vote-other-name') || titleEl.textContent;
-          const currentDesc = localStorage.getItem('aec-vote-other-desc') || '';
-          titleEl.innerHTML = `<input type="text" class="other-input" id="edit-title-input" value="${escapeHtml(currentName)}" maxlength="60" style="width:100%;margin-top:2px" />`;
-          descEl.innerHTML = `<textarea class="other-textarea" id="edit-desc-input" maxlength="200" rows="2" style="width:100%;margin-top:6px">${escapeHtml(currentDesc)}</textarea>`;
-          editBtn.textContent = 'Save';
-          editing = true;
+          titleEl.innerHTML = `<input type="text" class="other-input" id="ei-name-${key}" value="${escapeHtml(name)}" maxlength="60" style="width:100%;margin-top:2px"/>`;
+          descEl.innerHTML  = `<textarea class="other-textarea" id="ei-desc-${key}" rows="2" maxlength="200" style="width:100%;margin-top:6px">${escapeHtml(desc)}</textarea>`;
+          btn.textContent = 'Save'; editing = true;
         } else {
-          const newName = document.getElementById('edit-title-input').value.trim();
-          const newDesc = document.getElementById('edit-desc-input').value.trim();
-
-          if (!newName) {
-            document.getElementById('edit-title-input').style.borderColor = 'rgba(255,100,100,0.7)';
-            return;
-          }
-
-          localStorage.setItem('aec-vote-other-name', newName);
-          if (newDesc) localStorage.setItem('aec-vote-other-desc', newDesc);
-          else localStorage.removeItem('aec-vote-other-desc');
-
-          document.getElementById('custom-card-title').textContent = newName;
-          document.getElementById('custom-card-desc').textContent = newDesc || 'Member-suggested topic.';
-          document.getElementById('custom-topic-card').querySelector('input[type="radio"]').value = escapeHtml(newName);
-
-          editBtn.textContent = 'Edit';
-          editing = false;
+          const n = document.getElementById(`ei-name-${key}`).value.trim();
+          const d = document.getElementById(`ei-desc-${key}`).value.trim();
+          if (!n) { document.getElementById(`ei-name-${key}`).style.borderColor='rgba(255,100,100,0.7)'; return; }
+          saveTopicEdit(key, n, d).then(() => {
+            document.getElementById(`ct-title-${key}`).textContent = n;
+            document.getElementById(`ct-desc-${key}`).textContent  = d || 'Member-suggested topic.';
+            name = n; desc = d;
+          });
+          btn.textContent = 'Edit'; editing = false;
         }
       });
     }
 
+    // ── Form helpers ──────────────────────────────────────────
     function lockForm() {
-      document.querySelectorAll('[name="topic"]').forEach(input => input.disabled = true);
+      document.querySelectorAll('[name="topic"]').forEach(i => i.disabled = true);
       document.getElementById('member-confirm').disabled = true;
       document.getElementById('other-topic-name').disabled = true;
       document.getElementById('other-topic-desc').disabled = true;
       document.querySelector('.vote-button').disabled = true;
       document.querySelector('.vote-button').style.opacity = '0.65';
     }
-
     function showMessage(text, isError = false) {
-      const message = document.getElementById('vote-message');
-      message.textContent = text;
-      message.style.color = isError ? '#ffb3b3' : '#d0f4ff';
+      const m = document.getElementById('vote-message');
+      m.textContent = text;
+      m.style.color = isError ? '#ffb3b3' : '#d0f4ff';
+    }
+    function wireOtherToggle() {
+      document.querySelectorAll('[name="topic"]').forEach(input => {
+        input.addEventListener('change', function() {
+          document.getElementById('other-fields').style.display = this.value === 'Other' ? 'flex' : 'none';
+        });
+      });
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    // ── Init ──────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async function() {
       const session = getSession();
+
+      // Session indicator + admin link
       if (session) {
-        storageKey = `aec-vote-topic-${session.email}`;
         const note = document.getElementById('session-note');
-        note.textContent = `Signed in as ${session.email}`;
         note.style.display = 'block';
+        if (session.email === ADMIN_EMAIL) {
+          note.innerHTML = `Signed in as ${escapeHtml(session.email)} &nbsp;·&nbsp; <a href="admin.html" style="color:var(--accent);text-decoration:underline;">Admin Panel</a>`;
+        } else {
+          note.textContent = `Signed in as ${session.email}`;
+        }
       }
 
-      const counts = loadCounts();
-      updateResults(counts);
+      // Load Firebase data in parallel
+      const [counts, customTopics, userVote] = await Promise.all([
+        loadCounts(), loadCustomTopics(), getUserVote(session)
+      ]);
 
-      const savedVote = localStorage.getItem(storageKey);
-      if (savedVote) {
-        if (savedVote === 'Other') {
-          const otherName = localStorage.getItem('aec-vote-other-name') || 'Custom topic';
-          const otherDesc = localStorage.getItem('aec-vote-other-desc') || '';
-          insertCustomTopicCard(otherName, otherDesc);
-          showMessage(`You already voted for "${otherName}". Thank you!`);
-        } else {
-          document.querySelectorAll('[name="topic"]').forEach(input => {
-            if (input.value === savedVote) input.checked = true;
-          });
-          showMessage(`You already voted for "${savedVote}". Thank you!`);
-        }
+      updateResults(counts);
+      renderCustomTopics(customTopics, session, userVote);
+      wireOtherToggle();
+
+      if (userVote) {
+        showMessage(`You already voted for "${userVote}". Thank you!`);
         lockForm();
       }
 
-      // Show/hide Other fields when radio changes
-      document.querySelectorAll('[name="topic"]').forEach(input => {
-        input.addEventListener('change', function() {
-          document.getElementById('other-fields').style.display =
-            this.value === 'Other' ? 'flex' : 'none';
-        });
-      });
-
-      document.getElementById('vote-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-
+      document.getElementById('vote-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
         const selected = document.querySelector('[name="topic"]:checked');
-        const memberConfirm = document.getElementById('member-confirm');
+        if (!document.getElementById('member-confirm').checked) { showMessage('Please confirm you are a current club member before voting.', true); return; }
+        if (!selected) { showMessage('Please select one topic to vote for.', true); return; }
+        if (await getUserVote(session)) { showMessage('You have already submitted your vote.', true); return; }
 
-        if (!memberConfirm.checked) {
-          showMessage('Please confirm you are a current club member before voting.', true);
-          return;
-        }
+        const btn = document.querySelector('.vote-button');
+        btn.disabled = true; btn.textContent = 'Submitting…';
+        const topic = selected.value;
 
-        if (!selected) {
-          showMessage('Please select one topic to vote for.', true);
-          return;
-        }
-
-        if (localStorage.getItem(storageKey)) {
-          showMessage('You have already submitted your vote.', true);
-          return;
-        }
-
-        const topicValue = selected.value;
-
-        if (topicValue === 'Other') {
-          const otherName = document.getElementById('other-topic-name').value.trim();
-          if (!otherName) {
-            showMessage('Please enter a topic name for your "Other" suggestion.', true);
-            return;
-          }
-          localStorage.setItem('aec-vote-other-name', otherName);
-          const otherDesc = document.getElementById('other-topic-desc').value.trim();
-          if (otherDesc) localStorage.setItem('aec-vote-other-desc', otherDesc);
-        }
-
-        counts[topicValue] += 1;
-        saveCounts(counts);
-        localStorage.setItem(storageKey, topicValue);
-        updateResults(counts);
-
-        if (topicValue === 'Other') {
-          const otherName = localStorage.getItem('aec-vote-other-name');
-          const otherDesc = localStorage.getItem('aec-vote-other-desc') || '';
-          insertCustomTopicCard(otherName, otherDesc);
-          showMessage(`Thanks — your vote for "${otherName}" has been recorded.`);
+        if (topic === 'Other') {
+          const name = document.getElementById('other-topic-name').value.trim();
+          const desc = document.getElementById('other-topic-desc').value.trim();
+          if (!name) { showMessage('Please enter a topic name for your "Other" suggestion.', true); btn.disabled=false; btn.textContent='Submit Vote'; return; }
+          await addCustomTopic(name, desc, session?.email);
+          await saveUserVote(session, name);
+          const [newTopics, newVote] = await Promise.all([loadCustomTopics(), getUserVote(session)]);
+          renderCustomTopics(newTopics, session, newVote);
+          wireOtherToggle();
+          showMessage(`Thanks — your vote for "${name}" has been recorded.`);
         } else {
-          showMessage(`Thanks — your vote for "${topicValue}" has been recorded.`);
+          await incrementCount(topic);
+          await saveUserVote(session, topic);
+          updateResults(await loadCounts());
+          showMessage(`Thanks — your vote for "${topic}" has been recorded.`);
         }
         lockForm();
       });

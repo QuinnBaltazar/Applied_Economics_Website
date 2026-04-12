@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | UCSB Applied Economics Club</title>
+  <style>
+    :root {
+      --bg: #031a40;
+      --text: #ffffff;
+      --accent: #70b1ff;
+      --border: rgba(255,255,255,0.12);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .page { max-width: 1080px; margin: 0 auto; overflow-x: hidden; }
+
+    .topbar {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; padding: 24px 24px 16px; text-align: center;
+      background: rgba(3,26,64,0.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .brand { font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none; }
+    .main-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .main-nav a {
+      display: inline-flex; align-items: center; padding: 10px 18px;
+      color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.08);
+      border-radius: 999px; text-decoration: none; font-size: 0.95rem;
+      letter-spacing: 0.04em; transition: background 0.2s, transform 0.2s;
+    }
+    .main-nav a:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+
+    .card {
+      margin: 32px 24px 24px; padding: 34px;
+      background: rgba(7,22,48,0.96); border: 1px solid var(--border);
+      border-radius: 28px; box-shadow: 0 26px 60px rgba(0,0,0,0.18);
+    }
+    .card h1 { font-size: clamp(1.8rem, 3vw, 2.6rem); margin-bottom: 6px; }
+    .card .sub { color: rgba(255,255,255,0.6); font-size: 0.95rem; margin-bottom: 28px; }
+
+    /* ── Sections ── */
+    .admin-section { margin-bottom: 40px; }
+    .admin-section h2 {
+      font-size: 1.05rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+      padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* ── Counts table ── */
+    .counts-table { width: 100%; border-collapse: collapse; }
+    .counts-table th, .counts-table td {
+      text-align: left; padding: 10px 14px; font-size: 0.95rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .counts-table th { color: rgba(255,255,255,0.48); font-size: 0.78rem; letter-spacing: 0.07em; text-transform: uppercase; }
+    .counts-table td:last-child { color: var(--accent); font-weight: 700; text-align: right; }
+    .counts-table tr:last-child td { border-bottom: none; }
+
+    /* ── Custom topics list ── */
+    .topic-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .topic-row:last-child { border-bottom: none; }
+    .topic-row-info { flex: 1; }
+    .topic-row-name { font-weight: 600; font-size: 0.97rem; }
+    .topic-row-meta { font-size: 0.82rem; color: rgba(255,255,255,0.48); margin-top: 2px; }
+    .topic-row-votes { color: var(--accent); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+    .delete-topic-btn {
+      background: transparent; border: 1px solid rgba(255,80,80,0.4);
+      color: rgba(255,120,120,0.8); border-radius: 999px;
+      padding: 5px 12px; font-size: 0.8rem; font-family: inherit;
+      cursor: pointer; transition: background 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+    .delete-topic-btn:hover { background: rgba(255,80,80,0.12); border-color: rgba(255,80,80,0.7); }
+
+    /* ── Reset buttons ── */
+    .reset-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .reset-btn {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 18px 20px; border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s;
+      font-family: inherit;
+    }
+    .reset-btn:hover { border-color: rgba(255,120,100,0.5); background: rgba(255,80,60,0.06); }
+    .reset-btn .rb-title { font-weight: 700; font-size: 0.95rem; color: #fff; }
+    .reset-btn .rb-desc  { font-size: 0.82rem; color: rgba(255,255,255,0.48); }
+    .reset-btn.danger .rb-title { color: #ffb3b3; }
+
+    /* ── Status message ── */
+    .admin-msg {
+      margin-top: 16px; font-size: 0.92rem; min-height: 1.2em;
+      color: #d0f4ff;
+    }
+    .admin-msg.error { color: #ffb3b3; }
+
+    /* ── Access denied ── */
+    #access-denied { text-align: center; padding: 60px 20px; }
+    #access-denied h1 { font-size: 2rem; margin-bottom: 12px; }
+    #access-denied p { color: rgba(255,255,255,0.65); }
+
+    .empty-state { color: rgba(255,255,255,0.4); font-size: 0.92rem; padding: 12px 0; }
+
+    .footer { margin: 0 24px 42px; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.9rem; }
+
+    @media (max-width: 600px) {
+      .card { margin: 24px 16px; padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="vote.html">Voting</a>
+        <a href="signin.html">Sign In</a>
+        <a href="topics.html">Topics Covered</a>
+        <a href="members.html">Members</a>
+        <a href="board.html">Board</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </header>
+
+    <!-- Access denied state -->
+    <div id="access-denied" class="card" style="display:none;">
+      <h1>Access Restricted</h1>
+      <p>This page is only accessible to club administrators.<br>
+         <a href="signin.html" style="color:var(--accent);">Sign in</a> with an admin email to continue.</p>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="admin-panel" class="card" style="display:none;">
+      <h1>Admin Panel</h1>
+      <p class="sub" id="admin-sub"></p>
+
+      <!-- Live vote counts -->
+      <div class="admin-section">
+        <h2>Live Vote Counts</h2>
+        <table class="counts-table">
+          <thead><tr><th>Topic</th><th style="text-align:right">Votes</th></tr></thead>
+          <tbody id="counts-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Custom (Other) topics -->
+      <div class="admin-section">
+        <h2>Member-Submitted Topics</h2>
+        <div id="custom-topics-list"></div>
+      </div>
+
+      <!-- Reset controls -->
+      <div class="admin-section">
+        <h2>Reset Controls</h2>
+        <div class="reset-grid">
+          <button class="reset-btn" id="btn-reset-custom">
+            <span class="rb-title">Clear Custom Topics</span>
+            <span class="rb-desc">Remove all member-submitted "Other" topics from the vote page.</span>
+          </button>
+          <button class="reset-btn" id="btn-reset-counts">
+            <span class="rb-title">Reset Vote Counts</span>
+            <span class="rb-desc">Zero out all vote counts for the five permanent topics.</span>
+          </button>
+          <button class="reset-btn" id="btn-reset-records">
+            <span class="rb-title">Reset Vote Records</span>
+            <span class="rb-desc">Allow all members to vote again (clears who-voted-what log).</span>
+          </button>
+          <button class="reset-btn danger" id="btn-reset-all">
+            <span class="rb-title">Reset Everything</span>
+            <span class="rb-desc">Clear custom topics, all counts, and all vote records at once.</span>
+          </button>
+        </div>
+        <p class="admin-msg" id="admin-msg"></p>
+      </div>
+    </div>
+
+    <footer class="footer">Admin access — UCSB Applied Economics Club</footer>
+  </main>
+
+  <script>
+    // ── Config (must match vote.html) ─────────────────────────
+    const DB_URL     = 'YOUR_FIREBASE_DB_URL';
+    const FB_READY   = DB_URL !== 'YOUR_FIREBASE_DB_URL';
+    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+    const BASE_TOPICS = [
+      'Venture Capital','Wealth Management','Trading',
+      'Current Market Bull and Bear Cases','Investment Banking'
+    ];
+
+    function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
+    function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ── Firebase REST ─────────────────────────────────────────
+    async function fbGet(p) {
+      if (!FB_READY) return null;
+      try { const r = await fetch(`${DB_URL}/${p}.json`); return r.ok ? r.json() : null; } catch { return null; }
+    }
+    async function fbSet(p, d) {
+      if (!FB_READY) return false;
+      try { return (await fetch(`${DB_URL}/${p}.json`,{ method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) })).ok; } catch { return false; }
+    }
+    async function fbDelete(p) {
+      if (!FB_READY) return false;
+      try { return (await fetch(`${DB_URL}/${p}.json`,{ method:'DELETE' })).ok; } catch { return false; }
+    }
+
+    // ── UI helpers ────────────────────────────────────────────
+    function setMsg(text, isError = false) {
+      const el = document.getElementById('admin-msg');
+      el.textContent = text;
+      el.className = 'admin-msg' + (isError ? ' error' : '');
+    }
+
+    function renderCounts(counts) {
+      const tbody = document.getElementById('counts-tbody');
+      tbody.innerHTML = '';
+      BASE_TOPICS.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(t)}</td><td>${counts[t] || 0}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderCustomTopics(topics) {
+      const container = document.getElementById('custom-topics-list');
+      if (!topics.length) {
+        container.innerHTML = '<p class="empty-state">No member-submitted topics yet.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      topics.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'topic-row';
+        row.innerHTML = `
+          <div class="topic-row-info">
+            <div class="topic-row-name">${escapeHtml(t.name)}</div>
+            <div class="topic-row-meta">${escapeHtml(t.desc||'')} &nbsp;·&nbsp; Submitted by ${escapeHtml(t.createdBy||'anonymous')}</div>
+          </div>
+          <span class="topic-row-votes">${t.votes||0} vote${(t.votes||0)===1?'':'s'}</span>
+          <button class="delete-topic-btn" data-key="${escapeHtml(t.key)}">Delete</button>
+        `;
+        row.querySelector('.delete-topic-btn').addEventListener('click', async function() {
+          if (!confirm(`Delete "${t.name}"?`)) return;
+          await fbDelete(`custom-topics/${t.key}`);
+          await refresh();
+          setMsg(`"${t.name}" removed.`);
+        });
+        container.appendChild(row);
+      });
+    }
+
+    async function refresh() {
+      const [rawCounts, rawCustom] = await Promise.all([
+        fbGet('vote-counts'), fbGet('custom-topics')
+      ]);
+      const counts = rawCounts || {};
+      const topics = rawCustom ? Object.entries(rawCustom).map(([k,v]) => ({ key:k,...v })) : [];
+      renderCounts(counts);
+      renderCustomTopics(topics);
+    }
+
+    // ── Reset handlers ────────────────────────────────────────
+    async function confirmReset(label, action) {
+      if (!confirm(`Are you sure you want to ${label}? This cannot be undone.`)) return;
+      setMsg('Working…');
+      await action();
+      await refresh();
+      setMsg(`Done — ${label}.`);
+    }
+
+    document.getElementById('btn-reset-custom').addEventListener('click', () =>
+      confirmReset('clear all member-submitted topics', async () => {
+        await fbDelete('custom-topics');
+      })
+    );
+
+    document.getElementById('btn-reset-counts').addEventListener('click', () =>
+      confirmReset('reset all vote counts to zero', async () => {
+        const zeros = {};
+        BASE_TOPICS.forEach(t => zeros[t] = 0);
+        await fbSet('vote-counts', zeros);
+      })
+    );
+
+    document.getElementById('btn-reset-records').addEventListener('click', () =>
+      confirmReset('clear all vote records (everyone can vote again)', async () => {
+        await fbDelete('vote-records');
+      })
+    );
+
+    document.getElementById('btn-reset-all').addEventListener('click', () =>
+      confirmReset('reset EVERYTHING (topics, counts, and vote records)', async () => {
+        const zeros = {};
+        BASE_TOPICS.forEach(t => zeros[t] = 0);
+        await Promise.all([
+          fbDelete('custom-topics'),
+          fbSet('vote-counts', zeros),
+          fbDelete('vote-records')
+        ]);
+      })
+    );
+
+    // ── Init ──────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async function() {
+      const session = getSession();
+      const isAdmin = session && session.email === ADMIN_EMAIL;
+
+      document.getElementById('access-denied').style.display = isAdmin ? 'none' : 'block';
+      document.getElementById('admin-panel').style.display   = isAdmin ? 'block' : 'none';
+
+      if (!isAdmin) return;
+
+      document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
+
+      if (!FB_READY) {
+        setMsg('Firebase not configured — set DB_URL in admin.html and vote.html to enable live data.', true);
+      }
+
+      await refresh();
+    });
+  </script>
+</body>
+</html>
