@@ -90,11 +90,11 @@
 
     .hero {
       position: relative;
-      min-height: 70vh;
+      min-height: clamp(52vh, 60vh, 68vh);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 32px 24px 42px;
+      padding: 24px 24px 28px;
       border-radius: 0 0 40px 40px;
       overflow: hidden;
       background: transparent;
@@ -103,7 +103,7 @@
     .hero-chart {
       position: absolute;
       inset: 0;
-      padding: 18px;
+      padding: 16px;
       z-index: 0;
       display: flex;
       align-items: center;
