@@ -118,39 +118,78 @@
       position: relative;
       z-index: 1;
       text-align: center;
-      max-width: 720px;
-      padding: 46px 34px;
+      max-width: 660px;
+      padding: 40px 30px;
       border-radius: 28px;
-      background: rgba(2, 18, 44, 0.94);
-      box-shadow: 0 34px 90px rgba(0, 0, 0, 0.32);
+      background: rgba(2, 18, 44, 0.42);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
       border: 1px solid rgba(255, 255, 255, 0.14);
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(22px);
+      overflow: hidden;
+    }
+
+    .hero-content::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 45%);
+      pointer-events: none;
     }
 
     .eyebrow {
       display: inline-flex;
       text-transform: uppercase;
-      letter-spacing: 0.25em;
+      letter-spacing: 0.22em;
       color: #8be2ff;
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       font-weight: 700;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
     }
 
     h1 {
-      font-size: clamp(3.4rem, 5vw, 5.8rem);
+      font-size: clamp(3rem, 5vw, 5.8rem);
       letter-spacing: -0.04em;
-      max-width: 14ch;
-      margin: 0 auto 22px;
+      max-width: 12ch;
+      margin: 0 auto 18px;
       line-height: 1.02;
       color: #ffffff;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 span {
+      display: block;
+      font-weight: 800;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 18px;
+      margin: 0 auto 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.86);
+      font-size: 0.82rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
     }
 
     .lead {
-      max-width: 680px;
-      color: rgba(255,255,255,0.92);
-      font-size: 1.05rem;
-      margin: 0 auto 28px;
+      max-width: 620px;
+      color: rgba(255,255,255,0.88);
+      font-size: 1.02rem;
+      margin: 0 auto;
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
     }
 
     .hero-actions {
@@ -405,13 +444,9 @@
         <div id="tv_chart_container"></div>
       </div>
       <div class="hero-content">
-        <span class="eyebrow">Live NASDAQ QQQ Market View</span>
-        <h1>UCSB Applied Economics Club</h1>
-        <p class="lead">Interactive QQQ market data runs live behind the club introduction. Scroll down to read our mission and meet the board.</p>
-        <div class="hero-actions">
-          <a class="button" href="#mission">Our Mission</a>
-          <a class="button button-secondary" href="#board">Meet the Board</a>
-        </div>
+        <span class="hero-badge">NASDAQ:QQQ • Live Market</span>
+        <h1><span>UCSB</span>Applied Economics Club</h1>
+        <p class="lead">A live trading desk view sits behind the headline so the club identity feels integrated with the market action.</p>
       </div>
     </section>
 
@@ -481,21 +516,31 @@
   </main>
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <script>
-    new TradingView.widget({
-      "width": "100%",
-      "height": "100%",
-      "symbol": "NASDAQ:QQQ",
-      "interval": "60",
-      "timezone": "Etc/UTC",
-      "theme": "dark",
-      "style": "1",
-      "locale": "en",
-      "toolbar_bg": "#0b1f44",
-      "enable_publishing": false,
-      "allow_symbol_change": true,
-      "hideideas": true,
-      "container_id": "tv_chart_container"
-    });
+    function initTradingViewWidget() {
+      if (window.TradingView && typeof window.TradingView.widget === 'function') {
+        new TradingView.widget({
+          "autosize": true,
+          "symbol": "NASDAQ:QQQ",
+          "interval": "30",
+          "timezone": "America/New_York",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "toolbar_bg": "#0b1f44",
+          "enable_publishing": false,
+          "allow_symbol_change": true,
+          "hide_side_toolbar": false,
+          "details": true,
+          "hotlist": true,
+          "news": ["stocktwits"],
+          "container_id": "tv_chart_container"
+        });
+      } else {
+        setTimeout(initTradingViewWidget, 100);
+      }
+    }
+
+    initTradingViewWidget();
   </script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
