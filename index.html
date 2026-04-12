@@ -23,23 +23,25 @@
 
     body {
       min-height: 100vh;
-      color: #031a40;
+      color: var(--text);
       line-height: 1.6;
-      background-color: #ffffff;
+      background-color: var(--bg);
+      scroll-behavior: smooth;
     }
 
     .page {
       max-width: 1080px;
       margin: 0 auto;
-      padding: 32px 24px 48px;
-      background: #ffffff;
+      padding: 0;
+      background: var(--bg);
+      overflow-x: hidden;
     }
 
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 0;
+      padding: 20px 24px;
     }
 
     .brand {
@@ -52,12 +54,12 @@
 
     .hero {
       position: relative;
-      min-height: 72vh;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 72px 24px;
-      border-radius: 32px;
+      padding: 0;
+      border-radius: 0 0 40px 40px;
       overflow: hidden;
       background-color: #031a40;
     }
@@ -90,6 +92,12 @@
       z-index: 1;
       text-align: center;
       max-width: 760px;
+      padding: 56px 38px;
+      border-radius: 28px;
+      background: rgba(3, 26, 64, 0.92);
+      box-shadow: 0 34px 90px rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(14px);
     }
 
     .eyebrow {
@@ -123,25 +131,29 @@
       gap: 16px;
       flex-wrap: wrap;
       justify-content: center;
+      margin-top: 22px;
     }
 
     .button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 140px;
-      padding: 14px 22px;
+      min-width: 160px;
+      padding: 16px 26px;
       border-radius: 999px;
       font-weight: 700;
       text-decoration: none;
       background: var(--accent);
       color: #031a40;
-      transition: transform 0.2s ease, filter 0.2s ease;
+      letter-spacing: 0.02em;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 12px 26px rgba(112, 177, 255, 0.16);
     }
 
     .button:hover {
       transform: translateY(-2px);
-      filter: brightness(1.05);
+      filter: brightness(1.08);
+      box-shadow: 0 18px 36px rgba(112, 177, 255, 0.22);
     }
 
     .button-secondary {
@@ -236,6 +248,19 @@
       font-weight: 700;
     }
 
+    .mission,
+    .feature-grid,
+    .board-grid {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .visible {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+
     .mission {
       display: grid;
       gap: 18px;
@@ -310,8 +335,13 @@
 
     @media (max-width: 860px) {
       .hero {
-        flex-direction: column;
-        padding: 56px 16px;
+        align-items: flex-end;
+        padding: 24px 16px 32px;
+      }
+
+      .hero-content {
+        width: 100%;
+        padding: 34px 24px;
       }
 
       .market-stats {
@@ -333,21 +363,20 @@
       <div class="hero-content">
         <span class="eyebrow">UCSB Applied Economics Club</span>
         <h1>UCSB Applied Economics Club</h1>
-        <p class="lead">A year-to-date Nasdaq Composite chart is rendered behind the title to reinforce the club’s finance-focused mission.</p>
+        <p class="lead">A year-to-date QQQ Nasdaq trend line renders behind the title to reinforce the club’s finance-focused mission.</p>
         <div class="hero-actions">
           <a class="button" href="#mission">Our Mission</a>
           <a class="button button-secondary" href="#board">Meet the Board</a>
         </div>
       </div>
     </section>
-    <script src="https://s3.tradingview.com/tv.js" onload="initTradingView()"></script>
     <script>
       function initTradingView() {
         if (!window.TradingView) return;
 
         new TradingView.widget({
           autosize: true,
-          symbol: 'NASDAQ:COMP',
+          symbol: 'NASDAQ:QQQ',
           interval: 'D',
           timezone: 'Etc/UTC',
           theme: 'dark',
@@ -376,18 +405,21 @@
         });
       }
 
-      if (window.TradingView) {
-        initTradingView();
-      }
+      window.addEventListener('load', function() {
+        var script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/tv.js';
+        script.onload = initTradingView;
+        document.body.appendChild(script);
+      });
     </script>
 
-    <section id="mission" class="card mission">
+    <section id="mission" class="card mission reveal">
       <span class="section-title">Our Mission</span>
       <p>Applied Economics Club is dedicated to empowering ambitious students with practical economic insight and job-ready skills. We translate classroom learning into meaningful experiences, internships, and leadership opportunities so members can confidently pursue careers in consulting, finance, policy, and beyond.</p>
       <p>From data-driven analysis to professional communication, our club helps members build the bridge from concept to impact.</p>
     </section>
 
-    <section class="feature-grid" style="margin-top: 40px;">
+    <section class="feature-grid reveal" style="margin-top: 40px;">
       <article class="feature-card">
         <span>Real Experience</span>
         <h3>Hands-on economic analysis</h3>
@@ -405,28 +437,32 @@
       </article>
     </section>
 
-    <section id="board" style="margin-top: 40px;">
+    <section id="board" class="reveal" style="margin-top: 40px;">
       <span class="section-title">Meet the Board</span>
       <div class="board-grid">
         <article class="board-card">
-          <span>President</span>
-          <h3>Jordan Lee</h3>
-          <p>Leads club vision, builds partner relationships, and organizes events that connect members with employers and applied economics projects.</p>
+          <span>Executive</span>
+          <h3>Atticus</h3>
         </article>
         <article class="board-card">
-          <span>Vice President</span>
-          <h3>Riley Chen</h3>
-          <p>Coordinates workshops, speaker sessions, and research opportunities that turn economic ideas into career-ready expertise.</p>
+          <span>Executive</span>
+          <h3>Sam</h3>
         </article>
         <article class="board-card">
-          <span>Outreach Director</span>
-          <h3>Samira Patel</h3>
-          <p>Drives community growth through networking, industry engagement, and student outreach initiatives.</p>
+          <span>Executive</span>
+          <h3>Aiddan</h3>
         </article>
         <article class="board-card">
-          <span>Programs Director</span>
-          <h3>Alex Morgan</h3>
-          <p>Designs hands-on programs and case-study challenges that help members apply economics to real business and policy questions.</p>
+          <span>Executive</span>
+          <h3>Quinn</h3>
+        </article>
+        <article class="board-card">
+          <span>Executive</span>
+          <h3>Kristo</h3>
+        </article>
+        <article class="board-card">
+          <span>Executive</span>
+          <h3>Luca</h3>
         </article>
       </div>
     </section>
@@ -435,5 +471,24 @@
       Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
     </footer>
   </main>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var revealElements = document.querySelectorAll('.reveal');
+      var observer = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.18
+      });
+
+      revealElements.forEach(function(el) {
+        observer.observe(el);
+      });
+    });
+  </script>
 </body>
 </html>
