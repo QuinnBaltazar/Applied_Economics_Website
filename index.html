@@ -23,20 +23,16 @@
 
     body {
       min-height: 100vh;
-      color: var(--text);
+      color: #031a40;
       line-height: 1.6;
-      background-color: var(--bg);
-      background-image:
-        linear-gradient(180deg, rgba(3, 26, 64, 0.96) 0%, rgba(1, 12, 34, 0.96) 100%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%2370b1ff' stop-opacity='0.36'/%3E%3Cstop offset='1' stop-color='%2303153a' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='800' fill='%2303153a'/%3E%3Cg stroke='%23ffffff' stroke-width='1' opacity='0.12'%3E%3Cpath d='M0 720 L1200 720'/%3E%3Cpath d='M0 620 L1200 620'/%3E%3Cpath d='M0 520 L1200 520'/%3E%3Cpath d='M0 420 L1200 420'/%3E%3Cpath d='M0 320 L1200 320'/%3E%3Cpath d='M0 220 L1200 220'/%3E%3Cpath d='M0 120 L1200 120'/%3E%3Cpath d='M240 800 L240 0'/%3E%3Cpath d='M480 800 L480 0'/%3E%3Cpath d='M720 800 L720 0'/%3E%3Cpath d='M960 800 L960 0'/%3E%3C/g%3E%3Cpath d='M0 560 L140 540 L280 460 L420 512 L560 470 L700 520 L840 430 L980 460 L1120 380 L1200 328' fill='none' stroke='%2370b1ff' stroke-width='4' opacity='0.95'/%3E%3Cpath d='M0 560 L140 540 L280 460 L420 512 L560 470 L700 520 L840 430 L980 460 L1120 380 L1200 328 L1200 800 L0 800Z' fill='url(%23g)' opacity='0.3'/%3E%3C/svg%3E");
-      background-size: cover;
-      background-attachment: fixed;
+      background-color: #ffffff;
     }
 
     .page {
       max-width: 1080px;
       margin: 0 auto;
       padding: 32px 24px 48px;
+      background: #ffffff;
     }
 
     .topbar {
@@ -55,46 +51,78 @@
     }
 
     .hero {
-      padding: 56px 0 40px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
-      gap: 32px;
+      position: relative;
+      min-height: 72vh;
+      display: flex;
       align-items: center;
+      justify-content: center;
+      padding: 72px 24px;
+      border-radius: 32px;
+      overflow: hidden;
+      background-color: #031a40;
     }
 
-    .hero-copy {
-      max-width: 620px;
+    .hero-chart {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      opacity: 0.95;
+      filter: saturate(120%) contrast(110%);
+    }
+
+    .hero-chart iframe,
+    .hero-chart .tradingview-widget-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 26, 64, 0.45);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 760px;
     }
 
     .eyebrow {
       display: inline-flex;
       text-transform: uppercase;
       letter-spacing: 0.25em;
-      color: var(--accent);
-      font-size: 0.8rem;
+      color: #8be2ff;
+      font-size: 0.85rem;
       font-weight: 700;
       margin-bottom: 18px;
     }
 
     h1 {
-      font-size: clamp(3rem, 4vw, 5rem);
-      letter-spacing: -0.05em;
+      font-size: clamp(3.4rem, 5vw, 5.8rem);
+      letter-spacing: -0.04em;
       max-width: 14ch;
-      margin-bottom: 24px;
+      margin: 0 auto 22px;
       line-height: 1.02;
+      color: #ffffff;
     }
 
     .lead {
-      max-width: 760px;
-      color: var(--muted);
+      max-width: 680px;
+      color: rgba(255,255,255,0.92);
       font-size: 1.05rem;
-      margin-bottom: 28px;
+      margin: 0 auto 28px;
     }
 
     .hero-actions {
       display: flex;
       gap: 16px;
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     .button {
@@ -117,18 +145,19 @@
     }
 
     .button-secondary {
-      background: rgba(255,255,255,0.08);
-      color: var(--text);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.14);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.22);
     }
 
     .card {
-      background: rgba(11, 37, 85, 0.88);
-      border: 1px solid var(--border);
+      background: #031a40;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 24px;
       padding: 28px;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 50px rgba(1, 12, 34, 0.18);
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
     .hero-card {
@@ -210,11 +239,19 @@
     .mission {
       display: grid;
       gap: 18px;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .mission:hover {
+      transform: translateY(-4px);
+      border-color: rgba(112, 177, 255, 0.5);
+      box-shadow: 0 24px 68px rgba(1, 12, 34, 0.22);
     }
 
     .mission p {
       font-size: 1rem;
       max-width: 760px;
+      color: rgba(255,255,255,0.95);
     }
 
     .feature-grid,
@@ -267,13 +304,14 @@
     .footer {
       margin-top: 48px;
       text-align: center;
-      color: rgba(255,255,255,0.68);
+      color: rgba(3, 26, 64, 0.72);
       font-size: 0.95rem;
     }
 
     @media (max-width: 860px) {
       .hero {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        padding: 56px 16px;
       }
 
       .market-stats {
@@ -289,30 +327,53 @@
     </header>
 
     <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">Applied Economics Club</span>
-        <h1>Applied economics prepared for today’s markets.</h1>
-        <p class="lead">We bridge economic theory and career-ready skills with real-world analysis, finance-focused projects, and professional experience built for the modern student.</p>
+      <div class="hero-chart">
+        <div id="tv_chart"></div>
+      </div>
+      <div class="hero-content">
+        <span class="eyebrow">UCSB Applied Economics Club</span>
+        <h1>UCSB Applied Economics Club</h1>
+        <p class="lead">A year-to-date Nasdaq Composite chart is rendered behind the title to reinforce the club’s finance-focused mission.</p>
         <div class="hero-actions">
           <a class="button" href="#mission">Our Mission</a>
           <a class="button button-secondary" href="#board">Meet the Board</a>
         </div>
       </div>
-
-      <aside class="hero-panel card hero-card">
-        <div class="panel-header">
-          <span class="panel-label">NASDAQ Composite</span>
-          <span class="panel-value">14,231.84</span>
-        </div>
-        <div class="panel-growth">+0.84% intraday</div>
-        <p>Today’s market-inspired chart background keeps the homepage aligned with finance energy while preserving the same deep blue palette and modern layout.</p>
-        <div class="market-stats">
-          <div><span>Programs</span><strong>12+</strong></div>
-          <div><span>Speakers</span><strong>30+</strong></div>
-          <div><span>Projects</span><strong>18</strong></div>
-        </div>
-      </aside>
     </section>
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+      if (window.TradingView) {
+        new TradingView.widget({
+          autosize: true,
+          symbol: 'NASDAQ:COMP',
+          interval: 'D',
+          timezone: 'Etc/UTC',
+          theme: 'dark',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#031a40',
+          hide_top_toolbar: true,
+          hide_side_toolbar: true,
+          allow_symbol_change: false,
+          details: false,
+          studies: [],
+          container_id: 'tv_chart',
+          withdateranges: false,
+          hide_legend: true,
+          enabled_features: ['hide_left_toolbar_by_default'],
+          overrides: {
+            'paneProperties.background': '#031a40',
+            'paneProperties.backgroundType': 'solid',
+            'paneProperties.vertGridProperties.color': '#0b2f74',
+            'paneProperties.horzGridProperties.color': '#0b2f74',
+            'scalesProperties.textColor': '#8be2ff',
+            'symbolWatermarkProperties.transparency': 90,
+            'mainSeriesProperties.candleStyle.wickUpColor': '#70b1ff',
+            'mainSeriesProperties.candleStyle.wickDownColor': '#70b1ff'
+          }
+        });
+      }
+    </script>
 
     <section id="mission" class="card mission">
       <span class="section-title">Our Mission</span>
