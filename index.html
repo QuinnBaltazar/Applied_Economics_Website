@@ -87,6 +87,11 @@
       background: rgba(255, 255, 255, 0.16);
       transform: translateY(-1px);
     }
+    .main-nav a.active {
+      background: rgba(255, 255, 255, 0.95);
+      color: #031a40;
+      font-weight: 700;
+    }
 
     .hero {
       position: relative;
@@ -434,6 +439,7 @@
         <a href="topics.html">Topics Covered</a>
         <a href="members.html">Members</a>
         <a href="board.html">Board</a>
+        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
       </nav>
     </header>
 
@@ -516,7 +522,26 @@
       revealElements.forEach(function(el) {
         observer.observe(el);
       });
+      highlightCurrentNav();
+      updateAdminLinkVisibility();
     });
+
+    function highlightCurrentNav() {
+      var page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(function(a) {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
+    }
+
+    function updateAdminLinkVisibility() {
+      try {
+        var session = JSON.parse(localStorage.getItem('aec-session') || 'null');
+        var members = JSON.parse(localStorage.getItem('aec-members') || '[]');
+        var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true || (members.find(function(m){ return m.email === session.email; }) || {}).isAdmin === true);
+        var l = document.getElementById('admin-nav-link');
+        if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
+      } catch (e) {}
+    }
   </script>
 </body>
 </html>

@@ -84,6 +84,11 @@
       background: rgba(255, 255, 255, 0.18);
       transform: translateY(-1px);
     }
+    .main-nav a.active {
+      background: rgba(255, 255, 255, 0.95);
+      color: #031a40;
+      font-weight: 700;
+    }
 
     .hero-block {
       margin: 32px 24px 12px;
@@ -256,46 +261,16 @@
         <a href="topics.html">Topics Covered</a>
         <a href="members.html">Members</a>
         <a href="board.html">Board</a>
+        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
       </nav>
     </header>
 
     <section class="hero-block">
       <h1>Members</h1>
-      <p>Meet the students powering UCSB Applied Economics Club. This page highlights the active membership team and the roles they play in event planning, research, finance education, and community engagement.</p>
+      <p>Meet the students powering UCSB Applied Economics Club. Registered members are displayed below once they sign in and complete membership.</p>
     </section>
 
-    <section class="members-grid">
-      <article class="member-card">
-        <span>Club Lead</span>
-        <h3>Ari Patel</h3>
-        <p>Ari coordinates club strategy, guest speakers, and research workshops while making sure every member has a path to applied economics experience.</p>
-      </article>
-      <article class="member-card">
-        <span>Research Coordinator</span>
-        <h3>Zoe Malik</h3>
-        <p>Zoe leads student research teams, develops case studies, and helps members turn economic data into insight-driven presentations.</p>
-      </article>
-      <article class="member-card">
-        <span>Events Manager</span>
-        <h3>Nico Jones</h3>
-        <p>Nico plans club events, manages logistics, and ensures each workshop and networking session runs smoothly for members and industry partners.</p>
-      </article>
-      <article class="member-card">
-        <span>Outreach</span>
-        <h3>Emilia Chen</h3>
-        <p>Emilia supports club growth and community outreach, bringing new students into applied economics programming and campus engagement.</p>
-      </article>
-      <article class="member-card">
-        <span>Content Lead</span>
-        <h3>Jacob Silva</h3>
-        <p>Jacob creates club content, social updates, and educational resources that keep members informed about markets, policy, and data tools.</p>
-      </article>
-      <article class="member-card">
-        <span>Member Support</span>
-        <h3>Riya Singh</h3>
-        <p>Riya helps new members onboard, answers questions, and connects students with the right workshops and project teams.</p>
-      </article>
-    </section>
+    <section class="members-grid"></section>
 
     <footer class="footer">Built for the Applied Economics Club — clean, page-based site navigation for an active student network.</footer>
   </main>
@@ -311,6 +286,20 @@
       try { return JSON.parse(localStorage.getItem('aec-members')) || []; } catch { return []; }
     }
     function getMember(email) { return loadMembers().find(m => m.email === email) || null; }
+    function isAdminSession(session) {
+      try {
+        const member = session && getMember(session.email);
+        return session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true || (member && member.isAdmin === true));
+      } catch {
+        return session && session.email === 'quinnbaltazar@ucsb.edu';
+      }
+    }
+    function highlightCurrentNav() {
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
+    }
     function saveMemberLocally(member) {
       const list = loadMembers();
       const idx = list.findIndex(m => m.email === member.email);
@@ -390,13 +379,23 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       const session = getSession();
-      if (!session) return;
+      if (session && isAdminSession(session)) {
+        const l = document.getElementById('admin-nav-link');
+        if (l) l.style.display = 'inline-flex';
+      }
+      highlightCurrentNav();
 
-      const member = getMember(session.email);
-      if (!member) return;
-
+      const members = loadMembers();
       const grid = document.querySelector('.members-grid');
-      grid.appendChild(createMemberCard(member, true));
+      if (members.length) {
+        members.forEach(member => {
+          const isOwner = session && member.email === session.email;
+          grid.appendChild(createMemberCard(member, isOwner));
+        });
+      } else if (session) {
+        const member = getMember(session.email);
+        if (member) grid.appendChild(createMemberCard(member, true));
+      }
     });
   </script>
 </body>

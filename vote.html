@@ -85,6 +85,11 @@
       background: rgba(255, 255, 255, 0.18);
       transform: translateY(-1px);
     }
+    .main-nav a.active {
+      background: rgba(255, 255, 255, 0.95);
+      color: #031a40;
+      font-weight: 700;
+    }
 
     .content-card {
       margin: 32px 24px 48px;
@@ -307,6 +312,7 @@
         <a href="topics.html">Topics Covered</a>
         <a href="members.html">Members</a>
         <a href="board.html">Board</a>
+        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
       </nav>
     </header>
 
@@ -418,6 +424,13 @@
     function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function fmt(n) { return `${n||0} vote${(n||0)===1?'':'s'}`; }
+    function getMember(email) {
+      try { return JSON.parse(localStorage.getItem('aec-members')||'[]').find(m => m.email === email) || null; }
+      catch { return null; }
+    }
+    function isSessionAdmin(session) {
+      return session && (session.email === ADMIN_EMAIL || session.isAdmin === true || getMember(session.email)?.isAdmin === true);
+    }
     function eKey(email) { return email.replace(/[.@#$[\]/]/g,'_'); }
 
     // ── Firebase REST ─────────────────────────────────────────
@@ -427,15 +440,27 @@
     }
     async function fbSet(p, d) {
       if (!FB_READY) return false;
-      try { return (await fetch(`${DB_URL}/${p}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) })).ok; } catch { return false; }
+      try {
+        const r = await fetch(`${DB_URL}/${p}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+        if (!r.ok) { console.error(`Firebase PUT /${p} failed: ${r.status}`, await r.text()); return false; }
+        return true;
+      } catch(e) { console.error(`Firebase PUT /${p} error:`, e); return false; }
     }
     async function fbPatch(p, d) {
       if (!FB_READY) return false;
-      try { return (await fetch(`${DB_URL}/${p}.json`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) })).ok; } catch { return false; }
+      try {
+        const r = await fetch(`${DB_URL}/${p}.json`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+        if (!r.ok) { console.error(`Firebase PATCH /${p} failed: ${r.status}`, await r.text()); return false; }
+        return true;
+      } catch(e) { console.error(`Firebase PATCH /${p} error:`, e); return false; }
     }
     async function fbPost(p, d) {
       if (!FB_READY) return null;
-      try { const r = await fetch(`${DB_URL}/${p}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) }); return r.ok ? r.json() : null; } catch { return null; }
+      try {
+        const r = await fetch(`${DB_URL}/${p}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+        if (!r.ok) { console.error(`Firebase POST /${p} failed: ${r.status}`, await r.text()); return null; }
+        return r.json();
+      } catch(e) { console.error(`Firebase POST /${p} error:`, e); return null; }
     }
 
     // ── Vote counts ───────────────────────────────────────────
@@ -572,6 +597,12 @@
       m.textContent = text;
       m.style.color = isError ? '#ffb3b3' : '#d0f4ff';
     }
+    function highlightCurrentNav() {
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
+    }
     function wireOtherToggle() {
       document.querySelectorAll('[name="topic"]').forEach(input => {
         input.addEventListener('change', function() {
@@ -583,17 +614,21 @@
     // ── Init ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async function() {
       const session = getSession();
+      const isAdmin = isSessionAdmin(session);
 
       // Session indicator + admin link
       if (session) {
         const note = document.getElementById('session-note');
         note.style.display = 'block';
-        if (session.email === ADMIN_EMAIL) {
+        if (isAdmin) {
+          const link = document.getElementById('admin-nav-link');
+          if (link) link.style.display = 'inline-flex';
           note.innerHTML = `Signed in as ${escapeHtml(session.email)} &nbsp;·&nbsp; <a href="admin.html" style="color:var(--accent);text-decoration:underline;">Admin Panel</a>`;
         } else {
           note.textContent = `Signed in as ${session.email}`;
         }
       }
+      highlightCurrentNav();
 
       // Load Firebase data in parallel
       const [counts, customTopics, userVote] = await Promise.all([

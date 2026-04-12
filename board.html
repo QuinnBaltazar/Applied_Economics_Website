@@ -84,6 +84,11 @@
       background: rgba(255, 255, 255, 0.18);
       transform: translateY(-1px);
     }
+    .main-nav a.active {
+      background: rgba(255, 255, 255, 0.95);
+      color: #031a40;
+      font-weight: 700;
+    }
 
     .board-grid {
       display: grid;
@@ -148,43 +153,67 @@
         <a href="topics.html">Topics Covered</a>
         <a href="members.html">Members</a>
         <a href="board.html">Board</a>
+        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
       </nav>
     </header>
 
     <section class="board-grid">
       <div class="board-card">
         <span>President</span>
-        <h3>Atticus Nguyen</h3>
-        <p>Atticus leads club strategy and speaker programming, organizing market analysis sessions and ensuring every member gains hands-on exposure to applied economics.</p>
+        <h3>Samuel Millen</h3>
+        <p>Samuel leads overall club management and executive leadership, guiding strategy, operations, and member growth while keeping every initiative aligned with our mission.</p>
       </div>
       <div class="board-card">
-        <span>Vice President</span>
-        <h3>Sam Carter</h3>
-        <p>Sam coordinates partnerships and career events, manages external relations, and curates industry panels for finance and economic research careers.</p>
+        <span>VP of Curriculum and Website Development</span>
+        <h3>Quinn Baltazar</h3>
+        <p>Quinn oversees curriculum design and website development, creating engaging programming and ensuring the club’s online presence supports member learning and event coordination.</p>
       </div>
       <div class="board-card">
-        <span>Research Director</span>
-        <h3>Aiddan Ramirez</h3>
-        <p>Aiddan develops data-driven case work and study groups, leading team research projects focused on market trends, policy effects, and forecasting.</p>
+        <span>Director of Events and Outreach</span>
+        <h3>Atticus Gonzalez</h3>
+        <p>Atticus leads event planning and outreach initiatives to connect members with industry speakers, workshops, and campus partnerships.</p>
       </div>
       <div class="board-card">
-        <span>Programming Lead</span>
-        <h3>Quinn Lee</h3>
-        <p>Quinn builds workshop series and skill sessions, creating practical learning experiences around economic modeling, trading desk concepts, and analytics tools.</p>
+        <span>Director of Research and Analytics</span>
+        <h3>Luca Oliveria</h3>
+        <p>Luca drives research efforts and analytics projects, turning economic insights into club learning opportunities and member resources.</p>
       </div>
       <div class="board-card">
-        <span>Operations</span>
-        <h3>Kristo Patel</h3>
-        <p>Kristo keeps the club running smoothly by managing event logistics, communications, and onboarding for new members across campus.</p>
+        <span>Director of Strategy and Partnerships</span>
+        <h3>Aidan Middleton</h3>
+        <p>Aidan shapes strategic initiatives and partnerships, helping the club build meaningful collaborations and long-term growth.</p>
       </div>
       <div class="board-card">
-        <span>Community Manager</span>
-        <h3>Luca Taylor</h3>
-        <p>Luca curates member engagement and club culture, supporting collaborative research teams and fostering discussion around economics and markets.</p>
+        <span>Director of Operations and Logistics</span>
+        <h3>Kristofer Kusalo</h3>
+        <p>Kristofer manages the operational side of club activities, ensuring events and programs run smoothly for members and leaders.</p>
       </div>
     </section>
 
     <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
   </main>
+  <script>
+    function highlightCurrentNav() {
+      var page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(function(a) {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
+    }
+
+    function updateAdminLinkVisibility() {
+      try {
+        var session = JSON.parse(localStorage.getItem('aec-session') || 'null');
+        var members = JSON.parse(localStorage.getItem('aec-members') || '[]');
+        var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true || (members.find(function(m){ return m.email === session.email; }) || {}).isAdmin === true);
+        var l = document.getElementById('admin-nav-link');
+        if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
+      } catch (e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      highlightCurrentNav();
+      updateAdminLinkVisibility();
+    });
+  </script>
 </body>
 </html>

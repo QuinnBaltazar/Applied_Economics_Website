@@ -32,6 +32,7 @@
       letter-spacing: 0.04em; transition: background 0.2s, transform 0.2s;
     }
     .main-nav a:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+    .main-nav a.active { background: rgba(255,255,255,0.95); color: #031a40; font-weight: 700; }
 
     .card {
       margin: 32px 24px 24px; padding: 34px;
@@ -156,6 +157,11 @@
         <div id="custom-topics-list"></div>
       </div>
 
+      <div class="admin-section">
+        <h2>Admin Member Control</h2>
+        <div id="admin-members-list"></div>
+      </div>
+
       <!-- Reset controls -->
       <div class="admin-section">
         <h2>Reset Controls</h2>
@@ -196,6 +202,20 @@
 
     function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function loadMembers() {
+      try { return JSON.parse(localStorage.getItem('aec-members')) || []; } catch { return []; }
+    }
+    function saveMembers(list) { localStorage.setItem('aec-members', JSON.stringify(list)); }
+    function getMember(email) { return loadMembers().find(m => m.email === email) || null; }
+    function isAdminSession(session) {
+      return session && (session.email === ADMIN_EMAIL || session.isAdmin === true || getMember(session.email)?.isAdmin === true);
+    }
+    function updateSessionAdmin(email, isAdmin) {
+      const session = getSession();
+      if (!session || session.email !== email) return;
+      session.isAdmin = isAdmin;
+      localStorage.setItem('aec-session', JSON.stringify(session));
+    }
 
     // ── Firebase REST ─────────────────────────────────────────
     async function fbGet(p) {
@@ -256,6 +276,50 @@
       });
     }
 
+    function renderAdminMembers() {
+      const members = loadMembers().sort((a, b) => {
+        const aAdmin = a.isAdmin === true || a.email === ADMIN_EMAIL;
+        const bAdmin = b.isAdmin === true || b.email === ADMIN_EMAIL;
+        return (bAdmin - aAdmin) || a.name.localeCompare(b.name);
+      });
+      const container = document.getElementById('admin-members-list');
+      if (!members.length) {
+        container.innerHTML = '<p class="empty-state">No registered members found.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      members.forEach(member => {
+        const tr = document.createElement('div');
+        tr.className = 'topic-row';
+        const isAdminMember = member.email === ADMIN_EMAIL || member.isAdmin === true;
+        tr.innerHTML = `
+          <div class="topic-row-info">
+            <div class="topic-row-name">${escapeHtml(member.name)} <span style="font-size:0.78rem; color:rgba(255,255,255,0.6);">(${escapeHtml(member.email)})</span></div>
+            <div class="topic-row-meta">${escapeHtml(member.subject || 'Member')} · ${isAdminMember ? 'Admin' : 'Member'}</div>
+          </div>
+          <div>
+            <button class="delete-topic-btn admin-toggle-btn" data-email="${escapeHtml(member.email)}">${isAdminMember ? 'Revoke Admin' : 'Make Admin'}</button>
+          </div>
+        `;
+        const btn = tr.querySelector('.admin-toggle-btn');
+        btn.addEventListener('click', () => {
+          if (member.email === ADMIN_EMAIL) return;
+          const confirmed = confirm(`${isAdminMember ? 'Revoke admin access for' : 'Grant admin access to'} ${member.name}?`);
+          if (!confirmed) return;
+          const list = loadMembers();
+          const idx = list.findIndex(m => m.email === member.email);
+          if (idx >= 0) {
+            list[idx].isAdmin = !isAdminMember;
+            saveMembers(list);
+            updateSessionAdmin(member.email, !isAdminMember);
+            renderAdminMembers();
+            setMsg(`Updated admin status for ${member.name}.`);
+          }
+        });
+        container.appendChild(tr);
+      });
+    }
+
     async function refresh() {
       const [rawCounts, rawCustom] = await Promise.all([
         fbGet('vote-counts'), fbGet('custom-topics')
@@ -310,14 +374,16 @@
     // ── Init ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async function() {
       const session = getSession();
-      const isAdmin = session && session.email === ADMIN_EMAIL;
+      const isAdmin = isAdminSession(session);
 
       document.getElementById('access-denied').style.display = isAdmin ? 'none' : 'block';
       document.getElementById('admin-panel').style.display   = isAdmin ? 'block' : 'none';
 
       if (!isAdmin) return;
 
+      highlightCurrentNav();
       document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
+      renderAdminMembers();
 
       if (!FB_READY) {
         setMsg('Firebase not configured — set DB_URL in admin.html and vote.html to enable live data.', true);

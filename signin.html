@@ -78,6 +78,11 @@
       background: rgba(255,255,255,0.18);
       transform: translateY(-1px);
     }
+    .main-nav a.active {
+      background: rgba(255,255,255,0.95);
+      color: #031a40;
+      font-weight: 700;
+    }
 
     /* ── Auth card ── */
     .auth-card {
@@ -301,6 +306,7 @@
         <a href="topics.html">Topics Covered</a>
         <a href="members.html">Members</a>
         <a href="board.html">Board</a>
+        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
       </nav>
     </header>
 
@@ -409,6 +415,7 @@
     const EMAILJS_SERVICE_ID   = 'service_q979uh8';
     const EMAILJS_TEMPLATE_ID  = 'template_1cgjm5y';
     const EMAILJS_READY = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
+    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
 
     if (EMAILJS_READY) emailjs.init(EMAILJS_PUBLIC_KEY);
 
@@ -421,7 +428,11 @@
     function getSession() {
       try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
     }
-    function setSession(m) { localStorage.setItem('aec-session', JSON.stringify(m)); }
+    function setSession(m) {
+      const record = getMember(m.email);
+      const sessionData = { ...m, isAdmin: record && record.isAdmin === true };
+      localStorage.setItem('aec-session', JSON.stringify(sessionData));
+    }
     function clearSession() { localStorage.removeItem('aec-session'); }
 
     function fillWelcome(member, isNew) {
@@ -438,9 +449,19 @@
     document.addEventListener('DOMContentLoaded', function() {
       const session = getSession();
       if (session) {
+        const member = getMember(session.email);
+        if (member && member.isAdmin) {
+          session.isAdmin = true;
+          setSession(session);
+        }
         fillWelcome(session, false);
         showStep('step-welcome');
       }
+      if (session && isAdminSession(session)) {
+        const l = document.getElementById('admin-nav-link');
+        if (l) l.style.display = 'inline-flex';
+      }
+      highlightCurrentNav();
     });
 
     // ── Helpers ──────────────────────────────────────────────
@@ -455,6 +476,20 @@
 
     function getMember(email) {
       return loadMembers().find(m => m.email === email) || null;
+    }
+    function isAdminSession(session) {
+      try {
+        const member = session && getMember(session.email);
+        return session && (session.email === ADMIN_EMAIL || session.isAdmin === true || (member && member.isAdmin === true));
+      } catch {
+        return session && session.email === ADMIN_EMAIL;
+      }
+    }
+    function highlightCurrentNav() {
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
     }
 
     function saveMember(member) {
