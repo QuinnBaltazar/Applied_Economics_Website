@@ -423,14 +423,36 @@
       document.getElementById('count-other').textContent = formatVotes(counts['Other']);
     }
 
-    function lockForm(savedVote) {
-      document.querySelectorAll('[name="topic"]').forEach(input => {
-        input.disabled = true;
-        if (input.value === savedVote) input.checked = true;
-      });
-      if (savedVote === 'Other') {
-        document.getElementById('other-fields').style.display = 'flex';
-      }
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function insertCustomTopicCard(name, desc) {
+      const otherLabel = document.querySelector('[name="topic"][value="Other"]').closest('label');
+      const card = document.createElement('label');
+      card.className = 'vote-option';
+      card.innerHTML = `
+        <div class="option-head">
+          <input type="radio" name="topic" value="${escapeHtml(name)}" disabled checked />
+          <div>
+            <div class="option-title">${escapeHtml(name)}</div>
+            <div class="option-desc">${desc ? escapeHtml(desc) : 'Member-suggested topic.'}</div>
+          </div>
+        </div>
+        <span class="vote-count">1 vote</span>
+      `;
+      otherLabel.parentNode.insertBefore(card, otherLabel);
+
+      // Reset the Other card to its blank state
+      document.getElementById('other-fields').style.display = 'none';
+      document.getElementById('other-topic-name').value = '';
+      document.getElementById('other-topic-desc').value = '';
+      const otherRadio = document.querySelector('[name="topic"][value="Other"]');
+      otherRadio.checked = false;
+    }
+
+    function lockForm() {
+      document.querySelectorAll('[name="topic"]').forEach(input => input.disabled = true);
       document.getElementById('member-confirm').disabled = true;
       document.getElementById('other-topic-name').disabled = true;
       document.getElementById('other-topic-desc').disabled = true;
@@ -450,11 +472,18 @@
 
       const savedVote = localStorage.getItem(storageKey);
       if (savedVote) {
-        const label = savedVote === 'Other'
-          ? `"Other: ${localStorage.getItem('aec-vote-other-name') || 'custom topic'}"`
-          : `"${savedVote}"`;
-        showMessage(`You already voted for ${label}. Thank you!`);
-        lockForm(savedVote);
+        if (savedVote === 'Other') {
+          const otherName = localStorage.getItem('aec-vote-other-name') || 'Custom topic';
+          const otherDesc = localStorage.getItem('aec-vote-other-desc') || '';
+          insertCustomTopicCard(otherName, otherDesc);
+          showMessage(`You already voted for "${otherName}". Thank you!`);
+        } else {
+          document.querySelectorAll('[name="topic"]').forEach(input => {
+            if (input.value === savedVote) input.checked = true;
+          });
+          showMessage(`You already voted for "${savedVote}". Thank you!`);
+        }
+        lockForm();
       }
 
       // Show/hide Other fields when radio changes
@@ -504,11 +533,15 @@
         localStorage.setItem(storageKey, topicValue);
         updateResults(counts);
 
-        const displayName = topicValue === 'Other'
-          ? `Other: ${localStorage.getItem('aec-vote-other-name')}`
-          : topicValue;
-        showMessage(`Thanks — your vote for "${displayName}" has been recorded.`);
-        lockForm(topicValue);
+        if (topicValue === 'Other') {
+          const otherName = localStorage.getItem('aec-vote-other-name');
+          const otherDesc = localStorage.getItem('aec-vote-other-desc') || '';
+          insertCustomTopicCard(otherName, otherDesc);
+          showMessage(`Thanks — your vote for "${otherName}" has been recorded.`);
+        } else {
+          showMessage(`Thanks — your vote for "${topicValue}" has been recorded.`);
+        }
+        lockForm();
       });
     });
   </script>
