@@ -79,7 +79,7 @@
       position: absolute;
       inset: 0;
       border-radius: 40px 40px 0 0;
-      background: linear-gradient(180deg, rgba(3, 26, 64, 0.35), rgba(3, 26, 64, 0.78));
+      background: transparent;
       pointer-events: none;
     }
 
@@ -100,104 +100,17 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 30%, rgba(112, 177, 255, 0.1), transparent 28%), linear-gradient(180deg, rgba(3, 26, 64, 0.08), rgba(3, 26, 64, 0.88));
+      background: transparent;
       pointer-events: none;
     }
 
     .hero::after {
       content: "";
       position: absolute;
-      inset: 18px;
-      border: 1px solid rgba(112, 177, 255, 0.18);
-      border-radius: 32px;
-      box-shadow: inset 0 0 120px rgba(112, 177, 255, 0.08), 0 0 120px rgba(0, 0, 0, 0.18);
-      pointer-events: none;
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      max-width: 660px;
-      padding: 40px 30px;
-      border-radius: 28px;
-      background: rgba(2, 18, 44, 0.42);
-      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      backdrop-filter: blur(22px);
-      overflow: hidden;
-    }
-
-    .hero-content::before {
-      content: "";
-      position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 45%);
+      border: none;
+      background: transparent;
       pointer-events: none;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      text-transform: uppercase;
-      letter-spacing: 0.22em;
-      color: #8be2ff;
-      font-size: 0.78rem;
-      font-weight: 700;
-      margin-bottom: 14px;
-      position: relative;
-      z-index: 1;
-    }
-
-    h1 {
-      font-size: clamp(3rem, 5vw, 5.8rem);
-      letter-spacing: -0.04em;
-      max-width: 12ch;
-      margin: 0 auto 18px;
-      line-height: 1.02;
-      color: #ffffff;
-      position: relative;
-      z-index: 1;
-    }
-
-    h1 span {
-      display: block;
-      font-weight: 800;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 10px 18px;
-      margin: 0 auto 20px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.86);
-      font-size: 0.82rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      position: relative;
-      z-index: 1;
-    }
-
-    .lead {
-      max-width: 620px;
-      color: rgba(255,255,255,0.88);
-      font-size: 1.02rem;
-      margin: 0 auto;
-      line-height: 1.7;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 22px;
     }
 
     .button {
@@ -422,11 +335,6 @@
         padding: 24px 16px 32px;
       }
 
-      .hero-content {
-        width: 100%;
-        padding: 34px 24px;
-      }
-
       .market-stats {
         grid-template-columns: 1fr;
       }
@@ -442,11 +350,6 @@
     <section class="hero">
       <div class="hero-chart">
         <div id="tv_chart_container"></div>
-      </div>
-      <div class="hero-content">
-        <span class="hero-badge">NASDAQ:QQQ • Live Market</span>
-        <h1><span>UCSB</span>Applied Economics Club</h1>
-        <p class="lead">A live trading desk view sits behind the headline so the club identity feels integrated with the market action.</p>
       </div>
     </section>
 
