@@ -235,6 +235,8 @@
       // Reveal nav
       const ml=document.getElementById('members-nav-link');
       if(ml) ml.style.display='inline-flex';
+      const sl=document.querySelector('.main-nav a[href="signin.html"]');
+      if(sl) sl.textContent='Profile';
       if(isAdminSess(session)){
         const al=document.getElementById('admin-nav-link');
         if(al) al.style.display='inline-flex';
@@ -252,7 +254,13 @@
         return;
       }
 
-      const members=Object.values(raw).filter(m=>m&&m.name).sort((a,b)=>{
+      // Deduplicate by UCSB email — keep the record with an earlier joinedAt (the original)
+      const emailMap = new Map();
+      Object.values(raw).filter(m=>m&&m.name&&m.email).forEach(m=>{
+        const prev = emailMap.get(m.email);
+        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
+      });
+      const members = Array.from(emailMap.values()).sort((a,b)=>{
         if(a.email===session.email) return -1;
         if(b.email===session.email) return 1;
         return (a.name||'').localeCompare(b.name||'');

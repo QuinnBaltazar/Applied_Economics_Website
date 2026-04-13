@@ -3,463 +3,249 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Applied Economics Club</title>
+  <title>UCSB Applied Economics Club</title>
   <style>
     :root {
-      --bg: #031a40;
-      --surface: #0f2b62;
-      --text: #ffffff;
-      --muted: #a8c4ef;
-      --accent: #70b1ff;
-      --border: rgba(255,255,255,0.12);
+      --bg:       #090F1A;
+      --surface:  #0E1829;
+      --navy:     #162438;
+      --gold:     #C4A448;
+      --gold-lt:  #D4B55E;
+      --gold-dim: rgba(196,164,72,0.10);
+      --steel:    #2B4A6F;
+      --text:     #FFFFFF;
+      --muted:    rgba(255,255,255,0.62);
+      --border:   rgba(255,255,255,0.07);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      color: var(--text);
-      line-height: 1.6;
-      background-color: var(--bg);
-      scroll-behavior: smooth;
-    }
-
-    .page {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 64px 0 0;
-      background: var(--bg);
-      overflow-x: hidden;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; color: var(--text); line-height: 1.6; background: var(--bg); scroll-behavior: smooth; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; overflow-x: hidden; }
 
     /* ── NAV ── */
     .topbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      width: 100%;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 clamp(20px, 4vw, 56px);
-      height: 64px;
-      background: rgba(3, 26, 64, 0.72);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
-      animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
+      background: rgba(9, 15, 26, 0.78);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
+      animation: navDown 0.55s cubic-bezier(0.4,0,0.2,1) both;
     }
-
-    @keyframes navDown {
-      from { transform: translateY(-100%); opacity: 0; }
-      to   { transform: translateY(0);     opacity: 1; }
-    }
-
+    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .topbar.scrolled {
-      background: rgba(3, 26, 64, 0.97);
-      box-shadow: 0 2px 40px rgba(0,0,0,0.35);
-      border-color: rgba(255,255,255,0.1);
+      background: rgba(9,15,26,0.97);
+      box-shadow: 0 2px 40px rgba(0,0,0,0.45);
+      border-color: rgba(196,164,72,0.14);
     }
-
     .brand {
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      text-decoration: none;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: color 0.2s ease, opacity 0.2s ease;
+      font-size: 0.78rem; font-weight: 800; color: #fff;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      transition: color 0.2s;
     }
-
-    .brand:hover { color: var(--accent); }
-
-    .main-nav {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-    }
-
+    .brand:hover { color: var(--gold); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
     .main-nav a {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 13px;
-      color: rgba(255,255,255,0.72);
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      border-radius: 8px;
-      transition: color 0.2s ease, background 0.2s ease;
+      position: relative; display: inline-flex; align-items: center;
+      padding: 8px 13px; color: rgba(255,255,255,0.65);
+      text-decoration: none; font-size: 0.875rem; font-weight: 500;
+      letter-spacing: 0.03em; border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
     }
-
     .main-nav a::after {
-      content: '';
-      position: absolute;
-      bottom: 5px;
-      left: 13px; right: 13px;
-      height: 2px;
-      background: var(--accent);
-      border-radius: 2px;
+      content: ''; position: absolute; bottom: 5px;
+      left: 13px; right: 13px; height: 2px;
+      background: var(--gold); border-radius: 2px;
       transform: scaleX(0);
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
       transform-origin: center;
     }
+    .main-nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,0.08); }
 
-    .main-nav a:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.06);
-    }
-
-    .main-nav a:hover::after,
-    .main-nav a.active::after { transform: scaleX(1); }
-
-    .main-nav a.active {
-      color: #ffffff;
-      font-weight: 700;
-      background: rgba(112, 177, 255, 0.1);
-    }
-
+    /* ── HERO ── */
     .hero {
       position: relative;
-      min-height: clamp(52vh, 60vh, 68vh);
+      min-height: 90vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px 24px 28px;
-      border-radius: 0 0 40px 40px;
-      overflow: hidden;
-      background: transparent;
-    }
-
-    .hero-chart {
-      position: absolute;
-      inset: 0;
-      padding: 16px;
-      z-index: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .hero-chart::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 40px 40px 0 0;
-      background: transparent;
-      pointer-events: none;
-    }
-
-    #tv_chart_container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      min-height: 520px;
-      border-radius: 32px;
-      overflow: hidden;
-      box-shadow: none;
-      border: none;
-      z-index: 0;
-      background: transparent;
-    }
-
-    .hero-title-wrap {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 24px;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .hero-title {
-      color: #ffffff;
-      font-size: clamp(3rem, 6vw, 6rem);
-      letter-spacing: -0.04em;
-      font-weight: 900;
       text-align: center;
-      line-height: 0.96;
-      text-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-      max-width: 100%;
+      padding: 56px 24px 96px;
+      overflow: hidden;
     }
 
-    .hero::before {
-      content: "";
+    /* Concentric ring background — echoes the logo seal */
+    .hero-rings {
       position: absolute;
       inset: 0;
-      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       pointer-events: none;
+      z-index: 0;
+    }
+    .hero-rings svg {
+      width: 1000px;
+      height: 1000px;
+      max-width: none;
+      flex-shrink: 0;
     }
 
+    /* Subtle bottom fade so hero blends into page */
     .hero::after {
-      content: "";
+      content: '';
       position: absolute;
-      inset: 0;
-      border: none;
-      background: transparent;
+      bottom: 0; left: 0; right: 0;
+      height: 140px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
       pointer-events: none;
+      z-index: 0;
     }
 
-    .mission-section {
-      margin: 32px 24px 18px;
-      padding: 32px;
-      display: grid;
-      gap: 16px;
-      background: rgba(7, 22, 48, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 28px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    /* Logo */
+    .hero-logo-wrap {
+      position: relative; z-index: 1;
+      margin-bottom: 40px;
+      filter:
+        drop-shadow(0 0 48px rgba(196,164,72,0.22))
+        drop-shadow(0 0 120px rgba(196,164,72,0.08))
+        drop-shadow(0 28px 56px rgba(0,0,0,0.55));
+      animation: logoIn 1s cubic-bezier(0.4,0,0.2,1) 0.15s both;
     }
+    @keyframes logoIn {
+      from { opacity: 0; transform: scale(0.82) translateY(24px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .hero-logo-svg { width: 230px; height: 230px; display: block; }
 
-    .mission-section h2 {
-      font-size: clamp(2rem, 3vw, 3rem);
+    /* Hero text */
+    .hero-eyebrow {
+      position: relative; z-index: 1;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.35em;
+      text-transform: uppercase; color: var(--gold);
       margin-bottom: 10px;
-      letter-spacing: -0.03em;
+      animation: fadeUp 0.8s cubic-bezier(0.4,0,0.2,1) 0.5s both;
     }
-
-    .mission-section p {
-      color: rgba(255, 255, 255, 0.88);
-      font-size: 1rem;
-      line-height: 1.8;
-      max-width: 840px;
+    .hero-headline {
+      position: relative; z-index: 1;
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 800; letter-spacing: -0.04em; line-height: 1.05;
+      color: #fff; margin-bottom: 14px;
+      animation: fadeUp 0.8s cubic-bezier(0.4,0,0.2,1) 0.6s both;
     }
+    .hero-tagline {
+      position: relative; z-index: 1;
+      font-size: 1.05rem; color: var(--muted); margin-bottom: 38px;
+      animation: fadeUp 0.8s cubic-bezier(0.4,0,0.2,1) 0.7s both;
+    }
+    .hero-actions {
+      position: relative; z-index: 1;
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp 0.8s cubic-bezier(0.4,0,0.2,1) 0.8s both;
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 160px;
-      padding: 16px 26px;
-      border-radius: 999px;
-      font-weight: 700;
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 14px 30px; border-radius: 999px;
+      background: var(--gold); color: #090F1A;
+      font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em;
       text-decoration: none;
-      background: var(--accent);
-      color: #031a40;
-      letter-spacing: 0.02em;
-      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 12px 26px rgba(112, 177, 255, 0.16);
+      box-shadow: 0 8px 28px rgba(196,164,72,0.28);
+      transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 14px 36px rgba(196,164,72,0.36); }
+
+    .btn-outline {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 14px 30px; border-radius: 999px;
+      border: 1px solid rgba(196,164,72,0.38); color: var(--gold);
+      font-weight: 600; font-size: 0.95rem; text-decoration: none;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--gold); background: rgba(196,164,72,0.07); transform: translateY(-2px); }
+
+    /* ── THIN GOLD DIVIDER ── */
+    .gold-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(196,164,72,0.22), transparent);
+      margin: 0 24px 40px;
     }
 
-    .button:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.08);
-      box-shadow: 0 18px 36px rgba(112, 177, 255, 0.22);
+    /* ── MISSION ── */
+    .mission-section {
+      margin: 0 24px 32px;
+      padding: 40px 38px;
+      background: var(--surface);
+      border: 1px solid rgba(196,164,72,0.11);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 24px 24px 0;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.22);
     }
-
-    .button-secondary {
-      background: rgba(255,255,255,0.14);
-      color: #ffffff;
-      border: 1px solid rgba(255,255,255,0.22);
+    .mission-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 12px; display: block;
     }
-
-    .card {
-      background: #031a40;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
-      padding: 28px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 18px 50px rgba(1, 12, 34, 0.18);
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    .mission-section h2 {
+      font-size: clamp(1.7rem, 3vw, 2.3rem);
+      letter-spacing: -0.03em; margin-bottom: 16px; color: #fff;
     }
-
-    .hero-card {
-      display: grid;
-      gap: 20px;
-      min-height: 360px;
+    .mission-section p {
+      color: rgba(255,255,255,0.80); font-size: 1rem; line-height: 1.82; max-width: 800px;
     }
+    .mission-section p + p { margin-top: 12px; }
 
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
+    /* ── FEATURE CARDS ── */
+    .features-section { margin: 0 24px 52px; }
+    .features-header {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 18px; display: block;
     }
-
-    .panel-label {
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: var(--accent);
-      font-size: 0.85rem;
-      font-weight: 700;
+    .feature-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px; padding: 30px 26px;
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
     }
-
-    .panel-value {
-      font-size: 2.3rem;
-      letter-spacing: -0.03em;
+    .feature-card::before {
+      content: '';
+      display: block; width: 28px; height: 2px;
+      background: var(--gold); border-radius: 2px; margin-bottom: 18px;
     }
-
-    .panel-growth {
-      color: #8be2ff;
-      font-size: 1.1rem;
-      font-weight: 700;
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(196,164,72,0.28);
+      box-shadow: 0 22px 56px rgba(0,0,0,0.25);
     }
+    .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 9px; color: #fff; }
+    .feature-card p { font-size: 0.92rem; color: var(--muted); line-height: 1.72; }
 
-    .hero-card p {
-      color: var(--muted);
-      line-height: 1.8;
-    }
-
-    .market-stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .market-stats div {
-      background: rgba(112, 177, 255, 0.08);
-      border: 1px solid rgba(112, 177, 255, 0.12);
-      border-radius: 18px;
-      padding: 16px;
-      min-height: 96px;
-    }
-
-    .market-stats span {
-      display: block;
-      color: var(--accent);
-      font-size: 0.8rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      font-weight: 700;
-    }
-
-    .market-stats strong {
-      font-size: 1.4rem;
-      display: block;
-    }
-
-    .section-title {
-      display: inline-block;
-      margin-bottom: 18px;
-      font-size: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    .mission,
-    .feature-grid,
-    .board-grid {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.8s ease, transform 0.8s ease;
-    }
-
-    .visible {
-      opacity: 1 !important;
-      transform: translateY(0) !important;
-    }
-
-    .mission {
-      display: grid;
-      gap: 18px;
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-      background: #0b2f74;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .mission:hover {
-      transform: translateY(-4px);
-      border-color: rgba(112, 177, 255, 0.5);
-      box-shadow: 0 24px 68px rgba(1, 12, 34, 0.22);
-    }
-
-    .mission p {
-      font-size: 1rem;
-      max-width: 760px;
-      color: rgba(255,255,255,0.95);
-    }
-
-    .feature-grid,
-    .board-grid {
-      display: grid;
-      gap: 20px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-
-    .feature-card,
-    .board-card {
-      background: #0b2f74;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 24px;
-      min-height: 220px;
-      transition: transform 0.25s ease, border-color 0.25s ease;
-    }
-
-    .board-card {
-      background: linear-gradient(180deg, #102f62 0%, #0a2858 100%);
-    }
-
-    .feature-card:hover,
-    .board-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(112, 177, 255, 0.5);
-    }
-
-    .feature-card h3,
-    .board-card h3 {
-      margin-bottom: 10px;
-      font-size: 1.2rem;
-    }
-
-    .board-card h3 {
-      color: #ffffff;
-    }
-
-    .feature-card p,
-    .board-card p {
-      font-size: 0.96rem;
-      line-height: 1.7;
-    }
-
-    .feature-card p {
-      color: var(--muted);
-    }
-
-    .board-card p {
-      color: rgba(255, 255, 255, 0.84);
-    }
-
-    .feature-card span,
-    .board-card span {
-      display: inline-block;
-      margin-bottom: 16px;
-      color: var(--accent);
-      font-weight: 700;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-    }
-
+    /* ── FOOTER ── */
     .footer {
-      margin-top: 48px;
-      text-align: center;
-      color: rgba(3, 26, 64, 0.72);
-      font-size: 0.95rem;
+      margin: 0 24px 44px; text-align: center;
+      color: rgba(255,255,255,0.25); font-size: 0.88rem;
+      border-top: 1px solid var(--border); padding-top: 28px;
     }
+    .footer strong { color: var(--gold); font-weight: 600; }
 
-    @media (max-width: 860px) {
-      .hero {
-        align-items: flex-end;
-        padding: 24px 16px 32px;
-      }
+    /* ── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s ease, transform 0.75s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
 
-      .market-stats {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 640px) {
+      .hero { min-height: 82vh; padding: 40px 20px 80px; }
+      .hero-logo-svg { width: 190px; height: 190px; }
+      .hero-headline { font-size: 2rem; }
+      .mission-section { margin: 0 16px 28px; padding: 28px 22px; }
+      .features-section { margin: 0 16px 44px; }
     }
   </style>
 </head>
@@ -478,85 +264,141 @@
   </header>
   <main class="page">
 
+    <!-- ── HERO ── -->
     <section class="hero">
-      <div class="hero-chart">
-        <div id="tv_chart_container"></div>
+
+      <!-- Background: concentric rings echoing the logo's circular seal -->
+      <div class="hero-rings" aria-hidden="true">
+        <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <defs>
+            <radialGradient id="heroGlow" cx="50%" cy="50%" r="45%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#C4A448" stop-opacity="0.11"/>
+              <stop offset="45%"  stop-color="#C4A448" stop-opacity="0.03"/>
+              <stop offset="100%" stop-color="#C4A448" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="steelGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%"   stop-color="#2B4A6F" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#2B4A6F" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- Deep background glow -->
+          <circle cx="500" cy="500" r="480" fill="url(#steelGlow)"/>
+          <!-- Gold glow centered behind logo -->
+          <circle cx="500" cy="500" r="280" fill="url(#heroGlow)"/>
+          <!-- Concentric rings — innermost to outermost -->
+          <circle cx="500" cy="500" r="148" stroke="#C4A448" stroke-opacity="0.09" stroke-width="1"/>
+          <circle cx="500" cy="500" r="200" stroke="#C4A448" stroke-opacity="0.07" stroke-width="1"/>
+          <circle cx="500" cy="500" r="262" stroke="#C4A448" stroke-opacity="0.055" stroke-width="1"/>
+          <circle cx="500" cy="500" r="338" stroke="#2B4A6F" stroke-opacity="0.11" stroke-width="1"/>
+          <circle cx="500" cy="500" r="420" stroke="#2B4A6F" stroke-opacity="0.08" stroke-width="1"/>
+          <circle cx="500" cy="500" r="490" stroke="#2B4A6F" stroke-opacity="0.05" stroke-width="1"/>
+        </svg>
       </div>
-      <div class="hero-title-wrap">
-        <h1 class="hero-title">Applied Economics Club</h1>
+
+      <!-- Inline SVG recreation of the club logo -->
+      <div class="hero-logo-wrap">
+        <svg class="hero-logo-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Arc path for the curved "APPLIED ECONOMICS CLUB" text -->
+            <path id="sealTopArc" d="M 18,130 A 112,112 0 0,1 242,130"/>
+          </defs>
+
+          <!-- Cream seal background -->
+          <circle cx="130" cy="130" r="124" fill="#F2EDE3"/>
+
+          <!-- Outer bold ring -->
+          <circle cx="130" cy="130" r="124" fill="none" stroke="#2B4A6F" stroke-width="3.5"/>
+          <!-- Inner thin ring -->
+          <circle cx="130" cy="130" r="112" fill="none" stroke="#2B4A6F" stroke-width="1.2"/>
+
+          <!-- "APPLIED ECONOMICS CLUB" along the top arc -->
+          <text fill="#2B4A6F"
+                font-family="Inter, system-ui, -apple-system, sans-serif"
+                font-size="11" font-weight="700" letter-spacing="2.6">
+            <textPath href="#sealTopArc" startOffset="50%" text-anchor="middle">
+              APPLIED ECONOMICS CLUB
+            </textPath>
+          </text>
+
+          <!-- "UCSB" at bottom with gold flanking lines -->
+          <line x1="56"  y1="202" x2="90"  y2="202" stroke="#C4A448" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="130" y="207" text-anchor="middle"
+                fill="#C4A448" font-family="Inter, system-ui, sans-serif"
+                font-size="11.5" font-weight="700" letter-spacing="4.5">UCSB</text>
+          <line x1="170" y1="202" x2="204" y2="202" stroke="#C4A448" stroke-width="1.5" stroke-linecap="round"/>
+
+          <!-- AE monogram — bold serif, centered -->
+          <text x="130" y="163"
+                text-anchor="middle"
+                font-family="Georgia, 'Times New Roman', serif"
+                font-size="94" font-weight="900"
+                fill="#2B4A6F" letter-spacing="-6">AE</text>
+
+          <!-- Gold trend arrow over the monogram -->
+          <line x1="80" y1="156" x2="174" y2="82"
+                stroke="#C4A448" stroke-width="5.5" stroke-linecap="round"/>
+          <!-- Arrowhead (calculated for the arrow's direction vector) -->
+          <polygon points="174,82 164,100 156,88" fill="#C4A448"/>
+        </svg>
+      </div>
+
+      <!-- Text stack -->
+      <p class="hero-eyebrow">University of California, Santa Barbara</p>
+      <h1 class="hero-headline">Applied Economics Club</h1>
+      <p class="hero-tagline">Where economic theory meets real-world practice.</p>
+      <div class="hero-actions">
+        <a href="signin.html" class="btn-primary">Join the Club</a>
+        <a href="vote.html" class="btn-outline">Explore Topics</a>
       </div>
     </section>
 
-    <section class="mission-section">
-      <h2>Our Mission</h2>
-      <p>Our mission is to take big ideas and ground them in reality through practical use. We teach a topic chosen by club vote, then bring in an industry speaker to show members how that concept works in the real world.</p>
-      <p>We also keep everyone connected after graduation. The Members page lets club members update their goals, share what they’re interested in, and contact one another so the network stays active.</p>
+    <!-- ── DIVIDER ── -->
+    <div class="gold-divider"></div>
+
+    <!-- ── MISSION ── -->
+    <section class="mission-section reveal">
+      <span class="mission-label">Our Mission</span>
+      <h2>Theory grounded in practice.</h2>
+      <p>We teach a topic chosen by club vote, then bring in an industry speaker to show members exactly how that concept plays out in the real world — from venture capital and trading to wealth management and investment banking.</p>
+      <p>We also keep everyone connected after graduation. The Members page lets club members update their goals, share what they're working on, and reach out to one another so the network stays alive long after the diploma.</p>
+    </section>
+
+    <!-- ── WHAT WE DO ── -->
+    <section class="features-section reveal">
+      <span class="features-header">What We Do</span>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Member-Driven Topics</h3>
+          <p>Every session topic is put to a club-wide vote. The curriculum is always what members actually want to learn — not what someone decided years ago.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Industry Speakers</h3>
+          <p>After each topic vote we bring in a practitioner from that field to bridge the gap between academic concepts and how markets really work.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Lasting Network</h3>
+          <p>The verified member directory keeps alumni and current students connected long after graduation — a network built to stay active and useful.</p>
+        </div>
+      </div>
     </section>
 
     <footer class="footer">
-      Built for the Applied Economics Club — modern, clean, and ready to support your next career move.
+      <strong>UCSB Applied Economics Club</strong> &nbsp;·&nbsp; Built for student-led economics education
     </footer>
   </main>
-  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-  <script>
-    function initTradingViewWidget() {
-      if (window.TradingView && typeof window.TradingView.widget === 'function') {
-        new TradingView.widget({
-          "autosize": true,
-          "symbol": "BATS_DLY:QQQ",
-          "interval": "30",
-          "timezone": "America/New_York",
-          "theme": "dark",
-          "style": "1",
-          "locale": "en",
-          "toolbar_bg": "#0b1f44",
-          "enable_publishing": false,
-          "allow_symbol_change": false,
-          "hide_side_toolbar": true,
-          "hide_top_toolbar": true,
-          "hide_legend": true,
-          "hide_ideas": true,
-          "details": false,
-          "hotlist": false,
-          "news": [],
-          "save_image": false,
-          "container_id": "tv_chart_container",
-          "disabled_features": [
-            "header_compare",
-            "header_symbol_search",
-            "header_undo_redo",
-            "header_screenshot",
-            "header_settings",
-            "header_interval_dialog_button",
-            "header_resolutions",
-            "header_indicators",
-            "control_bar"
-          ]
-        });
-      } else {
-        setTimeout(initTradingViewWidget, 100);
-      }
-    }
 
-    initTradingViewWidget();
-  </script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var revealElements = document.querySelectorAll('.reveal');
-      var observer = new IntersectionObserver(function(entries, observer) {
+      var observer = new IntersectionObserver(function(entries, obs) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
-            observer.unobserve(entry.target);
+            obs.unobserve(entry.target);
           }
         });
-      }, {
-        threshold: 0.18
-      });
-
-      revealElements.forEach(function(el) {
-        observer.observe(el);
-      });
+      }, { threshold: 0.12 });
+      revealElements.forEach(function(el) { observer.observe(el); });
       highlightCurrentNav();
       updateAdminLinkVisibility();
     });
@@ -580,6 +422,8 @@
         if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
         var ml = document.getElementById('members-nav-link');
         if (ml) ml.style.display = session ? 'inline-flex' : 'none';
+        var sl = document.querySelector('.main-nav a[href="signin.html"]');
+        if (sl) sl.textContent = session ? 'Profile' : 'Sign In';
       } catch (e) {}
     }
   </script>

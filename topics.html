@@ -239,6 +239,8 @@
         if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
         var ml = document.getElementById('members-nav-link');
         if (ml) ml.style.display = session ? 'inline-flex' : 'none';
+        var sl = document.querySelector('.main-nav a[href="signin.html"]');
+        if (sl) sl.textContent = session ? 'Profile' : 'Sign In';
       } catch (e) {}
     }
 

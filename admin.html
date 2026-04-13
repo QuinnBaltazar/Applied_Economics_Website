@@ -294,18 +294,21 @@
 
     function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function loadMembers() {
-      try { return JSON.parse(localStorage.getItem('aec-members')) || []; } catch { return []; }
+    function eKey(email) { return email.replace(/[.@#$[\]/]/g, '_'); }
+
+    // Verify admin status against Firebase — always authoritative
+    async function getIsAdmin(session) {
+      if (!session || !session.email) return false;
+      if (session.email === ADMIN_EMAIL) return true;   // owner is always admin
+      if (!FB_READY) return false;
+      const member = await fbGet('members/' + eKey(session.email));
+      return member != null && member.isAdmin === true;
     }
-    function saveMembers(list) { localStorage.setItem('aec-members', JSON.stringify(list)); }
-    function getMember(email) { return loadMembers().find(m => m.email === email) || null; }
-    function isAdminSession(session) {
-      return session && (session.email === ADMIN_EMAIL || session.isAdmin === true || getMember(session.email)?.isAdmin === true);
-    }
-    function updateSessionAdmin(email, isAdmin) {
+
+    function updateSessionAdmin(email, flag) {
       const session = getSession();
       if (!session || session.email !== email) return;
-      session.isAdmin = isAdmin;
+      session.isAdmin = flag;
       localStorage.setItem('aec-session', JSON.stringify(session));
     }
 
@@ -374,7 +377,13 @@
       const raw = await fbGet('members');
       if (!raw) { container.innerHTML = '<p class="empty-state">No registered members yet.</p>'; return; }
 
-      const members = Object.values(raw).filter(m => m && m.name).sort((a, b) => {
+      // Deduplicate by UCSB email — keep the record with the earlier joinedAt (the original)
+      const emailMap = new Map();
+      Object.values(raw).filter(m => m && m.name && m.email).forEach(m => {
+        const prev = emailMap.get(m.email);
+        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
+      });
+      const members = Array.from(emailMap.values()).sort((a, b) => {
         const aA = a.isAdmin === true || a.email === ADMIN_EMAIL;
         const bA = b.isAdmin === true || b.email === ADMIN_EMAIL;
         return (bA - aA) || (a.name||'').localeCompare(b.name||'');
@@ -515,12 +524,22 @@
     // ── Init ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async function() {
       const session = getSession();
-      const isAdmin = isAdminSession(session);
+
+      // Verify admin status against Firebase (authoritative source)
+      const isAdmin = await getIsAdmin(session);
 
       document.getElementById('access-denied').style.display = isAdmin ? 'none' : 'block';
       document.getElementById('admin-panel').style.display   = isAdmin ? 'block' : 'none';
 
       if (!isAdmin) return;
+
+      // Ensure the owner account always has isAdmin:true persisted in Firebase
+      if (FB_READY && session.email === ADMIN_EMAIL) {
+        const ownerRec = await fbGet('members/' + eKey(ADMIN_EMAIL));
+        if (ownerRec && !ownerRec.isAdmin) {
+          await fbSet('members/' + eKey(ADMIN_EMAIL), Object.assign({}, ownerRec, { isAdmin: true }));
+        }
+      }
 
       highlightCurrentNav();
       document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
@@ -528,6 +547,8 @@
       // Show Members nav link — admin is always signed in
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'inline-flex';
+      const sl = document.querySelector('.main-nav a[href="signin.html"]');
+      if (sl) sl.textContent = 'Profile';
 
       await renderAdminMembers();
 

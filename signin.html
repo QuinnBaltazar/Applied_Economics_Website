@@ -505,6 +505,8 @@
     function revealMemberNav() {
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'inline-flex';
+      const sl = document.querySelector('.main-nav a[href="signin.html"]');
+      if (sl) sl.textContent = 'Profile';
     }
 
     // ── UI helpers ────────────────────────────────────────────
@@ -541,9 +543,18 @@
         }
         fillWelcome(session, false);
         showStep('step-welcome');
-        // Sync from Firebase in background to pick up any admin changes
+        // Sync from Firebase in background to pick up any admin changes (e.g. newly promoted admin)
         getFirebaseMember(session.email).then(fb => {
-          if (fb) { const merged = { ...session, ...fb }; setSession(merged); fillWelcome(merged, false); }
+          if (fb) {
+            const merged = { ...session, ...fb };
+            setSession(merged);
+            fillWelcome(merged, false);
+            // Show admin nav if newly granted admin access
+            if (isAdminSession(merged)) {
+              const l = document.getElementById('admin-nav-link');
+              if (l) l.style.display = 'inline-flex';
+            }
+          }
         });
       }
     });
@@ -673,11 +684,34 @@
       }
       const btn = this.querySelector('button[type="submit"]');
       btn.disabled = true; btn.textContent = 'Saving…';
+
+      // Guard: re-check Firebase — they may have already registered (e.g. slow network on first check)
+      const existing = await getFirebaseMember(currentEmail);
+      if (existing) {
+        const member = { ...existing, lastSeen: Date.now() };
+        await saveFirebaseMember(member);
+        setSession(member);
+        revealMemberNav();
+        if (isAdminSession(member)) {
+          const l = document.getElementById('admin-nav-link');
+          if (l) l.style.display = 'inline-flex';
+        }
+        logActivity(member.email, member.name, 'signin', 'Signed in');
+        fillWelcome(member, false);
+        btn.disabled = false; btn.textContent = 'Complete Registration';
+        showStep('step-welcome');
+        return;
+      }
+
+      // Merge with any existing record so we never clobber fields like isAdmin
+      const base = await getFirebaseMember(currentEmail) || {};
       const member = {
+        ...base,
         email: currentEmail, name, subject, learn, goal,
         preferredEmail, field,
-        isAdmin: currentEmail === ADMIN_EMAIL,
-        joinedAt: Date.now(), lastSeen: Date.now()
+        isAdmin: base.isAdmin === true || currentEmail === ADMIN_EMAIL,
+        joinedAt: base.joinedAt || Date.now(),
+        lastSeen: Date.now()
       };
       await saveFirebaseMember(member);
       setSession(member);
@@ -699,6 +733,8 @@
       if (ml) ml.style.display = 'none';
       const al = document.getElementById('admin-nav-link');
       if (al) al.style.display = 'none';
+      const sl = document.querySelector('.main-nav a[href="signin.html"]');
+      if (sl) sl.textContent = 'Sign In';
       document.getElementById('email-input').value = '';
       setMsg('email-msg', '', 'info');
       showStep('step-email');

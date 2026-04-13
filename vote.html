@@ -660,6 +660,8 @@
         note.style.display = 'block';
         const ml = document.getElementById('members-nav-link');
         if (ml) ml.style.display = 'inline-flex';
+        const sl = document.querySelector('.main-nav a[href="signin.html"]');
+        if (sl) sl.textContent = 'Profile';
         if (isAdmin) {
           const link = document.getElementById('admin-nav-link');
           if (link) link.style.display = 'inline-flex';
