@@ -6,420 +6,253 @@
   <title>Sign In | UCSB Applied Economics Club</title>
   <style>
     :root {
-      --bg: #090F1A;
-      --surface: #0E1829;
-      --surface-soft: #12213A;
-      --panel: rgba(255,255,255,0.04);
-      --accent: #C4A448;
-      --accent-soft: #D4B55E;
-      --muted: rgba(255,255,255,0.72);
-      --text: #FFFFFF;
-      --border: rgba(255,255,255,0.08);
-      --shadow: 0 24px 60px rgba(0,0,0,0.26);
+      --bg:       #090F1A;
+      --surface:  #0E1829;
+      --navy:     #162438;
+      --gold:     #C4A448;
+      --gold-lt:  #D4B55E;
+      --steel:    #2B4A6F;
+      --text:     #FFFFFF;
+      --muted:    rgba(255,255,255,0.62);
+      --border:   rgba(255,255,255,0.07);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; color: var(--text); line-height: 1.6; background: var(--bg); overflow-x: hidden; }
 
-    body {
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
+    /* Subtle full-page glow behind the form */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(196,164,72,0.07) 0%, rgba(43,74,111,0.07) 40%, transparent 68%);
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .page {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 64px 0 0;
-      overflow-x: hidden;
-    }
+    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; }
 
     /* ── NAV ── */
     .topbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      width: 100%;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 clamp(20px, 4vw, 56px);
-      height: 64px;
-      background: rgba(9, 15, 26, 0.84);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
-      animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
+      background: rgba(9,15,26,0.78); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background .35s, box-shadow .35s, border-color .35s;
+      animation: navDown .55s cubic-bezier(.4,0,.2,1) both;
+    }
+    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .topbar.scrolled { background: rgba(9,15,26,.97); box-shadow: 0 2px 40px rgba(0,0,0,.45); border-color: rgba(196,164,72,.14); }
+    .brand { font-size: .78rem; font-weight: 800; color: #fff; letter-spacing: .22em; text-transform: uppercase; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: color .2s; }
+    .brand:hover { color: var(--gold); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
+    .main-nav a { position: relative; display: inline-flex; align-items: center; padding: 8px 13px; color: rgba(255,255,255,.65); text-decoration: none; font-size: .875rem; font-weight: 500; letter-spacing: .03em; border-radius: 8px; transition: color .2s, background .2s; }
+    .main-nav a::after { content: ''; position: absolute; bottom: 5px; left: 13px; right: 13px; height: 2px; background: var(--gold); border-radius: 2px; transform: scaleX(0); transition: transform .25s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    .main-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,.08); }
+
+    /* ── SHELL ── */
+    .signin-shell {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 52px 24px 80px;
     }
 
-    @keyframes navDown {
-      from { transform: translateY(-100%); opacity: 0; }
-      to   { transform: translateY(0); opacity: 1; }
-    }
-
-    .topbar.scrolled {
-      background: rgba(9, 15, 26, 0.98);
-      box-shadow: 0 2px 38px rgba(0,0,0,0.42);
-      border-color: rgba(196,164,72,0.15);
-    }
-
-    .brand {
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      text-decoration: none;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: color 0.2s ease;
-    }
-
-    .brand:hover { color: var(--accent); }
-
-    .main-nav {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .main-nav a {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 13px;
-      color: rgba(255,255,255,0.72);
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      border-radius: 10px;
-      transition: color 0.2s, background 0.2s;
-    }
-
-    .main-nav a::after {
-      content: '';
-      position: absolute;
-      bottom: 5px;
-      left: 13px; right: 13px;
-      height: 2px;
-      background: var(--accent);
-      border-radius: 2px;
-      transform: scaleX(0);
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      transform-origin: center;
-    }
-
-    .main-nav a:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.08);
-    }
-
-    .main-nav a:hover::after,
-    .main-nav a.active::after { transform: scaleX(1); }
-
-    .main-nav a.active {
-      color: #ffffff;
-      font-weight: 700;
-      background: rgba(196,164,72,0.12);
-    }
-
-    .hero-label {
-      display: inline-flex;
-      padding: 10px 16px;
-      border-radius: 999px;
-      background: rgba(196,164,72,0.14);
-      color: var(--accent);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-      max-width: fit-content;
-    }
-
-    .hero-title {
-      margin: 0 0 16px;
-      font-size: clamp(2rem, 4vw, 3.6rem);
-      line-height: 1.05;
-    }
-
-    .hero-copy {
-      color: rgba(255,255,255,0.78);
-      max-width: 670px;
-      font-size: 1rem;
-      line-height: 1.84;
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.75s ease, transform 0.75s ease;
-    }
-    .reveal.visible {
-      opacity: 1;
-      transform: none;
-    }
-
-    .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      padding: 32px;
-      margin: 32px 24px 24px;
-    }
-    .content-card { margin-bottom: 48px; }
-    .btn-primary, .btn-outline, .secondary-btn, .auth-btn, .auth-gate-btn, .link-btn { transition: transform 0.2s, filter 0.2s, background 0.2s, border-color 0.2s; }
-    .btn-primary:hover, .auth-btn:hover, .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.07); }
-    .btn-outline:hover, .secondary-btn:hover, .link-btn:hover { border-color: var(--accent); background: rgba(196,164,72,0.08); transform: translateY(-2px); }
-    input, textarea, select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; color: #fff; padding: 12px 16px; font: inherit; outline: none; transition: border-color 0.2s ease; }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-    @media (max-width: 760px) { .page { padding: 80px 16px 0; } .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate { margin: 24px 16px 32px; } }
-
-    /* ── Auth card ── */
-    .auth-card {
-      margin: 40px auto 60px;
-      padding: 40px 44px;
-      max-width: 540px;
-      background: rgba(7,22,48,0.96);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      box-shadow: 0 26px 60px rgba(0,0,0,0.2);
-    }
-
-    .auth-card h1 {
-      font-size: clamp(1.8rem, 3vw, 2.4rem);
-      margin-bottom: 10px;
-    }
-
-    .auth-card > div > p.subtitle {
-      color: rgba(255,255,255,0.78);
-      font-size: 0.97rem;
-      line-height: 1.7;
-      margin-bottom: 28px;
-    }
-
-    /* ── Form elements ── */
-    .auth-form {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .field-label {
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.58);
-    }
-
-    .req { color: var(--accent); }
-    .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.35); }
-
-    .auth-input,
-    .auth-textarea {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      color: #fff;
-      padding: 12px 16px;
-      font-size: 0.97rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-      width: 100%;
-    }
-
-    .auth-textarea {
-      resize: none;
-    }
-
-    .auth-input::placeholder,
-    .auth-textarea::placeholder {
-      color: rgba(255,255,255,0.32);
-    }
-
-    .auth-input:focus,
-    .auth-textarea:focus {
-      border-color: var(--accent);
-    }
-
-    .auth-input.error-field {
-      border-color: rgba(255,100,100,0.7);
-    }
-
-    /* Large centered code input */
-    .code-input {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: 0.3em;
+    /* ── INTRO ── */
+    .signin-intro {
       text-align: center;
-      padding: 16px;
+      margin-bottom: 38px;
+      max-width: 540px;
+      animation: fadeUp .7s cubic-bezier(.4,0,.2,1) .1s both;
+    }
+    .signin-eyebrow {
+      display: inline-flex; align-items: center;
+      padding: 6px 18px; border-radius: 999px;
+      background: rgba(196,164,72,0.12); color: var(--gold);
+      font-size: .7rem; font-weight: 700; letter-spacing: .3em; text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .signin-intro h1 {
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.08;
+      margin-bottom: 12px;
+    }
+    .signin-intro p { color: var(--muted); font-size: .97rem; line-height: 1.75; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── AUTH CARD ── */
+    .auth-card {
+      width: 100%; max-width: 520px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      padding: 44px 48px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(196,164,72,0.06);
+      position: relative; overflow: hidden;
+      animation: cardIn .7s cubic-bezier(.4,0,.2,1) .2s both;
+    }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+    /* Gold top accent line */
+    .auth-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), var(--gold-lt), var(--gold), transparent);
     }
 
-    /* ── Button ── */
+    /* ── STEP LOGO ── */
+    .step-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 26px;
+    }
+    .step-logo-mark {
+      width: 42px; height: 42px; border-radius: 13px;
+      background: rgba(196,164,72,0.1); border: 1px solid rgba(196,164,72,0.22);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.05rem; font-weight: 900; color: var(--gold);
+      font-family: Georgia, serif; letter-spacing: -1px; flex-shrink: 0;
+    }
+    .step-logo-text {
+      font-size: .72rem; font-weight: 700; letter-spacing: .2em;
+      text-transform: uppercase; color: rgba(255,255,255,0.38);
+    }
+
+    /* ── STEP HEADINGS ── */
+    .auth-card h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 8px; }
+    .subtitle { color: rgba(255,255,255,0.62); font-size: .95rem; line-height: 1.65; margin-bottom: 30px; }
+
+    /* ── CHOICE CARDS ── */
+    .feature-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    .feature-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: transform .25s, border-color .25s, background .25s;
+    }
+    .feature-card::before {
+      content: ''; display: block; width: 26px; height: 2px;
+      background: var(--gold); border-radius: 2px; margin-bottom: 2px;
+    }
+    .feature-card:hover { transform: translateY(-3px); border-color: rgba(196,164,72,0.28); background: rgba(196,164,72,0.04); }
+    .feature-card h3 { font-size: .97rem; font-weight: 700; color: #fff; margin: 0; }
+    .feature-card p { color: rgba(255,255,255,0.58); font-size: .86rem; line-height: 1.6; margin: 0; flex: 1; }
+
+    /* ── FORM ── */
+    .auth-form { display: flex; flex-direction: column; gap: 20px; }
+    .field-group { display: flex; flex-direction: column; gap: 7px; }
+    .field-label { font-size: .76rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,0.48); }
+    .req { color: var(--gold); }
+    .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.3); }
+    .auth-input, .auth-textarea {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 14px; color: #fff; padding: 13px 16px;
+      font-size: .97rem; font-family: inherit; outline: none; width: 100%;
+      transition: border-color .2s, background .2s;
+    }
+    .auth-textarea { resize: none; }
+    .auth-input::placeholder, .auth-textarea::placeholder { color: rgba(255,255,255,0.26); }
+    .auth-input:focus, .auth-textarea:focus { border-color: var(--gold); background: rgba(255,255,255,0.08); }
+    .auth-input.error-field { border-color: rgba(255,100,100,0.7); }
+    .code-input { font-size: 2.2rem; font-weight: 700; letter-spacing: .38em; text-align: center; padding: 18px 14px; }
+
+    /* ── BUTTONS ── */
     .auth-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 22px;
-      border-radius: 999px;
-      border: none;
-      background: var(--accent);
-      color: #031a40;
-      font-weight: 700;
-      font-size: 0.97rem;
-      font-family: inherit;
-      cursor: pointer;
-      transition: transform 0.2s, filter 0.2s;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 14px 24px; border-radius: 999px; border: none;
+      background: var(--gold); color: #090F1A;
+      font-weight: 700; font-size: .97rem; font-family: inherit; cursor: pointer;
+      transition: transform .2s, filter .2s, box-shadow .2s;
+      box-shadow: 0 8px 28px rgba(196,164,72,0.25);
     }
-
-    .auth-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
-    .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; filter: none; }
-
-    /* ── Link-style buttons ── */
-    .auth-links {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .auth-choice-grid {
-      display: grid;
-      gap: 18px;
-      margin-top: 24px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .auth-choice-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .auth-choice-card h2 {
-      margin: 0;
-      font-size: 1.1rem;
-      letter-spacing: 0.02em;
-    }
-    .auth-choice-card p {
-      margin: 0;
-      color: rgba(255,255,255,0.72);
-      line-height: 1.6;
-      font-size: 0.95rem;
-    }
-
-    @media (max-width: 760px) {
-      .auth-choice-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .link-btn {
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-family: inherit;
-      font-size: 0.9rem;
-      cursor: pointer;
-      padding: 0;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    .link-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .auth-sep { color: rgba(255,255,255,0.3); }
-
-    /* ── Messages ── */
-    .auth-msg {
-      font-size: 0.92rem;
-      min-height: 1.2em;
-    }
-
-    .auth-msg.error  { color: #ffb3b3; }
-    .auth-msg.success { color: #d0f4ff; }
-    .auth-msg.info   { color: rgba(255,255,255,0.65); }
-
+    .auth-btn:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 14px 36px rgba(196,164,72,0.32); }
+    .auth-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
     .secondary-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 11px 22px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: transparent;
-      color: rgba(255,255,255,0.65);
-      font-weight: 600;
-      font-size: 0.92rem;
-      font-family: inherit;
-      cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 22px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18);
+      background: transparent; color: rgba(255,255,255,0.65);
+      font-weight: 600; font-size: .92rem; font-family: inherit; cursor: pointer;
+      transition: border-color .2s, color .2s, background .2s;
     }
-    .secondary-btn:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
+    .secondary-btn:hover { border-color: rgba(255,255,255,0.4); color: #fff; background: rgba(255,255,255,0.04); }
+    .link-btn {
+      background: none; border: none; color: var(--gold);
+      font-family: inherit; font-size: .88rem; cursor: pointer;
+      padding: 0; text-decoration: underline; text-underline-offset: 3px;
+      opacity: .82; transition: opacity .2s;
+    }
+    .link-btn:hover { opacity: 1; }
+    .link-btn:disabled { opacity: .38; cursor: not-allowed; }
+    .auth-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .auth-sep { color: rgba(255,255,255,0.25); }
 
-    /* ── Profile card (welcome back) ── */
+    /* ── MESSAGES ── */
+    .auth-msg { font-size: .9rem; min-height: 1.2em; }
+    .auth-msg.error   { color: #ffb3b3; }
+    .auth-msg.success { color: #d0f4ff; }
+    .auth-msg.info    { color: rgba(255,255,255,0.58); }
+
+    .form-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 4px 0; }
+
+    /* ── PROFILE (welcome) ── */
+    .profile-avatar {
+      width: 68px; height: 68px; border-radius: 22px;
+      background: linear-gradient(135deg, rgba(196,164,72,0.22), rgba(43,74,111,0.38));
+      border: 1px solid rgba(196,164,72,0.28);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.55rem; font-weight: 900; color: var(--gold);
+      font-family: Georgia, serif; letter-spacing: -2px;
+      margin-bottom: 20px;
+    }
     .profile-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: 24px 0;
-      padding: 22px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
+      display: flex; flex-direction: column; gap: 0;
+      margin: 22px 0;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px; overflow: hidden;
     }
-
     .profile-row {
-      display: flex;
-      gap: 12px;
+      display: flex; align-items: baseline; gap: 14px;
+      padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,0.05);
     }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-label { font-size: .72rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,0.36); min-width: 68px; flex-shrink: 0; padding-top: 2px; }
+    .profile-value { color: rgba(255,255,255,0.92); font-size: .95rem; }
+    .welcome-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
 
-    .profile-label {
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.45);
-      min-width: 80px;
-      padding-top: 2px;
+    /* ── PERKS ── */
+    .signin-perks {
+      width: 100%; max-width: 520px; margin-top: 24px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      animation: fadeUp .7s cubic-bezier(.4,0,.2,1) .5s both;
     }
+    .perk-item {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 18px 14px; text-align: center;
+    }
+    .perk-item::before { content: ''; display: block; width: 22px; height: 2px; background: var(--gold); border-radius: 2px; margin: 0 auto 10px; }
+    .perk-title { font-size: .8rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .perk-desc { font-size: .74rem; color: rgba(255,255,255,0.42); line-height: 1.5; }
 
-    .profile-value {
-      color: rgba(255,255,255,0.92);
-      font-size: 0.97rem;
-    }
+    /* ── DIVIDER ── */
+    .gold-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(196,164,72,0.18), transparent); margin: 24px 0 0; width: 100%; max-width: 520px; }
 
-    /* ── Divider ── */
-    .form-divider {
-      border: none;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      margin: 4px 0;
-    }
+    /* ── FOOTER ── */
+    .signin-footer { text-align: center; color: rgba(255,255,255,0.22); font-size: .85rem; padding: 20px 24px 40px; width: 100%; max-width: 520px; }
+    .signin-footer strong { color: rgba(196,164,72,0.6); font-weight: 600; }
 
     .hidden { display: none; }
 
-    .footer {
-      margin: 0 24px 42px;
-      text-align: center;
-      color: rgba(255,255,255,0.45);
-      font-size: 0.9rem;
-    }
-
     @media (max-width: 600px) {
-      .auth-card { margin: 24px 16px 40px; padding: 28px 22px; }
+      .signin-shell { padding: 32px 16px 60px; }
+      .auth-card { padding: 32px 22px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .signin-perks { grid-template-columns: 1fr; }
+      .auth-card h1 { font-size: 1.6rem; }
     }
   </style>
 </head>
@@ -436,147 +269,208 @@
       <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
     </nav>
   </header>
+
   <main class="page">
+    <div class="signin-shell">
 
-    <section class="hero-block reveal" style="margin-top: 24px;">
-      <span class="hero-label">Access</span>
-      <h1 class="hero-title">Member sign in and account creation</h1>
-      <p class="hero-copy">Secure your UCSB member profile and access the club directory, voting tools, and executive resources with one seamless experience.</p>
-    </section>
+      <!-- Page intro -->
+      <div class="signin-intro">
+        <div class="signin-eyebrow">Member Portal</div>
+        <h1>Sign in to your account</h1>
+        <p>Access the member directory, cast your vote on upcoming topics, and stay connected with the AEC network at UCSB.</p>
+      </div>
 
-    <section class="auth-card reveal">
+      <!-- Auth card -->
+      <section class="auth-card">
 
-      <!-- STEP 1: Start -->
-      <div id="step-choice">
-        <h1>Welcome</h1>
-        <p class="subtitle">Choose whether to log in with your existing account or create a new UCSB member account.</p>
-        <div class="auth-choice-grid">
-          <div class="auth-choice-card">
-            <h2>Existing member</h2>
-            <p>Log in using your UCSB email and password to access member resources and the club directory.</p>
-            <button type="button" id="open-login-btn" class="auth-btn">Login</button>
+        <!-- STEP 1: Choice -->
+        <div id="step-choice">
+          <div class="step-logo">
+            <div class="step-logo-mark">AE</div>
+            <span class="step-logo-text">Applied Economics Club</span>
           </div>
-          <div class="auth-choice-card">
-            <h2>New member</h2>
-            <p>Create a UCSB member account to join the Applied Economics Club and vote on topics.</p>
-            <button type="button" id="open-signup-btn" class="auth-btn">Create Account</button>
+          <h1>Welcome</h1>
+          <p class="subtitle">Log in to your existing account or create a new UCSB member profile to get started.</p>
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h3>Existing member</h3>
+              <p>Sign in with your UCSB email and password to access your profile.</p>
+              <button type="button" id="open-login-btn" class="auth-btn">Login</button>
+            </div>
+            <div class="feature-card">
+              <h3>New member</h3>
+              <p>Create your UCSB account and join the applied economics network.</p>
+              <button type="button" id="open-signup-btn" class="auth-btn">Create Account</button>
+            </div>
           </div>
+        </div>
+
+        <!-- STEP 2: Login -->
+        <div id="step-login" class="hidden">
+          <div class="step-logo">
+            <div class="step-logo-mark">AE</div>
+            <span class="step-logo-text">Sign In</span>
+          </div>
+          <h1>Login</h1>
+          <p class="subtitle">Enter your UCSB email and password to sign in immediately.</p>
+          <form id="login-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="login-email-input">UCSB Email <span class="req">*</span></label>
+              <input type="email" id="login-email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="login-password-input">Password <span class="req">*</span></label>
+              <input type="password" id="login-password-input" class="auth-input" placeholder="Enter your password" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="auth-btn">Log In</button>
+            <p class="auth-msg" id="login-msg"></p>
+            <div class="auth-links">
+              <button type="button" id="back-to-choice-from-login" class="link-btn">&#8592; Back</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- STEP 3: Sign up -->
+        <div id="step-signup" class="hidden">
+          <div class="step-logo">
+            <div class="step-logo-mark">AE</div>
+            <span class="step-logo-text">Create Account</span>
+          </div>
+          <h1>Create Account</h1>
+          <p class="subtitle">Verify your @ucsb.edu email and create a password to secure your account.</p>
+          <form id="signup-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="signup-email-input">UCSB Email <span class="req">*</span></label>
+              <input type="email" id="signup-email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="signup-password-input">Password <span class="req">*</span></label>
+              <input type="password" id="signup-password-input" class="auth-input" placeholder="Create a password (min 6 chars)" autocomplete="new-password" />
+            </div>
+            <button type="submit" class="auth-btn">Continue</button>
+            <p class="auth-msg" id="signup-msg"></p>
+            <div class="auth-links">
+              <button type="button" id="back-to-choice-from-signup" class="link-btn">&#8592; Back</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- STEP 4: Email verification code -->
+        <div id="step-code" class="hidden">
+          <div class="step-logo">
+            <div class="step-logo-mark" style="font-size:1.3rem; font-family:inherit;">&#10003;</div>
+            <span class="step-logo-text">Email Verification</span>
+          </div>
+          <h1>Check your email</h1>
+          <p class="subtitle">We sent a 6-digit code to <strong id="display-email" style="color:#fff;"></strong>. It may take a moment to arrive.</p>
+          <form id="code-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="code-input">Verification Code</label>
+              <input type="text" id="code-input" class="auth-input code-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+            </div>
+            <button type="submit" class="auth-btn">Verify Code</button>
+            <p class="auth-msg" id="code-msg"></p>
+            <div class="auth-links">
+              <button type="button" id="resend-btn" class="link-btn">Resend code</button>
+              <span class="auth-sep">·</span>
+              <button type="button" id="change-email-btn" class="link-btn">Change email</button>
+            </div>
+            <p class="auth-msg info" id="resend-msg"></p>
+          </form>
+        </div>
+
+        <!-- STEP 5: New member registration form -->
+        <div id="step-new-member" class="hidden">
+          <div class="step-logo">
+            <div class="step-logo-mark">AE</div>
+            <span class="step-logo-text">New Member</span>
+          </div>
+          <h1>Join AEC</h1>
+          <p class="subtitle">You're verified — fill this out to complete your membership profile.</p>
+          <form id="new-member-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="nm-name">Full Name <span class="req">*</span></label>
+              <input type="text" id="nm-name" class="auth-input" placeholder="Your full name" maxlength="80" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="nm-subject">Area of Interest <span class="req">*</span></label>
+              <input type="text" id="nm-subject" class="auth-input" placeholder="e.g. Finance, Macroeconomics, Policy…" maxlength="80" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="nm-learn">What do you want to learn? <span class="req">*</span></label>
+              <textarea id="nm-learn" class="auth-textarea" placeholder="Topics, skills, or concepts you're hoping to develop through the club." maxlength="400" rows="3"></textarea>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="nm-goal">What do you want out of the club? <span class="req">*</span></label>
+              <textarea id="nm-goal" class="auth-textarea" placeholder="Networking, research experience, career prep, community…" maxlength="400" rows="3"></textarea>
+            </div>
+            <hr class="form-divider" />
+            <div class="field-group">
+              <label class="field-label" for="nm-email">Preferred Email <span class="req">*</span></label>
+              <input type="email" id="nm-email" class="auth-input" placeholder="Best email to reach you" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="nm-field">Field / Employer <span class="opt">(optional)</span></label>
+              <input type="text" id="nm-field" class="auth-input" placeholder="Where you work or what field you're entering" maxlength="100" />
+            </div>
+            <button type="submit" class="auth-btn">Complete Registration</button>
+            <p class="auth-msg" id="nm-msg"></p>
+          </form>
+        </div>
+
+        <!-- STEP 6: Welcome back / profile display -->
+        <div id="step-welcome" class="hidden">
+          <div class="profile-avatar">AE</div>
+          <h1 id="welcome-heading">Welcome back!</h1>
+          <p class="subtitle" id="welcome-sub">You're verified and signed in.</p>
+          <div class="profile-grid">
+            <div class="profile-row">
+              <span class="profile-label">Name</span>
+              <span id="p-name" class="profile-value"></span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Interest</span>
+              <span id="p-subject" class="profile-value"></span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Field</span>
+              <span id="p-field" class="profile-value"></span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Email</span>
+              <span id="p-email" class="profile-value"></span>
+            </div>
+          </div>
+          <div class="welcome-actions">
+            <a href="members.html" class="auth-btn" style="text-decoration:none;">View Members</a>
+            <button type="button" id="signout-btn" class="secondary-btn">Sign Out</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- What membership unlocks -->
+      <div class="signin-perks">
+        <div class="perk-item">
+          <div class="perk-title">Vote on Topics</div>
+          <div class="perk-desc">Shape what the club covers each session</div>
+        </div>
+        <div class="perk-item">
+          <div class="perk-title">Member Directory</div>
+          <div class="perk-desc">Connect with current members and alumni</div>
+        </div>
+        <div class="perk-item">
+          <div class="perk-title">Speaker Access</div>
+          <div class="perk-desc">Guests from finance and economics industries</div>
         </div>
       </div>
 
-      <!-- STEP 2: Login -->
-      <div id="step-login" class="hidden">
-        <h1>Login</h1>
-        <p class="subtitle">Enter your UCSB email and password to sign in immediately.</p>
-        <form id="login-form" class="auth-form" novalidate>
-          <div class="field-group">
-            <label class="field-label" for="login-email-input">UCSB Email <span class="req">*</span></label>
-            <input type="email" id="login-email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="login-password-input">Password <span class="req">*</span></label>
-            <input type="password" id="login-password-input" class="auth-input" placeholder="Enter your password" autocomplete="current-password" />
-          </div>
-          <button type="submit" class="auth-btn">Log In</button>
-          <p class="auth-msg" id="login-msg"></p>
-          <div class="auth-links">
-            <button type="button" id="back-to-choice-from-login" class="link-btn">Back</button>
-          </div>
-        </form>
-      </div>
+      <div class="gold-divider"></div>
+      <footer class="signin-footer">
+        <strong>UCSB Applied Economics Club</strong> &nbsp;&middot;&nbsp; Member portal
+      </footer>
 
-      <!-- STEP 3: Create account -->
-      <div id="step-signup" class="hidden">
-        <h1>Create Account</h1>
-        <p class="subtitle">Verify your @ucsb.edu email and create a password to secure your account.</p>
-        <form id="signup-form" class="auth-form" novalidate>
-          <div class="field-group">
-            <label class="field-label" for="signup-email-input">UCSB Email <span class="req">*</span></label>
-            <input type="email" id="signup-email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="signup-password-input">Password <span class="req">*</span></label>
-            <input type="password" id="signup-password-input" class="auth-input" placeholder="Create a password" autocomplete="new-password" />
-          </div>
-          <button type="submit" class="auth-btn">Continue</button>
-          <p class="auth-msg" id="signup-msg"></p>
-          <div class="auth-links">
-            <button type="button" id="back-to-choice-from-signup" class="link-btn">Back</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- STEP 4: Code -->
-      <div id="step-code" class="hidden">
-        <h1>Check Your Email</h1>
-        <p class="subtitle">We sent a 6-digit code to <strong id="display-email"></strong>. It may take a moment to arrive.</p>
-        <form id="code-form" class="auth-form" novalidate>
-          <div class="field-group">
-            <label class="field-label" for="code-input">Verification Code</label>
-            <input type="text" id="code-input" class="auth-input code-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
-          </div>
-          <button type="submit" class="auth-btn">Verify Code</button>
-          <p class="auth-msg" id="code-msg"></p>
-          <div class="auth-links">
-            <button type="button" id="resend-btn" class="link-btn">Resend code</button>
-            <span class="auth-sep">·</span>
-            <button type="button" id="change-email-btn" class="link-btn">Change email</button>
-          </div>
-          <p class="auth-msg info" id="resend-msg"></p>
-        </form>
-      </div>
-
-      <!-- STEP 3a: New member form -->
-      <div id="step-new-member" class="hidden">
-        <h1>Join AEC</h1>
-        <p class="subtitle">You're not in our system yet. Fill this out to complete your membership.</p>
-        <form id="new-member-form" class="auth-form" novalidate>
-          <div class="field-group">
-            <label class="field-label" for="nm-name">Full Name <span class="req">*</span></label>
-            <input type="text" id="nm-name" class="auth-input" placeholder="Your full name" maxlength="80" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="nm-subject">Area of Interest <span class="req">*</span></label>
-            <input type="text" id="nm-subject" class="auth-input" placeholder="e.g. Finance, Macroeconomics, Policy…" maxlength="80" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="nm-learn">What do you want to learn? <span class="req">*</span></label>
-            <textarea id="nm-learn" class="auth-textarea" placeholder="Topics, skills, or concepts you're hoping to develop through the club." maxlength="400" rows="3"></textarea>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="nm-goal">What do you want out of the club? <span class="req">*</span></label>
-            <textarea id="nm-goal" class="auth-textarea" placeholder="Networking, research experience, career prep, community…" maxlength="400" rows="3"></textarea>
-          </div>
-          <hr class="form-divider" />
-          <div class="field-group">
-            <label class="field-label" for="nm-email">Preferred Email <span class="req">*</span></label>
-            <input type="email" id="nm-email" class="auth-input" placeholder="Best email to reach you" />
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="nm-field">Field / Employer <span class="opt">(optional)</span></label>
-            <input type="text" id="nm-field" class="auth-input" placeholder="Where you work or what field you're interested in" maxlength="100" />
-          </div>
-          <button type="submit" class="auth-btn">Complete Registration</button>
-          <p class="auth-msg" id="nm-msg"></p>
-        </form>
-      </div>
-
-      <!-- STEP 3b: Welcome back -->
-      <div id="step-welcome" class="hidden">
-        <h1 id="welcome-heading">Welcome back!</h1>
-        <p class="subtitle" id="welcome-sub">You're verified and signed in.</p>
-        <div class="profile-grid">
-          <div class="profile-row"><span class="profile-label">Name</span><span id="p-name" class="profile-value"></span></div>
-          <div class="profile-row"><span class="profile-label">Interest</span><span id="p-subject" class="profile-value"></span></div>
-          <div class="profile-row"><span class="profile-label">Field</span><span id="p-field" class="profile-value"></span></div>
-          <div class="profile-row"><span class="profile-label">Email</span><span id="p-email" class="profile-value"></span></div>
-        </div>
-        <button type="button" id="signout-btn" class="secondary-btn" style="margin-top:20px;">Sign Out</button>
-      </div>
-
-    </section>
-
-    <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
+    </div>
   </main>
 
   <!--
@@ -714,6 +608,7 @@
     // ── Init ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async function() {
       highlightCurrentNav();
+
       const session = getSession();
       if (session) {
         revealMemberNav();

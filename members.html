@@ -101,8 +101,23 @@
     .cancel-member-btn { padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.65); font-size: 0.88rem; font-family: inherit; cursor: pointer; }
     .edit-msg { font-size: 0.88rem; color: #ffb3b3; min-height: 1em; }
 
+    /* Page glow */
+    body::before {
+      content: '';
+      position: fixed; top: 5%; left: 50%; transform: translateX(-50%);
+      width: 1000px; height: 700px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(43,74,111,0.13) 0%, rgba(196,164,72,0.04) 42%, transparent 68%);
+      pointer-events: none; z-index: 0;
+    }
+    .page { position: relative; z-index: 1; }
+
     .state-msg { text-align: center; padding: 60px 24px; color: rgba(255,255,255,0.4); font-size: 0.97rem; grid-column: 1/-1; }
-    .footer { margin: 0 24px 42px; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.9rem; }
+    .footer {
+      margin: 0 24px 44px; text-align: center;
+      color: rgba(255,255,255,0.25); font-size: .88rem;
+      border-top: 1px solid rgba(255,255,255,0.07); padding-top: 28px;
+    }
+    .footer strong { color: #C4A448; font-weight: 600; }
 
     @media (max-width: 760px) {
       .hero-block { margin: 24px 16px 12px; }
@@ -153,7 +168,9 @@
       </div>
     </div>
 
-    <footer class="footer">UCSB Applied Economics Club &mdash; member directory visible to verified members only.</footer>
+    <footer class="footer">
+      <strong>UCSB Applied Economics Club</strong> &nbsp;&middot;&nbsp; Member directory &middot; Visible to verified members only
+    </footer>
   </main>
   <script>
     const DB_URL      = 'https://applied-economics-club-default-rtdb.firebaseio.com';

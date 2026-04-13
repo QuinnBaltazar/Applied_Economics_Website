@@ -6,244 +6,184 @@
   <title>Board | UCSB Applied Economics Club</title>
   <style>
     :root {
-      --bg: #090F1A;
-      --surface: #0E1829;
-      --surface-soft: #12213A;
-      --panel: rgba(255,255,255,0.04);
-      --accent: #C4A448;
-      --accent-soft: #D4B55E;
-      --muted: rgba(255,255,255,0.72);
-      --text: #FFFFFF;
-      --border: rgba(255,255,255,0.08);
-      --shadow: 0 24px 60px rgba(0,0,0,0.26);
+      --bg:       #090F1A;
+      --surface:  #0E1829;
+      --navy:     #162438;
+      --gold:     #C4A448;
+      --gold-lt:  #D4B55E;
+      --steel:    #2B4A6F;
+      --text:     #FFFFFF;
+      --muted:    rgba(255,255,255,0.62);
+      --border:   rgba(255,255,255,0.07);
+      --shadow:   0 24px 60px rgba(0,0,0,0.26);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg); color: var(--text); line-height: 1.6; scroll-behavior: smooth; overflow-x: hidden; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    /* Subtle page glow */
+    body::before {
+      content: '';
+      position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
+      width: 1000px; height: 800px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(43,74,111,0.14) 0%, rgba(196,164,72,0.05) 40%, transparent 68%);
+      pointer-events: none; z-index: 0;
     }
 
-    body {
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      scroll-behavior: smooth;
-    }
-
-    .page {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 64px 0 0;
-      overflow-x: hidden;
-    }
+    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; position: relative; z-index: 1; overflow-x: hidden; }
 
     /* ── NAV ── */
     .topbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      width: 100%;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 clamp(20px, 4vw, 56px);
-      height: 64px;
-      background: rgba(9, 15, 26, 0.84);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
-      animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
+      background: rgba(9,15,26,0.78); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background .35s, box-shadow .35s, border-color .35s;
+      animation: navDown .55s cubic-bezier(.4,0,.2,1) both;
     }
+    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .topbar.scrolled { background: rgba(9,15,26,.97); box-shadow: 0 2px 40px rgba(0,0,0,.45); border-color: rgba(196,164,72,.14); }
+    .brand { font-size: .78rem; font-weight: 800; color: #fff; letter-spacing: .22em; text-transform: uppercase; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: color .2s; }
+    .brand:hover { color: var(--gold); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
+    .main-nav a { position: relative; display: inline-flex; align-items: center; padding: 8px 13px; color: rgba(255,255,255,.65); text-decoration: none; font-size: .875rem; font-weight: 500; letter-spacing: .03em; border-radius: 8px; transition: color .2s, background .2s; }
+    .main-nav a::after { content: ''; position: absolute; bottom: 5px; left: 13px; right: 13px; height: 2px; background: var(--gold); border-radius: 2px; transform: scaleX(0); transition: transform .25s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    .main-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,.08); }
 
-    @keyframes navDown {
-      from { transform: translateY(-100%); opacity: 0; }
-      to   { transform: translateY(0); opacity: 1; }
+    /* ── HERO ── */
+    .hero-section {
+      margin: 40px 24px 0;
+      padding: 44px 42px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 24px 24px 0;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; flex-wrap: wrap;
     }
-
-    .topbar.scrolled {
-      background: rgba(9, 15, 26, 0.98);
-      box-shadow: 0 2px 38px rgba(0,0,0,0.42);
-      border-color: rgba(196,164,72,0.15);
+    .hero-text { flex: 1; min-width: 280px; }
+    .hero-eyebrow {
+      display: inline-flex; padding: 6px 16px; border-radius: 999px;
+      background: rgba(196,164,72,0.12); color: var(--gold);
+      font-size: .7rem; font-weight: 700; letter-spacing: .28em; text-transform: uppercase;
+      margin-bottom: 16px;
     }
-
-    .brand {
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      text-decoration: none;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: color 0.2s ease;
-    }
-
-    .brand:hover { color: var(--accent); }
-
-    .main-nav {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .main-nav a {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 13px;
-      color: rgba(255,255,255,0.72);
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      border-radius: 10px;
-      transition: color 0.2s, background 0.2s;
-    }
-
-    .main-nav a::after {
-      content: '';
-      position: absolute;
-      bottom: 5px;
-      left: 13px; right: 13px;
-      height: 2px;
-      background: var(--accent);
-      border-radius: 2px;
-      transform: scaleX(0);
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      transform-origin: center;
-    }
-
-    .main-nav a:hover {
-      color: #ffffff;
-      background: rgba(255,255,255,0.08);
-    }
-
-    .main-nav a:hover::after,
-    .main-nav a.active::after { transform: scaleX(1); }
-
-    .main-nav a.active {
-      color: #ffffff;
-      font-weight: 700;
-      background: rgba(196,164,72,0.12);
-    }
-
-    .hero-label {
-      display: inline-flex;
-      padding: 10px 16px;
-      border-radius: 999px;
-      background: rgba(196,164,72,0.14);
-      color: var(--accent);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-      max-width: fit-content;
-    }
-
     .hero-title {
-      margin: 0 0 16px;
-      font-size: clamp(2rem, 4vw, 3.6rem);
-      line-height: 1.05;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.07;
+      margin-bottom: 14px;
+    }
+    .hero-copy { color: rgba(255,255,255,0.78); font-size: 1rem; line-height: 1.82; max-width: 600px; }
+
+    /* Stats widget */
+    .hero-stats {
+      display: flex; flex-direction: column; gap: 10px;
+      flex-shrink: 0;
+    }
+    .stat-pill {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 18px;
+      background: rgba(196,164,72,0.08); border: 1px solid rgba(196,164,72,0.16);
+      border-radius: 14px;
+      white-space: nowrap;
+    }
+    .stat-num { font-size: 1.5rem; font-weight: 800; color: var(--gold); line-height: 1; }
+    .stat-lbl { font-size: .74rem; font-weight: 600; color: rgba(255,255,255,0.52); letter-spacing: .06em; text-transform: uppercase; }
+
+    /* ── GOLD DIVIDER ── */
+    .gold-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(196,164,72,0.2), transparent);
+      margin: 36px 24px;
     }
 
-    .hero-copy {
-      color: rgba(255,255,255,0.78);
-      max-width: 670px;
-      font-size: 1rem;
-      line-height: 1.84;
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.75s ease, transform 0.75s ease;
-    }
-    .reveal.visible {
-      opacity: 1;
-      transform: none;
-    }
-
-    .board-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(196,164,72,0.22);
-      box-shadow: 0 26px 62px rgba(0,0,0,0.24);
+    /* ── BOARD GRID ── */
+    .board-grid {
+      display: grid; gap: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin: 0 24px 48px;
+      counter-reset: board-counter;
     }
 
     .board-card {
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate {
       background: var(--surface);
-      border: 1px solid var(--border);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 24px; padding: 30px 28px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.18);
+      transition: transform .25s, border-color .25s, box-shadow .25s;
+      position: relative; overflow: hidden;
+      counter-increment: board-counter;
+    }
+    /* Gold top bar */
+    .board-card::before {
+      content: '';
+      display: block; width: 32px; height: 2px;
+      background: var(--gold); border-radius: 2px;
+      margin-bottom: 20px;
+    }
+    /* Faint card number watermark */
+    .board-card::after {
+      content: counter(board-counter, decimal-leading-zero);
+      position: absolute; top: 18px; right: 22px;
+      font-size: 1.6rem; font-weight: 900;
+      color: rgba(196,164,72,0.08);
+      letter-spacing: -.04em;
+      pointer-events: none;
+    }
+    .board-card:hover { transform: translateY(-4px); border-color: rgba(196,164,72,0.24); box-shadow: 0 28px 64px rgba(0,0,0,0.24); }
+
+    .board-role {
+      display: inline-flex;
+      font-size: .74rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 10px;
+    }
+    .board-name { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 12px; }
+    .board-bio { color: rgba(255,255,255,0.75); font-size: .93rem; line-height: 1.75; }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      margin: 0 24px 52px;
+      padding: 38px 40px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 24px;
       box-shadow: var(--shadow);
-      padding: 32px;
-      margin: 32px 24px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap;
     }
-    .content-card { margin-bottom: 48px; }
-    .auth-card, .auth-gate { margin-top: 32px; }
-    .btn-primary, .btn-outline, .secondary-btn, .auth-btn, .auth-gate-btn, .link-btn { transition: transform 0.2s, filter 0.2s, background 0.2s, border-color 0.2s; }
-    .btn-primary:hover, .auth-btn:hover, .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.07); }
-    .btn-outline:hover, .secondary-btn:hover, .link-btn:hover { border-color: var(--accent); background: rgba(196,164,72,0.08); transform: translateY(-2px); }
-    input, textarea, select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; color: #fff; padding: 12px 16px; font: inherit; outline: none; transition: border-color 0.2s ease; }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-    @media (max-width: 760px) { .page { padding: 80px 16px 0; } .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate { margin: 24px 16px 32px; } }
-
-    .board-grid {
-      display: grid;
-      gap: 24px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      margin: 32px 24px 48px;
+    .cta-text h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -.02em; }
+    .cta-text p { color: rgba(255,255,255,0.65); font-size: .95rem; line-height: 1.65; }
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 14px 28px; border-radius: 999px;
+      background: var(--gold); color: #090F1A;
+      font-weight: 700; font-size: .95rem; text-decoration: none;
+      box-shadow: 0 8px 28px rgba(196,164,72,0.28);
+      transition: transform .2s, filter .2s, box-shadow .2s;
+      white-space: nowrap; flex-shrink: 0;
     }
+    .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 14px 36px rgba(196,164,72,0.36); }
 
-    .board-card {
-      background: rgba(7, 22, 48, 0.96);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
-      padding: 26px;
-      min-height: 240px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
-    }
-
-    .board-card span {
-      display: inline-block;
-      margin-bottom: 14px;
-      color: var(--accent);
-      font-size: 0.82rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .board-card h3 {
-      margin-bottom: 14px;
-      font-size: 1.3rem;
-      color: #ffffff;
-    }
-
-    .board-card p {
-      color: rgba(255, 255, 255, 0.84);
-      font-size: 1rem;
-      line-height: 1.75;
-    }
-
+    /* ── FOOTER ── */
     .footer {
-      margin: 0 24px 42px;
-      text-align: center;
-      color: rgba(255, 255, 255, 0.66);
-      font-size: 0.95rem;
+      margin: 0 24px 44px; text-align: center;
+      color: rgba(255,255,255,0.25); font-size: .88rem;
+      border-top: 1px solid var(--border); padding-top: 28px;
     }
+    .footer strong { color: var(--gold); font-weight: 600; }
 
-    @media (max-width: 760px) {
-      .board-grid {
-        margin: 24px 16px 36px;
-      }
+    /* ── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .75s ease, transform .75s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 640px) {
+      .hero-section { margin: 24px 16px 0; padding: 28px 22px; }
+      .board-grid { margin: 0 16px 40px; }
+      .cta-section { margin: 0 16px 44px; padding: 28px 22px; }
+      .footer { margin: 0 16px 40px; }
+      .hero-stats { flex-direction: row; flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -262,47 +202,75 @@
   </header>
   <main class="page">
 
-    <section class="hero-block reveal">
-      <span class="hero-label">Leadership</span>
-      <h1 class="hero-title">Executive board driving the club forward</h1>
-      <p class="hero-copy">Our board blends strategy, curriculum design, member engagement, and operations to keep the club moving with professional rigor and student energy.</p>
+    <!-- Hero -->
+    <section class="hero-section reveal">
+      <div class="hero-text">
+        <span class="hero-eyebrow">Leadership</span>
+        <h1 class="hero-title">The executive board driving AEC forward</h1>
+        <p class="hero-copy">Our board blends strategy, curriculum design, member engagement, and operations to keep the club moving with professional rigor and student energy.</p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-pill">
+          <span class="stat-num">6</span>
+          <span class="stat-lbl">Board Members</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-num">SP</span>
+          <span class="stat-lbl">Spring 2025</span>
+        </div>
+      </div>
     </section>
 
+    <div class="gold-divider"></div>
+
+    <!-- Board cards -->
     <section class="board-grid reveal">
       <div class="board-card">
-        <span>President</span>
-        <h3>Samuel Millen</h3>
-        <p>Samuel leads overall club management and executive leadership, guiding strategy, operations, and member growth while keeping every initiative aligned with our mission.</p>
+        <span class="board-role">President</span>
+        <div class="board-name">Samuel Millen</div>
+        <p class="board-bio">Samuel leads overall club management and executive leadership, guiding strategy, operations, and member growth while keeping every initiative aligned with our mission.</p>
       </div>
       <div class="board-card">
-        <span>VP of Curriculum and Website Development</span>
-        <h3>Quinn Baltazar</h3>
-        <p>Quinn oversees curriculum design and website development, creating engaging programming and ensuring the club’s online presence supports member learning and event coordination.</p>
+        <span class="board-role">VP of Curriculum &amp; Website</span>
+        <div class="board-name">Quinn Baltazar</div>
+        <p class="board-bio">Quinn oversees curriculum design and website development, creating engaging programming and ensuring the club's online presence supports member learning and event coordination.</p>
       </div>
       <div class="board-card">
-        <span>Director of Events and Outreach</span>
-        <h3>Atticus Gonzalez</h3>
-        <p>Atticus leads event planning and outreach initiatives to connect members with industry speakers, workshops, and campus partnerships.</p>
+        <span class="board-role">Director of Events &amp; Outreach</span>
+        <div class="board-name">Atticus Gonzalez</div>
+        <p class="board-bio">Atticus leads event planning and outreach initiatives to connect members with industry speakers, workshops, and campus partnerships.</p>
       </div>
       <div class="board-card">
-        <span>Director of Research and Analytics</span>
-        <h3>Luca Oliveria</h3>
-        <p>Luca drives research efforts and analytics projects, turning economic insights into club learning opportunities and member resources.</p>
+        <span class="board-role">Director of Research &amp; Analytics</span>
+        <div class="board-name">Luca Oliveria</div>
+        <p class="board-bio">Luca drives research efforts and analytics projects, turning economic insights into club learning opportunities and member resources.</p>
       </div>
       <div class="board-card">
-        <span>Director of Strategy and Partnerships</span>
-        <h3>Aidan Middleton</h3>
-        <p>Aidan shapes strategic initiatives and partnerships, helping the club build meaningful collaborations and long-term growth.</p>
+        <span class="board-role">Director of Strategy &amp; Partnerships</span>
+        <div class="board-name">Aidan Middleton</div>
+        <p class="board-bio">Aidan shapes strategic initiatives and partnerships, helping the club build meaningful collaborations and long-term growth.</p>
       </div>
       <div class="board-card">
-        <span>Director of Operations and Logistics</span>
-        <h3>Kristofer Kusalo</h3>
-        <p>Kristofer manages the operational side of club activities, ensuring events and programs run smoothly for members and leaders.</p>
+        <span class="board-role">Director of Operations &amp; Logistics</span>
+        <div class="board-name">Kristofer Kusalo</div>
+        <p class="board-bio">Kristofer manages the operational side of club activities, ensuring events and programs run smoothly for members and leaders.</p>
       </div>
     </section>
 
-    <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
+    <!-- CTA -->
+    <section class="cta-section reveal">
+      <div class="cta-text">
+        <h2>Interested in joining the club?</h2>
+        <p>Create your member profile, vote on upcoming topics, and connect with the AEC network at UCSB.</p>
+      </div>
+      <a href="signin.html" class="btn-primary">Join AEC</a>
+    </section>
+
+    <footer class="footer">
+      <strong>UCSB Applied Economics Club</strong> &nbsp;&middot;&nbsp; Student-led economics education at UC Santa Barbara
+    </footer>
   </main>
+
   <script>
     window.addEventListener('scroll', function() {
       document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
@@ -331,6 +299,13 @@
     document.addEventListener('DOMContentLoaded', function() {
       highlightCurrentNav();
       updateAdminLinkVisibility();
+      var reveals = document.querySelectorAll('.reveal');
+      var observer = new IntersectionObserver(function(entries, obs) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) { entry.target.classList.add('visible'); obs.unobserve(entry.target); }
+        });
+      }, { threshold: 0.1 });
+      reveals.forEach(function(el) { observer.observe(el); });
     });
   </script>
 </body>

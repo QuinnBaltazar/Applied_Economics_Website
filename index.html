@@ -299,8 +299,16 @@
       <div class="hero-logo-wrap">
         <svg class="hero-logo-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <!-- Arc path for the curved "APPLIED ECONOMICS CLUB" text -->
+            <!-- Top arc: clockwise (sweep=1) from left→top→right -->
             <path id="sealTopArc" d="M 18,130 A 112,112 0 0,1 242,130"/>
+            <!-- Bottom arc: counter-clockwise (sweep=0) from left→bottom→right
+                 Using r=116 so baseline sits between the two rings at the bottom -->
+            <path id="sealBottomArc" d="M 14,130 A 116,116 0 0,0 246,130"/>
+            <!-- Arrowhead marker for the trend line -->
+            <marker id="trendArrow" markerWidth="7" markerHeight="7"
+                    refX="6" refY="3.5" orient="auto">
+              <polygon points="0 0, 7 3.5, 0 7" fill="#C4A448"/>
+            </marker>
           </defs>
 
           <!-- Cream seal background -->
@@ -321,7 +329,6 @@
           </text>
 
           <!-- "UCSB" along the bottom arc in gold -->
-          <path id="sealBottomArc" d="M 18,130 A 112,112 0 0,1 242,130" />
           <text fill="#C4A448"
                 font-family="Inter, system-ui, -apple-system, sans-serif"
                 font-size="11" font-weight="700" letter-spacing="3.2">
@@ -337,16 +344,10 @@
                 font-size="94" font-weight="900"
                 fill="#2B4A6F" letter-spacing="-6">AE</text>
 
-          <!-- Gold zigzag stock trend line -->
-          <path d="M72 170 L96 146 L118 156 L140 124 L162 140 L184 108"
-                stroke="#C4A448" stroke-width="6" fill="none"
-                stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="72" cy="170" r="4" fill="#C4A448"/>
-          <circle cx="96" cy="146" r="4" fill="#C4A448"/>
-          <circle cx="118" cy="156" r="4" fill="#C4A448"/>
-          <circle cx="140" cy="124" r="4" fill="#C4A448"/>
-          <circle cx="162" cy="140" r="4" fill="#C4A448"/>
-          <circle cx="184" cy="108" r="4" fill="#C4A448"/>
+          <!-- Thin gold upward market trend line with arrowhead -->
+          <line x1="76" y1="167" x2="183" y2="103"
+                stroke="#C4A448" stroke-width="2" stroke-linecap="round"
+                marker-end="url(#trendArrow)"/>
         </svg>
       </div>
 

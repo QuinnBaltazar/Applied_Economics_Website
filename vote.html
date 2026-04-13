@@ -420,25 +420,69 @@
       border-color: var(--accent);
     }
 
+    /* Page glow */
+    body::before {
+      content: '';
+      position: fixed; top: 5%; left: 50%; transform: translateX(-50%);
+      width: 1000px; height: 700px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(43,74,111,0.14) 0%, rgba(196,164,72,0.05) 42%, transparent 68%);
+      pointer-events: none; z-index: 0;
+    }
+    .page { position: relative; z-index: 1; }
+
+    /* Hero block above the vote card */
+    .hero-block {
+      margin: 40px 24px 0;
+      padding: 40px 42px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 24px 24px 0;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+    }
+    .hero-eyebrow {
+      display: inline-flex; padding: 6px 16px; border-radius: 999px;
+      background: rgba(196,164,72,0.12); color: var(--accent);
+      font-size: .7rem; font-weight: 700; letter-spacing: .28em; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .hero-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.07;
+      margin-bottom: 12px; color: #fff;
+    }
+    .hero-copy { color: rgba(255,255,255,0.75); font-size: .97rem; line-height: 1.8; max-width: 640px; }
+
+    .gold-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(196,164,72,0.2), transparent);
+      margin: 28px 24px;
+    }
+
     h1 {
-      font-size: clamp(2.8rem, 4vw, 4.6rem);
-      margin-bottom: 18px;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      margin-bottom: 14px;
+      letter-spacing: -.02em;
     }
 
     p {
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.85);
       font-size: 1rem;
       line-height: 1.8;
     }
 
     .footer {
-      margin: 32px 24px 42px;
+      margin: 32px 24px 44px;
       text-align: center;
-      color: rgba(255, 255, 255, 0.66);
-      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.25);
+      font-size: .88rem;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 28px;
     }
+    .footer strong { color: var(--accent); font-weight: 600; }
 
     @media (max-width: 760px) {
+      .hero-block { margin: 24px 16px 0; padding: 26px 20px; }
       .content-card {
         margin: 24px 16px 36px;
         padding: 28px;
@@ -461,8 +505,17 @@
   </header>
   <main class="page">
 
+    <!-- Hero section -->
+    <section class="hero-block">
+      <span class="hero-eyebrow">Topic Vote</span>
+      <h1 class="hero-title">Shape the next session</h1>
+      <p class="hero-copy">Every member gets one vote. Select the topic you want the club to cover next — your choice directly determines our next lecture and the industry speaker we bring in.</p>
+    </section>
+
+    <div class="gold-divider"></div>
+
     <section class="vote-card">
-      <h1>Vote on Next Topic</h1>
+      <h1>Cast Your Vote</h1>
       <p id="session-note" class="vote-note" style="display:none;"></p>
       <p>One vote per member. Select the topic you want the club to cover next, then submit. Your choice helps shape the next lecture and industry speaker session.</p>
 
@@ -549,7 +602,9 @@
       </form>
     </section>
 
-    <footer class="footer">Built for the Applied Economics Club — modern, clean, and ready for market-driven student leadership.</footer>
+    <footer class="footer">
+      <strong>UCSB Applied Economics Club</strong> &nbsp;&middot;&nbsp; One vote per member &middot; Results update live
+    </footer>
   </main>
   <script>
     // ── Firebase Config ───────────────────────────────────────
