@@ -14,25 +14,61 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { min-height: 100vh; background: var(--bg); color: var(--text); line-height: 1.6; }
-    .page { max-width: 1080px; margin: 0 auto; overflow-x: hidden; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; overflow-x: hidden; }
 
+    /* ── NAV ── */
     .topbar {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 12px; padding: 24px 24px 16px; text-align: center;
-      background: rgba(3,26,64,0.96); backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      position: sticky; top: 0; z-index: 20;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      width: 100%;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px);
+      height: 64px;
+      background: rgba(3, 26, 64, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
     }
-    .brand { font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none; }
-    .main-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    @keyframes navDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+    .topbar.scrolled {
+      background: rgba(3, 26, 64, 0.97);
+      box-shadow: 0 2px 40px rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .brand {
+      font-size: 0.85rem; font-weight: 800; color: #ffffff;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      transition: color 0.2s ease;
+    }
+    .brand:hover { color: var(--accent); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
     .main-nav a {
-      display: inline-flex; align-items: center; padding: 10px 18px;
-      color: rgba(255,255,255,0.92); background: rgba(255,255,255,0.08);
-      border-radius: 999px; text-decoration: none; font-size: 0.95rem;
-      letter-spacing: 0.04em; transition: background 0.2s, transform 0.2s;
+      position: relative; display: inline-flex; align-items: center;
+      padding: 8px 13px; color: rgba(255,255,255,0.72);
+      text-decoration: none; font-size: 0.875rem; font-weight: 500;
+      letter-spacing: 0.03em; border-radius: 8px;
+      transition: color 0.2s ease, background 0.2s ease;
     }
-    .main-nav a:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
-    .main-nav a.active { background: rgba(255,255,255,0.95); color: #031a40; font-weight: 700; }
+    .main-nav a::after {
+      content: ''; position: absolute; bottom: 5px;
+      left: 13px; right: 13px; height: 2px;
+      background: var(--accent); border-radius: 2px;
+      transform: scaleX(0);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: center;
+    }
+    .main-nav a:hover { color: #ffffff; background: rgba(255,255,255,0.06); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #ffffff; font-weight: 700; background: rgba(112,177,255,0.1); }
 
     .card {
       margin: 32px 24px 24px; padding: 34px;
@@ -79,6 +115,44 @@
     }
     .delete-topic-btn:hover { background: rgba(255,80,80,0.12); border-color: rgba(255,80,80,0.7); }
 
+    /* ── Activity log ── */
+    .activity-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-type {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+    }
+    .activity-type.join    { background: rgba(100,220,140,0.15); color: #80e6a0; }
+    .activity-type.signin  { background: rgba(112,177,255,0.12); color: var(--accent); }
+    .activity-type.vote    { background: rgba(255,200,80,0.12);  color: #ffd970; }
+    .activity-type.topic_submit { background: rgba(180,120,255,0.12); color: #c89fff; }
+    .activity-type.card_edit    { background: rgba(255,150,80,0.12);  color: #ffb060; }
+    .activity-info { flex: 1; }
+    .activity-who  { font-size: 0.9rem; font-weight: 600; }
+    .activity-detail { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-top: 1px; }
+    .activity-time { font-size: 0.75rem; color: rgba(255,255,255,0.3); white-space: nowrap; flex-shrink: 0; margin-top: 3px; }
+
+    /* ── Member rows ── */
+    .member-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .member-row:last-child { border-bottom: none; }
+    .member-row-info { flex: 1; min-width: 0; }
+    .member-row-name { font-weight: 600; font-size: 0.97rem; }
+    .member-row-meta { font-size: 0.82rem; color: rgba(255,255,255,0.48); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .member-row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .admin-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: rgba(112,177,255,0.15); color: var(--accent); }
+    .promote-btn { background: transparent; border: 1px solid rgba(100,220,140,0.4); color: rgba(100,220,140,0.9); border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s; white-space: nowrap; }
+    .promote-btn:hover { background: rgba(100,220,140,0.1); border-color: rgba(100,220,140,0.8); }
+    .revoke-btn { background: transparent; border: 1px solid rgba(255,160,80,0.4); color: rgba(255,160,80,0.9); border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-family: inherit; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .revoke-btn:hover { background: rgba(255,160,80,0.1); }
+    .remove-member-btn { background: transparent; border: 1px solid rgba(255,80,80,0.4); color: rgba(255,120,120,0.8); border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-family: inherit; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .remove-member-btn:hover { background: rgba(255,80,80,0.12); }
+
     /* ── Reset buttons ── */
     .reset-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     .reset-btn {
@@ -116,19 +190,19 @@
   </style>
 </head>
 <body>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="index.html">UCSB Applied Economics Club</a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="vote.html">Vote</a>
+      <a href="signin.html">Sign In</a>
+      <a href="topics.html">Topics</a>
+      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="board.html">Board</a>
+      <a href="admin.html">Admin</a>
+    </nav>
+  </header>
   <main class="page">
-    <header class="topbar">
-      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
-      <nav class="main-nav">
-        <a href="index.html">Home</a>
-        <a href="vote.html">Voting</a>
-        <a href="signin.html">Sign In</a>
-        <a href="topics.html">Topics Covered</a>
-        <a href="members.html">Members</a>
-        <a href="board.html">Board</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-    </header>
 
     <!-- Access denied state -->
     <div id="access-denied" class="card" style="display:none;">
@@ -157,9 +231,16 @@
         <div id="custom-topics-list"></div>
       </div>
 
+      <!-- Members management -->
       <div class="admin-section">
-        <h2>Admin Member Control</h2>
+        <h2>Members</h2>
         <div id="admin-members-list"></div>
+      </div>
+
+      <!-- Activity log -->
+      <div class="admin-section">
+        <h2>Recent Activity</h2>
+        <div id="activity-log"></div>
       </div>
 
       <!-- Reset controls -->
@@ -199,6 +280,17 @@
       'Venture Capital','Wealth Management','Trading',
       'Current Market Bull and Bear Cases','Investment Banking'
     ];
+
+    window.addEventListener('scroll', function() {
+      document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
+    }, { passive: true });
+
+    function highlightCurrentNav() {
+      var page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(function(a) {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
+    }
 
     function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -276,58 +368,107 @@
       });
     }
 
-    function renderAdminMembers() {
-      const members = loadMembers().sort((a, b) => {
-        const aAdmin = a.isAdmin === true || a.email === ADMIN_EMAIL;
-        const bAdmin = b.isAdmin === true || b.email === ADMIN_EMAIL;
-        return (bAdmin - aAdmin) || a.name.localeCompare(b.name);
-      });
+    async function renderAdminMembers() {
       const container = document.getElementById('admin-members-list');
-      if (!members.length) {
-        container.innerHTML = '<p class="empty-state">No registered members found.</p>';
+      container.innerHTML = '<p class="empty-state">Loading members...</p>';
+      const raw = await fbGet('members');
+      if (!raw) { container.innerHTML = '<p class="empty-state">No registered members yet.</p>'; return; }
+
+      const members = Object.values(raw).filter(m => m && m.name).sort((a, b) => {
+        const aA = a.isAdmin === true || a.email === ADMIN_EMAIL;
+        const bA = b.isAdmin === true || b.email === ADMIN_EMAIL;
+        return (bA - aA) || (a.name||'').localeCompare(b.name||'');
+      });
+
+      if (!members.length) { container.innerHTML = '<p class="empty-state">No registered members yet.</p>'; return; }
+      container.innerHTML = '';
+
+      members.forEach(member => {
+        const isAdminMember = member.email === ADMIN_EMAIL || member.isAdmin === true;
+        const isOwnerAccount = member.email === ADMIN_EMAIL;
+        const row = document.createElement('div');
+        row.className = 'member-row';
+        row.innerHTML =
+          '<div class="member-row-info">' +
+            '<div class="member-row-name">' + escapeHtml(member.name) +
+              (isAdminMember ? ' <span class="admin-tag">Admin</span>' : '') + '</div>' +
+            '<div class="member-row-meta">' + escapeHtml(member.email) +
+              (member.subject ? ' &nbsp;&middot;&nbsp; ' + escapeHtml(member.subject) : '') +
+              (member.joinedAt ? ' &nbsp;&middot;&nbsp; Joined ' + new Date(member.joinedAt).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="member-row-actions"></div>';
+
+        const actions = row.querySelector('.member-row-actions');
+
+        if (!isOwnerAccount) {
+          const toggleBtn = document.createElement('button');
+          toggleBtn.className = isAdminMember ? 'revoke-btn' : 'promote-btn';
+          toggleBtn.textContent = isAdminMember ? 'Revoke Admin' : 'Make Admin';
+          toggleBtn.addEventListener('click', async () => {
+            if (!confirm((isAdminMember ? 'Revoke admin access for ' : 'Grant admin access to ') + member.name + '?')) return;
+            const updated = Object.assign({}, member, { isAdmin: !isAdminMember });
+            await fbSet('members/' + eKey(member.email), updated);
+            updateSessionAdmin(member.email, !isAdminMember);
+            setMsg('Updated admin status for ' + member.name + '.');
+            await renderAdminMembers();
+          });
+          actions.appendChild(toggleBtn);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-member-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', async () => {
+            if (!confirm('Permanently remove ' + member.name + ' from the members list?')) return;
+            await fbDelete('members/' + eKey(member.email));
+            setMsg(member.name + ' removed.');
+            await renderAdminMembers();
+          });
+          actions.appendChild(removeBtn);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    function renderActivityLog(entries) {
+      const container = document.getElementById('activity-log');
+      if (!entries || !entries.length) {
+        container.innerHTML = '<p class="empty-state">No activity recorded yet.</p>';
         return;
       }
       container.innerHTML = '';
-      members.forEach(member => {
-        const tr = document.createElement('div');
-        tr.className = 'topic-row';
-        const isAdminMember = member.email === ADMIN_EMAIL || member.isAdmin === true;
-        tr.innerHTML = `
-          <div class="topic-row-info">
-            <div class="topic-row-name">${escapeHtml(member.name)} <span style="font-size:0.78rem; color:rgba(255,255,255,0.6);">(${escapeHtml(member.email)})</span></div>
-            <div class="topic-row-meta">${escapeHtml(member.subject || 'Member')} · ${isAdminMember ? 'Admin' : 'Member'}</div>
-          </div>
-          <div>
-            <button class="delete-topic-btn admin-toggle-btn" data-email="${escapeHtml(member.email)}">${isAdminMember ? 'Revoke Admin' : 'Make Admin'}</button>
-          </div>
-        `;
-        const btn = tr.querySelector('.admin-toggle-btn');
-        btn.addEventListener('click', () => {
-          if (member.email === ADMIN_EMAIL) return;
-          const confirmed = confirm(`${isAdminMember ? 'Revoke admin access for' : 'Grant admin access to'} ${member.name}?`);
-          if (!confirmed) return;
-          const list = loadMembers();
-          const idx = list.findIndex(m => m.email === member.email);
-          if (idx >= 0) {
-            list[idx].isAdmin = !isAdminMember;
-            saveMembers(list);
-            updateSessionAdmin(member.email, !isAdminMember);
-            renderAdminMembers();
-            setMsg(`Updated admin status for ${member.name}.`);
-          }
-        });
-        container.appendChild(tr);
+      entries.slice(0, 60).forEach(e => {
+        const row = document.createElement('div');
+        row.className = 'activity-row';
+        const typeLabel = { join:'Join', signin:'Sign In', vote:'Vote', topic_submit:'Topic', card_edit:'Edit' }[e.type] || e.type;
+        const timeStr = e.at ? new Date(e.at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        row.innerHTML =
+          '<span class="activity-type ' + escapeHtml(e.type||'') + '">' + escapeHtml(typeLabel) + '</span>' +
+          '<div class="activity-info">' +
+            '<div class="activity-who">' + escapeHtml(e.name||e.email||'Unknown') +
+              ' <span style="font-size:0.75rem;color:rgba(255,255,255,0.35);">(' + escapeHtml(e.email||'') + ')</span></div>' +
+            '<div class="activity-detail">' + escapeHtml(e.detail||'') + '</div>' +
+          '</div>' +
+          '<div class="activity-time">' + escapeHtml(timeStr) + '</div>';
+        container.appendChild(row);
       });
     }
 
     async function refresh() {
-      const [rawCounts, rawCustom] = await Promise.all([
-        fbGet('vote-counts'), fbGet('custom-topics')
+      const [rawCounts, rawCustom, rawActivity] = await Promise.all([
+        fbGet('vote-counts'), fbGet('custom-topics'), fbGet('activity')
       ]);
       const counts = rawCounts || {};
       const topics = rawCustom ? Object.entries(rawCustom).map(([k,v]) => ({ key:k,...v })) : [];
       renderCounts(counts);
       renderCustomTopics(topics);
+
+      // Activity log — sort newest first
+      const actEntries = rawActivity
+        ? Object.values(rawActivity).sort((a,b) => (b.at||0)-(a.at||0))
+        : [];
+      renderActivityLog(actEntries);
     }
 
     // ── Reset handlers ────────────────────────────────────────
@@ -383,7 +524,12 @@
 
       highlightCurrentNav();
       document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
-      renderAdminMembers();
+
+      // Show Members nav link — admin is always signed in
+      const ml = document.getElementById('members-nav-link');
+      if (ml) ml.style.display = 'inline-flex';
+
+      await renderAdminMembers();
 
       if (!FB_READY) {
         setMsg('Firebase not configured — set DB_URL in admin.html and vote.html to enable live data.', true);

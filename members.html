@@ -11,391 +11,259 @@
       --accent: #70b1ff;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg); color: var(--text); line-height: 1.6; scroll-behavior: smooth; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; overflow-x: hidden; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      scroll-behavior: smooth;
-    }
-
-    .page {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 0;
-      overflow-x: hidden;
-    }
-
+    /* ── NAV ── */
     .topbar {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      padding: 24px 24px 16px;
-      text-align: center;
-      width: 100%;
-      background: rgba(3, 26, 64, 0.96);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      position: sticky;
-      top: 0;
-      z-index: 20;
+      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
+      background: rgba(3,26,64,0.72); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      animation: navDown 0.5s cubic-bezier(0.4,0,0.2,1) both;
     }
+    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .topbar.scrolled { background: rgba(3,26,64,0.97); box-shadow: 0 2px 40px rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.1); }
+    .brand { font-size: 0.85rem; font-weight: 800; color: #fff; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: color 0.2s; }
+    .brand:hover { color: var(--accent); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
+    .main-nav a { position: relative; display: inline-flex; align-items: center; padding: 8px 13px; color: rgba(255,255,255,0.72); text-decoration: none; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.03em; border-radius: 8px; transition: color 0.2s, background 0.2s; }
+    .main-nav a::after { content: ''; position: absolute; bottom: 5px; left: 13px; right: 13px; height: 2px; background: var(--accent); border-radius: 2px; transform: scaleX(0); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); transform-origin: center; }
+    .main-nav a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(112,177,255,0.1); }
 
-    .brand {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      line-height: 1.1;
-      text-decoration: none;
-    }
+    /* ── AUTH GATE ── */
+    .auth-gate { margin: 60px auto; padding: 56px 44px; max-width: 480px; text-align: center; background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; box-shadow: 0 26px 60px rgba(0,0,0,0.2); }
+    .auth-gate-icon { font-size: 3rem; margin-bottom: 20px; display: block; }
+    .auth-gate h2 { font-size: 1.8rem; margin-bottom: 12px; letter-spacing: -0.02em; }
+    .auth-gate p { color: rgba(255,255,255,0.72); font-size: 0.97rem; line-height: 1.7; margin-bottom: 28px; }
+    .auth-gate-btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 30px; border-radius: 999px; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.97rem; text-decoration: none; transition: transform 0.2s, filter 0.2s; }
+    .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
 
-    .main-nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-    }
+    /* ── PAGE HEADER ── */
+    .hero-block { margin: 32px 24px 12px; padding: 34px; background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.12); border-radius: 28px; box-shadow: 0 26px 60px rgba(0,0,0,0.18); display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .hero-block-text h1 { font-size: clamp(2.4rem,4vw,3.8rem); margin-bottom: 10px; letter-spacing: -0.03em; }
+    .hero-block-text p { color: rgba(255,255,255,0.82); font-size: 1rem; line-height: 1.75; max-width: 600px; }
+    .member-count-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 88px; padding: 18px; background: rgba(112,177,255,0.1); border: 1px solid rgba(112,177,255,0.2); border-radius: 20px; flex-shrink: 0; }
+    .member-count-badge strong { font-size: 2.4rem; font-weight: 800; color: var(--accent); line-height: 1; }
+    .member-count-badge span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 4px; }
 
-    .main-nav a {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 18px;
-      color: rgba(255, 255, 255, 0.92);
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 999px;
-      text-decoration: none;
-      font-size: 0.95rem;
-      letter-spacing: 0.04em;
-      transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .main-nav a:hover {
-      background: rgba(255, 255, 255, 0.18);
-      transform: translateY(-1px);
-    }
-    .main-nav a.active {
-      background: rgba(255, 255, 255, 0.95);
-      color: #031a40;
-      font-weight: 700;
-    }
-
-    .hero-block {
-      margin: 32px 24px 12px;
-      padding: 34px;
-      background: rgba(7, 22, 48, 0.96);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 28px;
-      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.18);
-    }
-
-    .hero-block h1 {
-      font-size: clamp(2.8rem, 4vw, 4.6rem);
-      margin-bottom: 18px;
-    }
-
-    .hero-block p {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 1rem;
-      line-height: 1.8;
-      max-width: 860px;
-    }
-
-    .members-grid {
-      display: grid;
-      gap: 24px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      margin: 24px;
-    }
-
-    .member-card {
-      background: rgba(7, 22, 48, 0.96);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
-      padding: 26px;
-      min-height: 220px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
-      transition: transform 0.2s ease, border-color 0.2s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .member-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(112, 177, 255, 0.5);
-    }
-
-    .member-card span {
-      display: inline-block;
-      margin-bottom: 14px;
-      color: var(--accent);
-      font-size: 0.82rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .member-card h3 {
-      margin-bottom: 12px;
-      font-size: 1.3rem;
-      color: #ffffff;
-    }
-
-    .member-card p {
-      color: rgba(255, 255, 255, 0.84);
-      font-size: 1rem;
-      line-height: 1.75;
-    }
-
-    .footer {
-      margin: 24px 24px 42px;
-      text-align: center;
-      color: rgba(255, 255, 255, 0.66);
-      font-size: 0.95rem;
-    }
-
-    .edit-member-btn {
-      margin-top: auto;
-      align-self: flex-start;
-      padding-top: 16px;
-      background: transparent;
-      border: 1px solid rgba(112, 177, 255, 0.35);
-      color: var(--accent);
-      border-radius: 999px;
-      padding: 6px 16px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      margin-top: 18px;
-    }
+    /* ── GRID ── */
+    .members-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); margin: 20px 24px 48px; }
+    .member-card { background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 18px 50px rgba(0,0,0,0.14); transition: transform 0.22s ease, border-color 0.22s ease; animation: cardIn 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .member-card:hover { transform: translateY(-4px); border-color: rgba(112,177,255,0.4); }
+    .member-card.own-card { border-color: rgba(112,177,255,0.3); background: rgba(12,42,92,0.96); }
+    .member-badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .member-name { font-size: 1.2rem; font-weight: 700; color: #fff; }
+    .member-subject { font-size: 0.85rem; color: rgba(255,255,255,0.55); font-weight: 500; }
+    .member-learn { font-size: 0.92rem; color: rgba(255,255,255,0.8); line-height: 1.65; margin-top: 6px; flex: 1; }
+    .member-meta { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
+    .edit-member-btn { margin-top: 14px; align-self: flex-start; background: transparent; border: 1px solid rgba(112,177,255,0.35); color: var(--accent); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
     .edit-member-btn:hover { background: rgba(112,177,255,0.1); border-color: var(--accent); }
 
-    .member-edit-form { display: flex; flex-direction: column; gap: 12px; }
-
-    .member-field-group { display: flex; flex-direction: column; gap: 5px; }
-
-    .member-field-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.48);
-    }
-
-    .member-input,
-    .member-textarea {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 10px;
-      color: #fff;
-      padding: 9px 12px;
-      font-size: 0.92rem;
-      font-family: inherit;
-      outline: none;
-      resize: none;
-      transition: border-color 0.2s;
-      width: 100%;
-    }
+    /* ── EDIT FORM ── */
+    .member-edit-form { display: flex; flex-direction: column; gap: 11px; }
+    .member-field-group { display: flex; flex-direction: column; gap: 4px; }
+    .member-field-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.42); }
+    .member-input, .member-textarea { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; color: #fff; padding: 9px 12px; font-size: 0.92rem; font-family: inherit; outline: none; resize: none; transition: border-color 0.2s; width: 100%; }
     .member-input:focus, .member-textarea:focus { border-color: var(--accent); }
-    .member-input::placeholder, .member-textarea::placeholder { color: rgba(255,255,255,0.28); }
-
     .member-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .save-member-btn { padding: 8px 18px; border-radius: 999px; border: none; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.88rem; font-family: inherit; cursor: pointer; }
+    .cancel-member-btn { padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.65); font-size: 0.88rem; font-family: inherit; cursor: pointer; }
+    .edit-msg { font-size: 0.88rem; color: #ffb3b3; min-height: 1em; }
 
-    .save-member-btn {
-      padding: 8px 18px;
-      border-radius: 999px;
-      border: none;
-      background: var(--accent);
-      color: #031a40;
-      font-weight: 700;
-      font-size: 0.88rem;
-      font-family: inherit;
-      cursor: pointer;
-    }
-
-    .cancel-member-btn {
-      padding: 8px 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: transparent;
-      color: rgba(255,255,255,0.65);
-      font-size: 0.88rem;
-      font-family: inherit;
-      cursor: pointer;
-    }
-
-    .edit-msg {
-      font-size: 0.88rem;
-      color: #ffb3b3;
-      min-height: 1em;
-    }
+    .state-msg { text-align: center; padding: 60px 24px; color: rgba(255,255,255,0.4); font-size: 0.97rem; grid-column: 1/-1; }
+    .footer { margin: 0 24px 42px; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.9rem; }
 
     @media (max-width: 760px) {
-      .hero-block,
-      .members-grid {
-        margin: 24px 16px;
-      }
+      .hero-block { margin: 24px 16px 12px; }
+      .members-grid { margin: 16px 16px 40px; }
     }
   </style>
 </head>
 <body>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="index.html">UCSB Applied Economics Club</a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="vote.html">Vote</a>
+      <a href="signin.html">Sign In</a>
+      <a href="topics.html">Topics</a>
+      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="board.html">Board</a>
+      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+    </nav>
+  </header>
   <main class="page">
-    <header class="topbar">
-      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
-      <nav class="main-nav">
-        <a href="index.html">Home</a>
-        <a href="vote.html">Voting</a>
-        <a href="signin.html">Sign In</a>
-        <a href="topics.html">Topics Covered</a>
-        <a href="members.html">Members</a>
-        <a href="board.html">Board</a>
-        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
-      </nav>
-    </header>
 
-    <section class="hero-block">
-      <h1>Members</h1>
-      <p>Meet the students powering UCSB Applied Economics Club. Registered members are displayed below once they sign in and complete membership.</p>
-    </section>
+    <!-- Not signed in -->
+    <div id="auth-gate" style="display:none;">
+      <div class="auth-gate">
+        <span class="auth-gate-icon">&#128274;</span>
+        <h2>Members Only</h2>
+        <p>This page is for verified club members. Sign in with your UCSB email to view the member directory and connect with the network.</p>
+        <a href="signin.html" class="auth-gate-btn">Sign In to Continue</a>
+      </div>
+    </div>
 
-    <section class="members-grid"></section>
+    <!-- Signed in -->
+    <div id="members-content" style="display:none;">
+      <header class="hero-block">
+        <div class="hero-block-text">
+          <h1>Members</h1>
+          <p>Verified members of UCSB Applied Economics Club. Click "Edit my card" to update your profile — changes sync instantly across all devices.</p>
+        </div>
+        <div class="member-count-badge">
+          <strong id="member-count">&#8212;</strong>
+          <span>Members</span>
+        </div>
+      </header>
 
-    <footer class="footer">Built for the Applied Economics Club — clean, page-based site navigation for an active student network.</footer>
+      <div class="members-grid" id="members-grid">
+        <div class="state-msg">Loading members&hellip;</div>
+      </div>
+    </div>
+
+    <footer class="footer">UCSB Applied Economics Club &mdash; member directory visible to verified members only.</footer>
   </main>
   <script>
-    function escapeHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-    function getSession() {
-      try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
-    }
-    function setSession(m) { localStorage.setItem('aec-session', JSON.stringify(m)); }
-    function loadMembers() {
-      try { return JSON.parse(localStorage.getItem('aec-members')) || []; } catch { return []; }
-    }
-    function getMember(email) { return loadMembers().find(m => m.email === email) || null; }
-    function isAdminSession(session) {
-      try {
-        const member = session && getMember(session.email);
-        return session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true || (member && member.isAdmin === true));
-      } catch {
-        return session && session.email === 'quinnbaltazar@ucsb.edu';
-      }
-    }
+    const DB_URL      = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+
+    function eKey(e) { return e.replace(/[.@#$[\]/]/g,'_'); }
+    async function fbGet(p) { try { const r=await fetch(`${DB_URL}/${p}.json`); return r.ok?r.json():null; } catch{return null;} }
+    async function fbSet(p,d) { try{await fetch(`${DB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{} }
+    async function fbPost(p,d) { try{await fetch(`${DB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{} }
+    function logActivity(email,name,type,detail) { fbPost('activity',{email,name:name||'',type,detail,at:Date.now()}); }
+
+    function getSession() { try{return JSON.parse(localStorage.getItem('aec-session'));}catch{return null;} }
+    function setSession(m) { localStorage.setItem('aec-session',JSON.stringify(m)); }
+    function isAdminSess(s) { return s&&(s.email===ADMIN_EMAIL||s.isAdmin===true); }
+
+    window.addEventListener('scroll',()=>document.getElementById('topbar').classList.toggle('scrolled',window.scrollY>8),{passive:true});
+
     function highlightCurrentNav() {
-      const page = window.location.pathname.split('/').pop() || 'index.html';
-      document.querySelectorAll('.main-nav a').forEach(a => {
-        a.classList.toggle('active', a.getAttribute('href') === page);
-      });
+      const page=window.location.pathname.split('/').pop()||'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')===page));
     }
-    function saveMemberLocally(member) {
-      const list = loadMembers();
-      const idx = list.findIndex(m => m.email === member.email);
-      if (idx >= 0) list[idx] = member; else list.push(member);
-      localStorage.setItem('aec-members', JSON.stringify(list));
-    }
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmtDate(ts) { return ts?new Date(ts).toLocaleDateString('en-US',{month:'short',year:'numeric'}):''; }
 
     function createMemberCard(member, isOwner) {
-      const article = document.createElement('article');
-      article.className = 'member-card';
-      article.dataset.email = member.email;
-      article.innerHTML = `
-        <span>${escapeHtml(member.subject)}</span>
-        <h3>${escapeHtml(member.name)}</h3>
-        <p>${escapeHtml(member.learn)}</p>
-      `;
+      const art = document.createElement('article');
+      art.className = 'member-card'+(isOwner?' own-card':'');
+      art.dataset.email = member.email;
+      art.innerHTML =
+        '<div class="member-badge">'+(isOwner?'&#9733; You':esc(member.subject))+'</div>'+
+        '<div class="member-name">'+esc(member.name)+'</div>'+
+        (isOwner?'<div class="member-subject">'+esc(member.subject)+'</div>':'')+
+        '<div class="member-learn">'+esc(member.learn)+'</div>'+
+        (member.field?'<div class="member-meta">'+esc(member.field)+'</div>':'')+
+        (member.joinedAt?'<div class="member-meta">Joined '+fmtDate(member.joinedAt)+'</div>':'');
       if (isOwner) {
         const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'edit-member-btn';
-        btn.textContent = 'Edit my card';
-        btn.addEventListener('click', () => makeEditable(article, member));
-        article.appendChild(btn);
+        btn.type='button'; btn.className='edit-member-btn'; btn.textContent='Edit my card';
+        btn.addEventListener('click',()=>makeEditable(art,member));
+        art.appendChild(btn);
       }
-      return article;
+      return art;
     }
 
     function makeEditable(card, member) {
-      card.innerHTML = `
-        <div class="member-edit-form">
-          <div class="member-field-group">
-            <label class="member-field-label">Name <span style="color:var(--accent)">*</span></label>
-            <input type="text" class="member-input" id="edit-name" value="${escapeHtml(member.name)}" maxlength="80" />
-          </div>
-          <div class="member-field-group">
-            <label class="member-field-label">Area of Interest <span style="color:var(--accent)">*</span></label>
-            <input type="text" class="member-input" id="edit-subject" value="${escapeHtml(member.subject)}" maxlength="80" />
-          </div>
-          <div class="member-field-group">
-            <label class="member-field-label">About / What you want to learn <span style="color:var(--accent)">*</span></label>
-            <textarea class="member-textarea" id="edit-learn" maxlength="400" rows="3">${escapeHtml(member.learn)}</textarea>
-          </div>
-          <div class="member-field-group">
-            <label class="member-field-label">Field / Employer</label>
-            <input type="text" class="member-input" id="edit-field" value="${escapeHtml(member.field || '')}" maxlength="100" />
-          </div>
-          <div class="member-edit-actions">
-            <button type="button" class="save-member-btn" id="save-member-btn">Save</button>
-            <button type="button" class="cancel-member-btn" id="cancel-member-btn">Cancel</button>
-          </div>
-          <p class="edit-msg" id="edit-msg"></p>
-        </div>
-      `;
-      document.getElementById('save-member-btn').addEventListener('click', () => saveEdits(card, member));
-      document.getElementById('cancel-member-btn').addEventListener('click', () => {
-        const fresh = getMember(member.email) || member;
-        card.parentNode.replaceChild(createMemberCard(fresh, true), card);
+      card.innerHTML =
+        '<div class="member-edit-form">'+
+          '<div class="member-field-group">'+
+            '<label class="member-field-label">Name <span style="color:var(--accent)">*</span></label>'+
+            '<input type="text" class="member-input" id="edit-name" value="'+esc(member.name)+'" maxlength="80"/>'+
+          '</div>'+
+          '<div class="member-field-group">'+
+            '<label class="member-field-label">Area of Interest <span style="color:var(--accent)">*</span></label>'+
+            '<input type="text" class="member-input" id="edit-subject" value="'+esc(member.subject)+'" maxlength="80"/>'+
+          '</div>'+
+          '<div class="member-field-group">'+
+            '<label class="member-field-label">What you want to learn <span style="color:var(--accent)">*</span></label>'+
+            '<textarea class="member-textarea" id="edit-learn" maxlength="400" rows="3">'+esc(member.learn)+'</textarea>'+
+          '</div>'+
+          '<div class="member-field-group">'+
+            '<label class="member-field-label">Field / Employer</label>'+
+            '<input type="text" class="member-input" id="edit-field" value="'+esc(member.field||'')+'" maxlength="100"/>'+
+          '</div>'+
+          '<div class="member-edit-actions">'+
+            '<button type="button" class="save-member-btn" id="save-member-btn">Save</button>'+
+            '<button type="button" class="cancel-member-btn" id="cancel-member-btn">Cancel</button>'+
+          '</div>'+
+          '<p class="edit-msg" id="edit-msg"></p>'+
+        '</div>';
+      document.getElementById('save-member-btn').addEventListener('click',()=>saveEdits(card,member));
+      document.getElementById('cancel-member-btn').addEventListener('click',async()=>{
+        const fresh=await fbGet('members/'+eKey(member.email))||member;
+        card.parentNode.replaceChild(createMemberCard(fresh,true),card);
       });
     }
 
-    function saveEdits(card, member) {
+    async function saveEdits(card, member) {
       const newName    = document.getElementById('edit-name').value.trim();
       const newSubject = document.getElementById('edit-subject').value.trim();
       const newLearn   = document.getElementById('edit-learn').value.trim();
       const newField   = document.getElementById('edit-field').value.trim();
+      if (!newName||!newSubject||!newLearn) {
+        document.getElementById('edit-msg').textContent='Name, interest, and description are required.'; return;
+      }
+      const btn=document.getElementById('save-member-btn');
+      btn.disabled=true; btn.textContent='Saving...';
+      const updated=Object.assign({},member,{name:newName,subject:newSubject,learn:newLearn,field:newField});
+      await fbSet('members/'+eKey(member.email),updated);
+      setSession(updated);
+      logActivity(member.email,newName,'card_edit','Updated member card');
+      card.parentNode.replaceChild(createMemberCard(updated,true),card);
+    }
 
-      if (!newName || !newSubject || !newLearn) {
-        document.getElementById('edit-msg').textContent = 'Name, interest, and description are required.';
+    document.addEventListener('DOMContentLoaded',async function(){
+      highlightCurrentNav();
+      const session=getSession();
+
+      if (!session) {
+        document.getElementById('auth-gate').style.display='block';
         return;
       }
 
-      const updated = { ...member, name: newName, subject: newSubject, learn: newLearn, field: newField };
-      saveMemberLocally(updated);
-      setSession(updated);
-      card.parentNode.replaceChild(createMemberCard(updated, true), card);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const session = getSession();
-      if (session && isAdminSession(session)) {
-        const l = document.getElementById('admin-nav-link');
-        if (l) l.style.display = 'inline-flex';
+      // Reveal nav
+      const ml=document.getElementById('members-nav-link');
+      if(ml) ml.style.display='inline-flex';
+      if(isAdminSess(session)){
+        const al=document.getElementById('admin-nav-link');
+        if(al) al.style.display='inline-flex';
       }
-      highlightCurrentNav();
+      document.getElementById('members-content').style.display='block';
 
-      const members = loadMembers();
-      const grid = document.querySelector('.members-grid');
-      if (members.length) {
-        members.forEach(member => {
-          const isOwner = session && member.email === session.email;
-          grid.appendChild(createMemberCard(member, isOwner));
-        });
-      } else if (session) {
-        const member = getMember(session.email);
-        if (member) grid.appendChild(createMemberCard(member, true));
+      // Load all members from Firebase
+      const raw=await fbGet('members');
+      const grid=document.getElementById('members-grid');
+      grid.innerHTML='';
+
+      if(!raw){
+        grid.innerHTML='<div class="state-msg">No members yet. Sign in to be the first!</div>';
+        document.getElementById('member-count').textContent='0';
+        return;
       }
+
+      const members=Object.values(raw).filter(m=>m&&m.name).sort((a,b)=>{
+        if(a.email===session.email) return -1;
+        if(b.email===session.email) return 1;
+        return (a.name||'').localeCompare(b.name||'');
+      });
+
+      document.getElementById('member-count').textContent=members.length;
+      members.forEach((m,i)=>{
+        const card=createMemberCard(m,m.email===session.email);
+        card.style.animationDelay=(i*35)+'ms';
+        grid.appendChild(card);
+      });
     });
   </script>
 </body>

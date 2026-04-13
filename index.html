@@ -32,65 +32,100 @@
     .page {
       max-width: 1080px;
       margin: 0 auto;
-      padding: 0;
+      padding: 64px 0 0;
       background: var(--bg);
       overflow-x: hidden;
     }
 
+    /* ── NAV ── */
     .topbar {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      padding: 24px 24px 16px;
-      text-align: center;
+      position: fixed;
+      top: 0; left: 0; right: 0;
       width: 100%;
-      background: rgba(3, 26, 64, 0.96);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      position: sticky;
-      top: 0;
-      z-index: 15;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px);
+      height: 64px;
+      background: rgba(3, 26, 64, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    @keyframes navDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .topbar.scrolled {
+      background: rgba(3, 26, 64, 0.97);
+      box-shadow: 0 2px 40px rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.1);
     }
 
     .brand {
-      font-size: 1.3rem;
+      font-size: 0.85rem;
       font-weight: 800;
       color: #ffffff;
-      letter-spacing: 0.22em;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      line-height: 1.1;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: color 0.2s ease, opacity 0.2s ease;
     }
+
+    .brand:hover { color: var(--accent); }
 
     .main-nav {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
+      align-items: center;
+      gap: 2px;
     }
 
     .main-nav a {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 10px 18px;
-      color: rgba(255, 255, 255, 0.92);
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 999px;
+      padding: 8px 13px;
+      color: rgba(255,255,255,0.72);
       text-decoration: none;
-      font-size: 0.95rem;
-      letter-spacing: 0.04em;
-      transition: background 0.2s ease, transform 0.2s ease;
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      border-radius: 8px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    .main-nav a::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: 13px; right: 13px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+      transform: scaleX(0);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: center;
     }
 
     .main-nav a:hover {
-      background: rgba(255, 255, 255, 0.16);
-      transform: translateY(-1px);
+      color: #ffffff;
+      background: rgba(255,255,255,0.06);
     }
+
+    .main-nav a:hover::after,
+    .main-nav a.active::after { transform: scaleX(1); }
+
     .main-nav a.active {
-      background: rgba(255, 255, 255, 0.95);
-      color: #031a40;
+      color: #ffffff;
       font-weight: 700;
+      background: rgba(112, 177, 255, 0.1);
     }
 
     .hero {
@@ -429,19 +464,19 @@
   </style>
 </head>
 <body>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="index.html">UCSB Applied Economics Club</a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="vote.html">Vote</a>
+      <a href="signin.html">Sign In</a>
+      <a href="topics.html">Topics</a>
+      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="board.html">Board</a>
+      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+    </nav>
+  </header>
   <main class="page">
-    <header class="topbar">
-      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
-      <nav class="main-nav">
-        <a href="index.html">Home</a>
-        <a href="vote.html">Voting</a>
-        <a href="signin.html">Sign In</a>
-        <a href="topics.html">Topics Covered</a>
-        <a href="members.html">Members</a>
-        <a href="board.html">Board</a>
-        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
-      </nav>
-    </header>
 
     <section class="hero">
       <div class="hero-chart">
@@ -526,6 +561,10 @@
       updateAdminLinkVisibility();
     });
 
+    window.addEventListener('scroll', function() {
+      document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
+    }, { passive: true });
+
     function highlightCurrentNav() {
       var page = window.location.pathname.split('/').pop() || 'index.html';
       document.querySelectorAll('.main-nav a').forEach(function(a) {
@@ -536,10 +575,11 @@
     function updateAdminLinkVisibility() {
       try {
         var session = JSON.parse(localStorage.getItem('aec-session') || 'null');
-        var members = JSON.parse(localStorage.getItem('aec-members') || '[]');
-        var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true || (members.find(function(m){ return m.email === session.email; }) || {}).isAdmin === true);
+        var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true);
         var l = document.getElementById('admin-nav-link');
         if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
+        var ml = document.getElementById('members-nav-link');
+        if (ml) ml.style.display = session ? 'inline-flex' : 'none';
       } catch (e) {}
     }
   </script>

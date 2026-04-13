@@ -25,63 +25,99 @@
     .page {
       max-width: 1080px;
       margin: 0 auto;
+      padding: 64px 0 0;
       overflow-x: hidden;
     }
 
-    /* ── Topbar ── */
+    /* ── NAV ── */
     .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      width: 100%;
+      z-index: 100;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding: 24px 24px 16px;
-      text-align: center;
-      background: rgba(3,26,64,0.96);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      position: sticky;
-      top: 0;
-      z-index: 20;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px);
+      height: 64px;
+      background: rgba(3, 26, 64, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    @keyframes navDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .topbar.scrolled {
+      background: rgba(3, 26, 64, 0.97);
+      box-shadow: 0 2px 40px rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.1);
     }
 
     .brand {
-      font-size: 1.4rem;
+      font-size: 0.85rem;
       font-weight: 800;
-      color: #fff;
-      letter-spacing: 0.22em;
+      color: #ffffff;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      line-height: 1.1;
       text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: color 0.2s ease, opacity 0.2s ease;
     }
+
+    .brand:hover { color: var(--accent); }
 
     .main-nav {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
+      align-items: center;
+      gap: 2px;
     }
 
     .main-nav a {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      padding: 10px 18px;
-      color: rgba(255,255,255,0.92);
-      background: rgba(255,255,255,0.08);
-      border-radius: 999px;
+      padding: 8px 13px;
+      color: rgba(255,255,255,0.72);
       text-decoration: none;
-      font-size: 0.95rem;
-      letter-spacing: 0.04em;
-      transition: background 0.2s, transform 0.2s;
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      border-radius: 8px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    .main-nav a::after {
+      content: '';
+      position: absolute;
+      bottom: 5px;
+      left: 13px; right: 13px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+      transform: scaleX(0);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: center;
     }
 
     .main-nav a:hover {
-      background: rgba(255,255,255,0.18);
-      transform: translateY(-1px);
+      color: #ffffff;
+      background: rgba(255,255,255,0.06);
     }
+
+    .main-nav a:hover::after,
+    .main-nav a.active::after { transform: scaleX(1); }
+
     .main-nav a.active {
-      background: rgba(255,255,255,0.95);
-      color: #031a40;
+      color: #ffffff;
       font-weight: 700;
+      background: rgba(112, 177, 255, 0.1);
     }
 
     /* ── Auth card ── */
@@ -296,19 +332,19 @@
   </style>
 </head>
 <body>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="index.html">UCSB Applied Economics Club</a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="vote.html">Vote</a>
+      <a href="signin.html">Sign In</a>
+      <a href="topics.html">Topics</a>
+      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="board.html">Board</a>
+      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+    </nav>
+  </header>
   <main class="page">
-    <header class="topbar">
-      <a class="brand" href="index.html">UCSB Applied Economics Club</a>
-      <nav class="main-nav">
-        <a href="index.html">Home</a>
-        <a href="vote.html">Voting</a>
-        <a href="signin.html">Sign In</a>
-        <a href="topics.html">Topics Covered</a>
-        <a href="members.html">Members</a>
-        <a href="board.html">Board</a>
-        <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
-      </nav>
-    </header>
 
     <section class="auth-card">
 
@@ -411,30 +447,77 @@
   -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
-    const EMAILJS_PUBLIC_KEY   = '8NT7ERI9_COG0opnM';
-    const EMAILJS_SERVICE_ID   = 'service_q979uh8';
-    const EMAILJS_TEMPLATE_ID  = 'template_1cgjm5y';
+    // ── Config ────────────────────────────────────────────────
+    const EMAILJS_PUBLIC_KEY  = '8NT7ERI9_COG0opnM';
+    const EMAILJS_SERVICE_ID  = 'service_q979uh8';
+    const EMAILJS_TEMPLATE_ID = 'template_1cgjm5y';
     const EMAILJS_READY = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
-    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+    const ADMIN_EMAIL   = 'quinnbaltazar@ucsb.edu';
+    const DB_URL        = 'https://applied-economics-club-default-rtdb.firebaseio.com';
 
     if (EMAILJS_READY) emailjs.init(EMAILJS_PUBLIC_KEY);
 
-    const MEMBERS_KEY = 'aec-members';
     let currentCode  = null;
     let currentEmail = null;
     let resendTimer  = 0;
+
+    // ── Firebase helpers ──────────────────────────────────────
+    function eKey(email) { return email.replace(/[.@#$[\]/]/g, '_'); }
+
+    async function fbGet(path) {
+      try { const r = await fetch(`${DB_URL}/${path}.json`); return r.ok ? r.json() : null; } catch { return null; }
+    }
+    async function fbSet(path, data) {
+      try { await fetch(`${DB_URL}/${path}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch {}
+    }
+    async function fbPost(path, data) {
+      try { await fetch(`${DB_URL}/${path}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch {}
+    }
+
+    async function getFirebaseMember(email) { return fbGet(`members/${eKey(email)}`); }
+    async function saveFirebaseMember(member) { await fbSet(`members/${eKey(member.email)}`, member); }
+    function logActivity(email, name, type, detail) {
+      fbPost('activity', { email, name: name||'', type, detail, at: Date.now() });
+    }
 
     // ── Session ───────────────────────────────────────────────
     function getSession() {
       try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
     }
-    function setSession(m) {
-      const record = getMember(m.email);
-      const sessionData = { ...m, isAdmin: record && record.isAdmin === true };
-      localStorage.setItem('aec-session', JSON.stringify(sessionData));
+    function setSession(member) {
+      const data = { ...member, isAdmin: member.isAdmin === true || member.email === ADMIN_EMAIL };
+      localStorage.setItem('aec-session', JSON.stringify(data));
     }
     function clearSession() { localStorage.removeItem('aec-session'); }
+    function isAdminSession(s) { return s && (s.email === ADMIN_EMAIL || s.isAdmin === true); }
 
+    // ── Nav ───────────────────────────────────────────────────
+    window.addEventListener('scroll', function() {
+      document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
+    }, { passive: true });
+
+    function highlightCurrentNav() {
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+      });
+    }
+    function revealMemberNav() {
+      const ml = document.getElementById('members-nav-link');
+      if (ml) ml.style.display = 'inline-flex';
+    }
+
+    // ── UI helpers ────────────────────────────────────────────
+    function showStep(id) {
+      ['step-email','step-code','step-new-member','step-welcome'].forEach(s => {
+        document.getElementById(s).classList.toggle('hidden', s !== id);
+      });
+    }
+    function setMsg(id, text, type = 'info') {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'auth-msg ' + type;
+    }
     function fillWelcome(member, isNew) {
       document.getElementById('welcome-heading').textContent = isNew ? `Welcome, ${member.name}!` : `Welcome back, ${member.name}!`;
       document.getElementById('welcome-sub').textContent = isNew
@@ -446,80 +529,34 @@
       document.getElementById('p-email').textContent   = member.preferredEmail;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    // ── Init ──────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async function() {
+      highlightCurrentNav();
       const session = getSession();
       if (session) {
-        const member = getMember(session.email);
-        if (member && member.isAdmin) {
-          session.isAdmin = true;
-          setSession(session);
+        revealMemberNav();
+        if (isAdminSession(session)) {
+          const l = document.getElementById('admin-nav-link');
+          if (l) l.style.display = 'inline-flex';
         }
         fillWelcome(session, false);
         showStep('step-welcome');
+        // Sync from Firebase in background to pick up any admin changes
+        getFirebaseMember(session.email).then(fb => {
+          if (fb) { const merged = { ...session, ...fb }; setSession(merged); fillWelcome(merged, false); }
+        });
       }
-      if (session && isAdminSession(session)) {
-        const l = document.getElementById('admin-nav-link');
-        if (l) l.style.display = 'inline-flex';
-      }
-      highlightCurrentNav();
     });
 
-    // ── Helpers ──────────────────────────────────────────────
-    function generateCode() {
-      return String(Math.floor(100000 + Math.random() * 900000));
-    }
-
-    function loadMembers() {
-      try { return JSON.parse(localStorage.getItem(MEMBERS_KEY)) || []; }
-      catch { return []; }
-    }
-
-    function getMember(email) {
-      return loadMembers().find(m => m.email === email) || null;
-    }
-    function isAdminSession(session) {
-      try {
-        const member = session && getMember(session.email);
-        return session && (session.email === ADMIN_EMAIL || session.isAdmin === true || (member && member.isAdmin === true));
-      } catch {
-        return session && session.email === ADMIN_EMAIL;
-      }
-    }
-    function highlightCurrentNav() {
-      const page = window.location.pathname.split('/').pop() || 'index.html';
-      document.querySelectorAll('.main-nav a').forEach(a => {
-        a.classList.toggle('active', a.getAttribute('href') === page);
-      });
-    }
-
-    function saveMember(member) {
-      const list = loadMembers();
-      const idx = list.findIndex(m => m.email === member.email);
-      if (idx >= 0) list[idx] = member; else list.push(member);
-      localStorage.setItem(MEMBERS_KEY, JSON.stringify(list));
-    }
-
-    function showStep(id) {
-      ['step-email','step-code','step-new-member','step-welcome'].forEach(s => {
-        document.getElementById(s).classList.toggle('hidden', s !== id);
-      });
-    }
-
-    function setMsg(id, text, type = 'info') {
-      const el = document.getElementById(id);
-      el.textContent = text;
-      el.className = 'auth-msg ' + type;
-    }
+    // ── Email verification ────────────────────────────────────
+    function generateCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
     async function sendVerificationCode(email) {
       currentCode = generateCode();
-
       if (!EMAILJS_READY) {
-        // Dev mode — show code on screen when EmailJS isn't configured
         setMsg('resend-msg', `Dev mode — code: ${currentCode}`, 'info');
         return true;
       }
-
       try {
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
           to_email:  email,
@@ -528,8 +565,7 @@
         });
         return true;
       } catch (err) {
-        console.error('EmailJS error status:', err.status);
-        console.error('EmailJS error text:', err.text);
+        console.error('EmailJS error:', err.status, err.text);
         return false;
       }
     }
@@ -538,60 +574,56 @@
     document.getElementById('email-form').addEventListener('submit', async function(e) {
       e.preventDefault();
       const email = document.getElementById('email-input').value.trim().toLowerCase();
-
       if (!email.endsWith('@ucsb.edu')) {
         setMsg('email-msg', 'Please enter a valid @ucsb.edu email address.', 'error');
         document.getElementById('email-input').classList.add('error-field');
         return;
       }
       document.getElementById('email-input').classList.remove('error-field');
-
       const btn = this.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      btn.textContent = 'Sending…';
-
+      btn.disabled = true; btn.textContent = 'Sending…';
       currentEmail = email;
       const sent = await sendVerificationCode(email);
-
-      btn.disabled = false;
-      btn.textContent = 'Send Verification Code';
-
-      if (!sent) {
-        setMsg('email-msg', 'Could not send the email. Please try again.', 'error');
-        return;
-      }
-
+      btn.disabled = false; btn.textContent = 'Send Verification Code';
+      if (!sent) { setMsg('email-msg', 'Could not send the email. Please try again.', 'error'); return; }
       document.getElementById('display-email').textContent = email;
       setMsg('email-msg', '', 'info');
       showStep('step-code');
     });
 
     // ── Step 2: Code ──────────────────────────────────────────
-    document.getElementById('code-form').addEventListener('submit', function(e) {
+    document.getElementById('code-form').addEventListener('submit', async function(e) {
       e.preventDefault();
       const entered = document.getElementById('code-input').value.trim();
-
       if (!/^\d{6}$/.test(entered)) {
         setMsg('code-msg', 'Please enter the 6-digit code from your email.', 'error');
         return;
       }
-
       if (entered !== currentCode) {
         setMsg('code-msg', 'Incorrect code — please try again.', 'error');
         document.getElementById('code-input').classList.add('error-field');
         return;
       }
-
       document.getElementById('code-input').classList.remove('error-field');
-      setMsg('code-msg', '', 'info');
+      setMsg('code-msg', 'Verified! Checking membership…', 'info');
 
-      const member = getMember(currentEmail);
-      if (member) {
+      const fbMember = await getFirebaseMember(currentEmail);
+      if (fbMember) {
+        const member = { ...fbMember, lastSeen: Date.now() };
+        saveFirebaseMember(member);
         setSession(member);
+        revealMemberNav();
+        if (isAdminSession(member)) {
+          const l = document.getElementById('admin-nav-link');
+          if (l) l.style.display = 'inline-flex';
+        }
+        logActivity(member.email, member.name, 'signin', 'Signed in');
         fillWelcome(member, false);
+        setMsg('code-msg', '', 'info');
         showStep('step-welcome');
       } else {
         document.getElementById('nm-email').value = currentEmail;
+        setMsg('code-msg', '', 'info');
         showStep('step-new-member');
       }
     });
@@ -601,10 +633,8 @@
       if (resendTimer > 0) return;
       this.disabled = true;
       setMsg('resend-msg', 'Sending…', 'info');
-
       const sent = await sendVerificationCode(currentEmail);
       setMsg('resend-msg', sent ? 'Code resent — check your inbox.' : 'Failed to resend. Try again.', sent ? 'success' : 'error');
-
       resendTimer = 60;
       const btn = this;
       const iv = setInterval(() => {
@@ -616,8 +646,7 @@
 
     // Change email
     document.getElementById('change-email-btn').addEventListener('click', function() {
-      currentCode = null;
-      currentEmail = null;
+      currentCode = null; currentEmail = null;
       document.getElementById('code-input').value = '';
       document.getElementById('code-input').classList.remove('error-field');
       setMsg('code-msg', '', 'info');
@@ -625,36 +654,51 @@
       showStep('step-email');
     });
 
-    // ── Step 3a: New member form ──────────────────────────────
-    document.getElementById('new-member-form').addEventListener('submit', function(e) {
+    // ── Step 3a: New member registration ──────────────────────
+    document.getElementById('new-member-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-
       const name           = document.getElementById('nm-name').value.trim();
       const subject        = document.getElementById('nm-subject').value.trim();
       const learn          = document.getElementById('nm-learn').value.trim();
       const goal           = document.getElementById('nm-goal').value.trim();
       const preferredEmail = document.getElementById('nm-email').value.trim();
       const field          = document.getElementById('nm-field').value.trim();
-
       if (!name || !subject || !learn || !goal || !preferredEmail) {
         setMsg('nm-msg', 'Please fill in all required fields.', 'error');
         return;
       }
-
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(preferredEmail)) {
         setMsg('nm-msg', 'Please enter a valid preferred email address.', 'error');
         return;
       }
-
-      const member = { email: currentEmail, name, subject, learn, goal, preferredEmail, field };
-      saveMember(member);
+      const btn = this.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      const member = {
+        email: currentEmail, name, subject, learn, goal,
+        preferredEmail, field,
+        isAdmin: currentEmail === ADMIN_EMAIL,
+        joinedAt: Date.now(), lastSeen: Date.now()
+      };
+      await saveFirebaseMember(member);
       setSession(member);
+      revealMemberNav();
+      if (isAdminSession(member)) {
+        const l = document.getElementById('admin-nav-link');
+        if (l) l.style.display = 'inline-flex';
+      }
+      logActivity(member.email, member.name, 'join', 'Joined the club');
       fillWelcome(member, true);
+      btn.disabled = false; btn.textContent = 'Complete Registration';
       showStep('step-welcome');
     });
 
+    // Sign out
     document.getElementById('signout-btn').addEventListener('click', function() {
       clearSession();
+      const ml = document.getElementById('members-nav-link');
+      if (ml) ml.style.display = 'none';
+      const al = document.getElementById('admin-nav-link');
+      if (al) al.style.display = 'none';
       document.getElementById('email-input').value = '';
       setMsg('email-msg', '', 'info');
       showStep('step-email');
