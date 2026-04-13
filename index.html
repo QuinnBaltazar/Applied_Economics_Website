@@ -299,15 +299,14 @@
       <div class="hero-logo-wrap">
         <svg class="hero-logo-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <!-- Top arc: clockwise (sweep=1) from left→top→right -->
+            <!-- Top arc: clockwise from left→top→right -->
             <path id="sealTopArc" d="M 18,130 A 112,112 0 0,1 242,130"/>
-            <!-- Bottom arc: counter-clockwise (sweep=0) from left→bottom→right
-                 Using r=116 so baseline sits between the two rings at the bottom -->
+            <!-- Bottom arc: counter-clockwise from left→bottom→right (r=116, sits between rings) -->
             <path id="sealBottomArc" d="M 14,130 A 116,116 0 0,0 246,130"/>
-            <!-- Arrowhead marker for the trend line -->
-            <marker id="trendArrow" markerWidth="7" markerHeight="7"
-                    refX="6" refY="3.5" orient="auto">
-              <polygon points="0 0, 7 3.5, 0 7" fill="#C4A448"/>
+            <!-- Arrowhead for trend line -->
+            <marker id="trendArrow" markerWidth="10" markerHeight="8"
+                    refX="9" refY="4" orient="auto">
+              <polygon points="0 0, 10 4, 0 8" fill="#C4A448"/>
             </marker>
           </defs>
 
@@ -316,8 +315,14 @@
 
           <!-- Outer bold ring -->
           <circle cx="130" cy="130" r="124" fill="none" stroke="#2B4A6F" stroke-width="3.5"/>
-          <!-- Inner thin ring -->
-          <circle cx="130" cy="130" r="112" fill="none" stroke="#2B4A6F" stroke-width="1.2"/>
+
+          <!-- Inner ring as partial arc — gap at bottom so UCSB text is clear
+               Arc from lower-left (58,216) clockwise all the way around to lower-right (202,216) -->
+          <path d="M 58,216 A 112,112 0 1,1 202,216"
+                fill="none" stroke="#2B4A6F" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- Short flanking lines at the arc endpoints (frame for UCSB) -->
+          <line x1="42" y1="216" x2="56" y2="216" stroke="#2B4A6F" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="204" y1="216" x2="218" y2="216" stroke="#2B4A6F" stroke-width="1.2" stroke-linecap="round"/>
 
           <!-- "APPLIED ECONOMICS CLUB" along the top arc -->
           <text fill="#2B4A6F"
@@ -344,10 +349,11 @@
                 font-size="94" font-weight="900"
                 fill="#2B4A6F" letter-spacing="-6">AE</text>
 
-          <!-- Thin gold upward market trend line with arrowhead -->
-          <line x1="76" y1="167" x2="183" y2="103"
-                stroke="#C4A448" stroke-width="2" stroke-linecap="round"
-                marker-end="url(#trendArrow)"/>
+          <!-- Gold stock-chart trend line: dip → sharp rise → pullback → final push with arrow -->
+          <polyline points="70,168 86,178 116,146 135,155 183,101"
+                    stroke="#C4A448" stroke-width="2.5" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    marker-end="url(#trendArrow)"/>
         </svg>
       </div>
 

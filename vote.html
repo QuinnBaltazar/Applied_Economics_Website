@@ -270,18 +270,55 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 26px 22px 22px;
+      gap: 12px;
+      padding: 24px 22px 20px;
       border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(255, 255, 255, 0.04);
-      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color 0.22s ease, transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+      cursor: pointer;
+      /* Staggered entrance animation */
+      animation: voteCardIn 0.45s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    .vote-option:nth-child(1) { animation-delay: 0.05s; }
+    .vote-option:nth-child(2) { animation-delay: 0.10s; }
+    .vote-option:nth-child(3) { animation-delay: 0.15s; }
+    .vote-option:nth-child(4) { animation-delay: 0.20s; }
+    .vote-option:nth-child(5) { animation-delay: 0.25s; }
+    .vote-option:nth-child(6) { animation-delay: 0.30s; }
+    @keyframes voteCardIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .vote-option:hover {
-      border-color: rgba(196, 164, 72, 0.45);
+      border-color: rgba(196, 164, 72, 0.4);
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.055);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.2);
+    }
+
+    /* Gold highlight when the radio inside is selected */
+    .vote-option:has(input[type="radio"]:checked) {
+      border-color: rgba(196, 164, 72, 0.62);
+      background: rgba(196, 164, 72, 0.07);
+      box-shadow: 0 0 0 1px rgba(196,164,72,0.18), 0 18px 48px rgba(0,0,0,0.22);
       transform: translateY(-2px);
-      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Progress bar */
+    .vote-bar-track {
+      height: 3px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .vote-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+      border-radius: 3px;
+      transition: width 0.9s cubic-bezier(0.4,0,0.2,1);
     }
 
     .vote-option input {
@@ -529,6 +566,7 @@
                 <div class="option-desc">Explore early-stage investing and real-world startup funding strategies for scaling companies.</div>
               </div>
             </div>
+            <div class="vote-bar-track"><div class="vote-bar-fill" id="bar-vc"></div></div>
             <span class="vote-count" id="count-vc">0 votes</span>
           </label>
           <label class="vote-option">
@@ -539,6 +577,7 @@
                 <div class="option-desc">Learn how high-net-worth strategies, portfolio construction, and client advisory work together.</div>
               </div>
             </div>
+            <div class="vote-bar-track"><div class="vote-bar-fill" id="bar-wm"></div></div>
             <span class="vote-count" id="count-wm">0 votes</span>
           </label>
           <label class="vote-option">
@@ -549,6 +588,7 @@
                 <div class="option-desc">Study market mechanics, risk management, and practical trade execution across equities and derivatives.</div>
               </div>
             </div>
+            <div class="vote-bar-track"><div class="vote-bar-fill" id="bar-trading"></div></div>
             <span class="vote-count" id="count-trading">0 votes</span>
           </label>
           <label class="vote-option">
@@ -559,6 +599,7 @@
                 <div class="option-desc">Debate today's macro outlook with real examples of bullish and bearish theses from recent markets.</div>
               </div>
             </div>
+            <div class="vote-bar-track"><div class="vote-bar-fill" id="bar-bullbear"></div></div>
             <span class="vote-count" id="count-bullbear">0 votes</span>
           </label>
           <label class="vote-option">
@@ -569,6 +610,7 @@
                 <div class="option-desc">Review deal sourcing, modeling, and advisory best practices used in real M&A and capital markets work.</div>
               </div>
             </div>
+            <div class="vote-bar-track"><div class="vote-bar-fill" id="bar-ib"></div></div>
             <span class="vote-count" id="count-ib">0 votes</span>
           </label>
           <label class="vote-option">
@@ -690,6 +732,22 @@
       document.getElementById('count-trading').textContent  = fmt(counts['Trading']);
       document.getElementById('count-bullbear').textContent = fmt(counts['Current Market Bull and Bear Cases']);
       document.getElementById('count-ib').textContent       = fmt(counts['Investment Banking']);
+
+      // Animate progress bars relative to the top vote getter
+      const vals = [
+        counts['Venture Capital']||0,
+        counts['Wealth Management']||0,
+        counts['Trading']||0,
+        counts['Current Market Bull and Bear Cases']||0,
+        counts['Investment Banking']||0
+      ];
+      const max = Math.max(...vals, 1);
+      [['bar-vc','Venture Capital'],['bar-wm','Wealth Management'],['bar-trading','Trading'],
+       ['bar-bullbear','Current Market Bull and Bear Cases'],['bar-ib','Investment Banking']
+      ].forEach(([id, topic]) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = Math.round((counts[topic]||0) / max * 100) + '%';
+      });
     }
 
     // ── Custom topics ─────────────────────────────────────────
