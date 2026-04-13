@@ -6,10 +6,16 @@
   <title>Sign In | UCSB Applied Economics Club</title>
   <style>
     :root {
-      --bg: #031a40;
-      --text: #ffffff;
-      --accent: #70b1ff;
-      --border: rgba(255,255,255,0.12);
+      --bg: #090F1A;
+      --surface: #0E1829;
+      --surface-soft: #12213A;
+      --panel: rgba(255,255,255,0.04);
+      --accent: #C4A448;
+      --accent-soft: #D4B55E;
+      --muted: rgba(255,255,255,0.72);
+      --text: #FFFFFF;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 24px 60px rgba(0,0,0,0.26);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
@@ -40,23 +46,23 @@
       justify-content: space-between;
       padding: 0 clamp(20px, 4vw, 56px);
       height: 64px;
-      background: rgba(3, 26, 64, 0.72);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      background: rgba(9, 15, 26, 0.84);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
       animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
     }
 
     @keyframes navDown {
       from { transform: translateY(-100%); opacity: 0; }
-      to   { transform: translateY(0);     opacity: 1; }
+      to   { transform: translateY(0); opacity: 1; }
     }
 
     .topbar.scrolled {
-      background: rgba(3, 26, 64, 0.97);
-      box-shadow: 0 2px 40px rgba(0,0,0,0.35);
-      border-color: rgba(255,255,255,0.1);
+      background: rgba(9, 15, 26, 0.98);
+      box-shadow: 0 2px 38px rgba(0,0,0,0.42);
+      border-color: rgba(196,164,72,0.15);
     }
 
     .brand {
@@ -68,7 +74,7 @@
       text-decoration: none;
       white-space: nowrap;
       flex-shrink: 0;
-      transition: color 0.2s ease, opacity 0.2s ease;
+      transition: color 0.2s ease;
     }
 
     .brand:hover { color: var(--accent); }
@@ -89,8 +95,8 @@
       font-size: 0.875rem;
       font-weight: 500;
       letter-spacing: 0.03em;
-      border-radius: 8px;
-      transition: color 0.2s ease, background 0.2s ease;
+      border-radius: 10px;
+      transition: color 0.2s, background 0.2s;
     }
 
     .main-nav a::after {
@@ -108,7 +114,7 @@
 
     .main-nav a:hover {
       color: #ffffff;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.08);
     }
 
     .main-nav a:hover::after,
@@ -117,8 +123,24 @@
     .main-nav a.active {
       color: #ffffff;
       font-weight: 700;
-      background: rgba(112, 177, 255, 0.1);
+      background: rgba(196,164,72,0.12);
     }
+
+    .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 32px;
+      margin: 32px 24px 24px;
+    }
+    .content-card { margin-bottom: 48px; }
+    .btn-primary, .btn-outline, .secondary-btn, .auth-btn, .auth-gate-btn, .link-btn { transition: transform 0.2s, filter 0.2s, background 0.2s, border-color 0.2s; }
+    .btn-primary:hover, .auth-btn:hover, .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.07); }
+    .btn-outline:hover, .secondary-btn:hover, .link-btn:hover { border-color: var(--accent); background: rgba(196,164,72,0.08); transform: translateY(-2px); }
+    input, textarea, select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; color: #fff; padding: 12px 16px; font: inherit; outline: none; transition: border-color 0.2s ease; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    @media (max-width: 760px) { .page { padding: 80px 16px 0; } .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate { margin: 24px 16px 32px; } }
 
     /* ── Auth card ── */
     .auth-card {
@@ -348,21 +370,59 @@
 
     <section class="auth-card">
 
-      <!-- STEP 1: Email -->
-      <div id="step-email">
-        <h1>Sign In</h1>
-        <p class="subtitle">Enter your UCSB email address. We'll send you a 6-digit verification code.</p>
-        <form id="email-form" class="auth-form" novalidate>
+      <!-- STEP 1: Start -->
+      <div id="step-choice">
+        <h1>Welcome</h1>
+        <p class="subtitle">Choose whether to log in with your existing account or create a new UCSB member account.</p>
+        <div class="auth-links" style="justify-content:flex-start; margin-top:24px; gap:14px;">
+          <button type="button" id="open-login-btn" class="auth-btn">Login</button>
+          <button type="button" id="open-signup-btn" class="auth-btn">Create New Account</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Login -->
+      <div id="step-login" class="hidden">
+        <h1>Login</h1>
+        <p class="subtitle">Enter your UCSB email and password to sign in immediately.</p>
+        <form id="login-form" class="auth-form" novalidate>
           <div class="field-group">
-            <label class="field-label" for="email-input">UCSB Email <span class="req">*</span></label>
-            <input type="email" id="email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
+            <label class="field-label" for="login-email-input">UCSB Email <span class="req">*</span></label>
+            <input type="email" id="login-email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
           </div>
-          <button type="submit" class="auth-btn">Send Verification Code</button>
-          <p class="auth-msg" id="email-msg"></p>
+          <div class="field-group">
+            <label class="field-label" for="login-password-input">Password <span class="req">*</span></label>
+            <input type="password" id="login-password-input" class="auth-input" placeholder="Enter your password" autocomplete="current-password" />
+          </div>
+          <button type="submit" class="auth-btn">Log In</button>
+          <p class="auth-msg" id="login-msg"></p>
+          <div class="auth-links">
+            <button type="button" id="back-to-choice-from-login" class="link-btn">Back</button>
+          </div>
         </form>
       </div>
 
-      <!-- STEP 2: Code -->
+      <!-- STEP 3: Create account -->
+      <div id="step-signup" class="hidden">
+        <h1>Create Account</h1>
+        <p class="subtitle">Verify your @ucsb.edu email and create a password to secure your account.</p>
+        <form id="signup-form" class="auth-form" novalidate>
+          <div class="field-group">
+            <label class="field-label" for="signup-email-input">UCSB Email <span class="req">*</span></label>
+            <input type="email" id="signup-email-input" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="signup-password-input">Password <span class="req">*</span></label>
+            <input type="password" id="signup-password-input" class="auth-input" placeholder="Create a password" autocomplete="new-password" />
+          </div>
+          <button type="submit" class="auth-btn">Continue</button>
+          <p class="auth-msg" id="signup-msg"></p>
+          <div class="auth-links">
+            <button type="button" id="back-to-choice-from-signup" class="link-btn">Back</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 4: Code -->
       <div id="step-code" class="hidden">
         <h1>Check Your Email</h1>
         <p class="subtitle">We sent a 6-digit code to <strong id="display-email"></strong>. It may take a moment to arrive.</p>
@@ -457,9 +517,11 @@
 
     if (EMAILJS_READY) emailjs.init(EMAILJS_PUBLIC_KEY);
 
-    let currentCode  = null;
-    let currentEmail = null;
-    let resendTimer  = 0;
+    let currentCode      = null;
+    let currentEmail     = null;
+    let currentPassword  = null;
+    let currentAuthMode  = null;
+    let resendTimer      = 0;
 
     // ── Firebase helpers ──────────────────────────────────────
     function eKey(email) { return email.replace(/[.@#$[\]/]/g, '_'); }
@@ -484,8 +546,28 @@
     function getSession() {
       try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
     }
+    function sanitizeMemberForSession(member) {
+      if (!member) return null;
+      const { password, ...safe } = member;
+      return {
+        ...safe,
+        email: member.email,
+        isAdmin: member.email === ADMIN_EMAIL || member.isAdmin === true
+      };
+    }
+    function buildMemberProfile(member) {
+      return {
+        ...member,
+        email: member.email,
+        isAdmin: member.isAdmin === true || member.email === ADMIN_EMAIL,
+        authProvider: member.authProvider || 'password',
+        joinedAt: member.joinedAt || Date.now(),
+        lastSeen: member.lastSeen || Date.now(),
+        updatedAt: Date.now()
+      };
+    }
     function setSession(member) {
-      const data = { ...member, isAdmin: member.isAdmin === true || member.email === ADMIN_EMAIL };
+      const data = sanitizeMemberForSession(member);
       localStorage.setItem('aec-session', JSON.stringify(data));
     }
     function clearSession() { localStorage.removeItem('aec-session'); }
@@ -509,9 +591,23 @@
       if (sl) sl.textContent = 'Profile';
     }
 
+    function goToLogin() {
+      currentAuthMode = 'login';
+      currentPassword = null;
+      setMsg('login-msg', '');
+      showStep('step-login');
+    }
+
+    function goToSignup() {
+      currentAuthMode = 'signup';
+      currentPassword = null;
+      setMsg('signup-msg', '');
+      showStep('step-signup');
+    }
+
     // ── UI helpers ────────────────────────────────────────────
     function showStep(id) {
-      ['step-email','step-code','step-new-member','step-welcome'].forEach(s => {
+      ['step-choice','step-login','step-signup','step-code','step-new-member','step-welcome'].forEach(s => {
         document.getElementById(s).classList.toggle('hidden', s !== id);
       });
     }
@@ -581,27 +677,6 @@
       }
     }
 
-    // ── Step 1: Email ─────────────────────────────────────────
-    document.getElementById('email-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const email = document.getElementById('email-input').value.trim().toLowerCase();
-      if (!email.endsWith('@ucsb.edu')) {
-        setMsg('email-msg', 'Please enter a valid @ucsb.edu email address.', 'error');
-        document.getElementById('email-input').classList.add('error-field');
-        return;
-      }
-      document.getElementById('email-input').classList.remove('error-field');
-      const btn = this.querySelector('button[type="submit"]');
-      btn.disabled = true; btn.textContent = 'Sending…';
-      currentEmail = email;
-      const sent = await sendVerificationCode(email);
-      btn.disabled = false; btn.textContent = 'Send Verification Code';
-      if (!sent) { setMsg('email-msg', 'Could not send the email. Please try again.', 'error'); return; }
-      document.getElementById('display-email').textContent = email;
-      setMsg('email-msg', '', 'info');
-      showStep('step-code');
-    });
-
     // ── Step 2: Code ──────────────────────────────────────────
     document.getElementById('code-form').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -620,23 +695,33 @@
 
       const fbMember = await getFirebaseMember(currentEmail);
       if (fbMember) {
-        const member = { ...fbMember, lastSeen: Date.now() };
-        saveFirebaseMember(member);
-        setSession(member);
-        revealMemberNav();
-        if (isAdminSession(member)) {
-          const l = document.getElementById('admin-nav-link');
-          if (l) l.style.display = 'inline-flex';
+        const existing = { ...fbMember, lastSeen: Date.now() };
+        if (currentAuthMode === 'signup') {
+          if (existing.password && existing.password !== currentPassword) {
+            setMsg('code-msg', 'An account with this email already exists. Please log in instead.', 'error');
+            return;
+          }
+          if (!existing.password) existing.password = currentPassword;
         }
-        logActivity(member.email, member.name, 'signin', 'Signed in');
-        fillWelcome(member, false);
-        setMsg('code-msg', '', 'info');
-        showStep('step-welcome');
-      } else {
-        document.getElementById('nm-email').value = currentEmail;
-        setMsg('code-msg', '', 'info');
-        showStep('step-new-member');
+        if (currentAuthMode === 'login' || (currentAuthMode === 'signup' && existing.password === currentPassword)) {
+          await saveFirebaseMember(existing);
+          setSession(existing);
+          revealMemberNav();
+          if (isAdminSession(existing)) {
+            const l = document.getElementById('admin-nav-link');
+            if (l) l.style.display = 'inline-flex';
+          }
+          logActivity(existing.email, existing.name, currentAuthMode === 'login' ? 'signin' : 'signup', currentAuthMode === 'login' ? 'Logged in' : 'Verified existing account');
+          fillWelcome(existing, false);
+          setMsg('code-msg', '', 'info');
+          showStep('step-welcome');
+          return;
+        }
       }
+
+      document.getElementById('nm-email').value = currentEmail;
+      setMsg('code-msg', '', 'info');
+      showStep('step-new-member');
     });
 
     // Resend code
@@ -657,12 +742,79 @@
 
     // Change email
     document.getElementById('change-email-btn').addEventListener('click', function() {
-      currentCode = null; currentEmail = null;
+      currentCode = null; currentPassword = null;
       document.getElementById('code-input').value = '';
       document.getElementById('code-input').classList.remove('error-field');
       setMsg('code-msg', '', 'info');
       setMsg('resend-msg', '', 'info');
-      showStep('step-email');
+      if (currentAuthMode === 'signup') showStep('step-signup');
+      else showStep('step-choice');
+    });
+
+    document.getElementById('open-login-btn').addEventListener('click', goToLogin);
+    document.getElementById('open-signup-btn').addEventListener('click', goToSignup);
+    document.getElementById('back-to-choice-from-login').addEventListener('click', function() { showStep('step-choice'); });
+    document.getElementById('back-to-choice-from-signup').addEventListener('click', function() { showStep('step-choice'); });
+
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email-input').value.trim().toLowerCase();
+      const password = document.getElementById('login-password-input').value;
+      if (!email.endsWith('@ucsb.edu')) {
+        setMsg('login-msg', 'Please enter a valid @ucsb.edu email address.', 'error');
+        return;
+      }
+      if (!password) {
+        setMsg('login-msg', 'Please enter your password.', 'error');
+        return;
+      }
+      const member = await getFirebaseMember(email);
+      if (!member || !member.password) {
+        setMsg('login-msg', 'Account not found. Please create a new account.', 'error');
+        return;
+      }
+      if (member.password !== password) {
+        setMsg('login-msg', 'Incorrect password. Please try again.', 'error');
+        return;
+      }
+      const signedIn = buildMemberProfile({ ...member, lastSeen: Date.now(), authProvider: 'password' });
+      await saveFirebaseMember(signedIn);
+      setSession(signedIn);
+      revealMemberNav();
+      if (isAdminSession(signedIn)) {
+        const l = document.getElementById('admin-nav-link'); if (l) l.style.display = 'inline-flex';
+      }
+      logActivity(signedIn.email, signedIn.name, 'signin', 'Logged in with password');
+      fillWelcome(signedIn, false);
+      setMsg('login-msg', '', 'success');
+      showStep('step-welcome');
+    });
+
+    document.getElementById('signup-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('signup-email-input').value.trim().toLowerCase();
+      const password = document.getElementById('signup-password-input').value;
+      if (!email.endsWith('@ucsb.edu')) {
+        setMsg('signup-msg', 'Please enter a valid @ucsb.edu email address.', 'error');
+        return;
+      }
+      if (!password || password.length < 6) {
+        setMsg('signup-msg', 'Please choose a password with at least 6 characters.', 'error');
+        return;
+      }
+      currentAuthMode = 'signup';
+      currentEmail = email;
+      currentPassword = password;
+      document.getElementById('display-email').textContent = email;
+      document.getElementById('code-input').value = '';
+      setMsg('signup-msg', '', 'info');
+      const sent = await sendVerificationCode(email);
+      if (!sent) {
+        setMsg('signup-msg', 'Could not send the verification email. Try again.', 'error');
+        return;
+      }
+      showStep('step-code');
+      setMsg('code-msg', 'Check your email for the verification code.', 'info');
     });
 
     // ── Step 3a: New member registration ──────────────────────
@@ -688,7 +840,11 @@
       // Guard: re-check Firebase — they may have already registered (e.g. slow network on first check)
       const existing = await getFirebaseMember(currentEmail);
       if (existing) {
-        const member = { ...existing, lastSeen: Date.now() };
+        const member = buildMemberProfile({
+          ...existing,
+          lastSeen: Date.now(),
+          authProvider: existing.authProvider || 'password'
+        });
         await saveFirebaseMember(member);
         setSession(member);
         revealMemberNav();
@@ -705,14 +861,16 @@
 
       // Merge with any existing record so we never clobber fields like isAdmin
       const base = await getFirebaseMember(currentEmail) || {};
-      const member = {
+      const member = buildMemberProfile({
         ...base,
         email: currentEmail, name, subject, learn, goal,
         preferredEmail, field,
+        password: currentPassword || base.password || '',
+        authProvider: 'password',
         isAdmin: base.isAdmin === true || currentEmail === ADMIN_EMAIL,
         joinedAt: base.joinedAt || Date.now(),
         lastSeen: Date.now()
-      };
+      });
       await saveFirebaseMember(member);
       setSession(member);
       revealMemberNav();
@@ -735,9 +893,13 @@
       if (al) al.style.display = 'none';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
       if (sl) sl.textContent = 'Sign In';
-      document.getElementById('email-input').value = '';
-      setMsg('email-msg', '', 'info');
-      showStep('step-email');
+      document.getElementById('login-email-input').value = '';
+      document.getElementById('login-password-input').value = '';
+      document.getElementById('signup-email-input').value = '';
+      document.getElementById('signup-password-input').value = '';
+      setMsg('login-msg', '', 'info');
+      setMsg('signup-msg', '', 'info');
+      showStep('step-choice');
     });
   </script>
 </body>

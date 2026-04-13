@@ -6,10 +6,16 @@
   <title>Voting | UCSB Applied Economics Club</title>
   <style>
     :root {
-      --bg: #031a40;
-      --text: #ffffff;
-      --accent: #70b1ff;
-      --border: rgba(255,255,255,0.12);
+      --bg: #090F1A;
+      --surface: #0E1829;
+      --surface-soft: #12213A;
+      --panel: rgba(255,255,255,0.04);
+      --accent: #C4A448;
+      --accent-soft: #D4B55E;
+      --muted: rgba(255,255,255,0.72);
+      --text: #FFFFFF;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 24px 60px rgba(0,0,0,0.26);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
@@ -45,23 +51,23 @@
       justify-content: space-between;
       padding: 0 clamp(20px, 4vw, 56px);
       height: 64px;
-      background: rgba(3, 26, 64, 0.72);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      background: rgba(9, 15, 26, 0.84);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
       animation: navDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
     }
 
     @keyframes navDown {
       from { transform: translateY(-100%); opacity: 0; }
-      to   { transform: translateY(0);     opacity: 1; }
+      to   { transform: translateY(0); opacity: 1; }
     }
 
     .topbar.scrolled {
-      background: rgba(3, 26, 64, 0.97);
-      box-shadow: 0 2px 40px rgba(0,0,0,0.35);
-      border-color: rgba(255,255,255,0.1);
+      background: rgba(9, 15, 26, 0.98);
+      box-shadow: 0 2px 38px rgba(0,0,0,0.42);
+      border-color: rgba(196,164,72,0.15);
     }
 
     .brand {
@@ -73,7 +79,7 @@
       text-decoration: none;
       white-space: nowrap;
       flex-shrink: 0;
-      transition: color 0.2s ease, opacity 0.2s ease;
+      transition: color 0.2s ease;
     }
 
     .brand:hover { color: var(--accent); }
@@ -88,21 +94,21 @@
       position: relative;
       display: inline-flex;
       align-items: center;
-      padding: 8px 13px;
+      padding: 8px 14px;
       color: rgba(255,255,255,0.72);
       text-decoration: none;
       font-size: 0.875rem;
       font-weight: 500;
       letter-spacing: 0.03em;
-      border-radius: 8px;
-      transition: color 0.2s ease, background 0.2s ease;
+      border-radius: 10px;
+      transition: color 0.2s, background 0.2s;
     }
 
     .main-nav a::after {
       content: '';
       position: absolute;
       bottom: 5px;
-      left: 13px; right: 13px;
+      left: 14px; right: 14px;
       height: 2px;
       background: var(--accent);
       border-radius: 2px;
@@ -113,7 +119,7 @@
 
     .main-nav a:hover {
       color: #ffffff;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.08);
     }
 
     .main-nav a:hover::after,
@@ -122,7 +128,112 @@
     .main-nav a.active {
       color: #ffffff;
       font-weight: 700;
-      background: rgba(112, 177, 255, 0.1);
+      background: rgba(196,164,72,0.12);
+    }
+
+    .panel,
+    .card,
+    .content-card,
+    .hero-block,
+    .vote-card,
+    .auth-card,
+    .auth-gate {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel,
+    .card,
+    .content-card,
+    .hero-block,
+    .vote-card,
+    .auth-card,
+    .auth-gate {
+      padding: 32px;
+    }
+
+    .content-card { margin: 32px 24px 48px; }
+    .card,
+    .vote-card,
+    .hero-block,
+    .auth-card,
+    .auth-gate { margin: 32px 24px 24px; }
+
+    .btn-primary,
+    .button,
+    .auth-btn,
+    .auth-gate-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 30px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #090F1A;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s, filter 0.2s;
+    }
+
+    .btn-primary:hover,
+    .auth-btn:hover,
+    .auth-gate-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.07);
+    }
+
+    .btn-outline,
+    .secondary-btn,
+    .link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(196,164,72,0.24);
+      color: var(--accent);
+      background: transparent;
+      text-decoration: none;
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .btn-outline:hover,
+    .secondary-btn:hover,
+    .link-btn:hover {
+      border-color: var(--accent);
+      background: rgba(196,164,72,0.08);
+      transform: translateY(-2px);
+    }
+
+    input,
+    textarea,
+    select {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px;
+      color: #fff;
+      padding: 12px 16px;
+      font: inherit;
+      transition: border-color 0.2s ease;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 760px) {
+      .page { padding: 80px 16px 0; }
+      .hero-block,
+      .content-card,
+      .card,
+      .vote-card,
+      .auth-card,
+      .auth-gate { margin: 24px 16px 32px; }
     }
 
     .content-card {
@@ -168,9 +279,9 @@
     }
 
     .vote-option:hover {
-      border-color: rgba(112, 177, 255, 0.5);
+      border-color: rgba(196, 164, 72, 0.45);
       transform: translateY(-2px);
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .vote-option input {
@@ -201,7 +312,7 @@
     .vote-count {
       align-self: flex-end;
       margin-top: auto;
-      background: rgba(112, 177, 255, 0.14);
+      background: rgba(196, 164, 72, 0.16);
       color: var(--accent);
       padding: 8px 12px;
       border-radius: 999px;
@@ -292,7 +403,7 @@
     .edit-btn {
       align-self: flex-start;
       background: transparent;
-      border: 1px solid rgba(112, 177, 255, 0.4);
+      border: 1px solid rgba(196, 164, 72, 0.4);
       color: var(--accent);
       border-radius: 999px;
       padding: 5px 14px;
@@ -305,7 +416,7 @@
     }
 
     .edit-btn:hover {
-      background: rgba(112, 177, 255, 0.12);
+      background: rgba(196, 164, 72, 0.12);
       border-color: var(--accent);
     }
 

@@ -320,12 +320,15 @@
             </textPath>
           </text>
 
-          <!-- "UCSB" at bottom with gold flanking lines -->
-          <line x1="56"  y1="202" x2="90"  y2="202" stroke="#C4A448" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="130" y="207" text-anchor="middle"
-                fill="#C4A448" font-family="Inter, system-ui, sans-serif"
-                font-size="11.5" font-weight="700" letter-spacing="4.5">UCSB</text>
-          <line x1="170" y1="202" x2="204" y2="202" stroke="#C4A448" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- "UCSB" along the bottom arc in gold -->
+          <path id="sealBottomArc" d="M 242,130 A 112,112 0 0,0 18,130" />
+          <text fill="#C4A448"
+                font-family="Inter, system-ui, -apple-system, sans-serif"
+                font-size="11" font-weight="700" letter-spacing="3.2">
+            <textPath href="#sealBottomArc" startOffset="50%" text-anchor="middle" side="left">
+              UCSB
+            </textPath>
+          </text>
 
           <!-- AE monogram — bold serif, centered -->
           <text x="130" y="163"
@@ -334,11 +337,11 @@
                 font-size="94" font-weight="900"
                 fill="#2B4A6F" letter-spacing="-6">AE</text>
 
-          <!-- Gold trend arrow over the monogram -->
-          <line x1="80" y1="156" x2="174" y2="82"
-                stroke="#C4A448" stroke-width="5.5" stroke-linecap="round"/>
-          <!-- Arrowhead (calculated for the arrow's direction vector) -->
-          <polygon points="174,82 164,100 156,88" fill="#C4A448"/>
+          <!-- Gold zigzag stock trend line -->
+          <path d="M74 166 L96 146 L112 156 L130 122 L148 138 L166 104"
+                stroke="#C4A448" stroke-width="6" fill="none"
+                stroke-linecap="round" stroke-linejoin="round"/>
+          <polygon points="166,104 156,116 158,96" fill="#C4A448"/>
         </svg>
       </div>
 
