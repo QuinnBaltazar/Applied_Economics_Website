@@ -126,6 +126,43 @@
       background: rgba(196,164,72,0.12);
     }
 
+    .hero-label {
+      display: inline-flex;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(196,164,72,0.14);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      max-width: fit-content;
+    }
+
+    .hero-title {
+      margin: 0 0 16px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.05;
+    }
+
+    .hero-copy {
+      color: rgba(255,255,255,0.78);
+      max-width: 670px;
+      font-size: 1rem;
+      line-height: 1.84;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
     .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -258,6 +295,39 @@
       flex-wrap: wrap;
     }
 
+    .auth-choice-grid {
+      display: grid;
+      gap: 18px;
+      margin-top: 24px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .auth-choice-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .auth-choice-card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+    }
+    .auth-choice-card p {
+      margin: 0;
+      color: rgba(255,255,255,0.72);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 760px) {
+      .auth-choice-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .link-btn {
       background: none;
       border: none;
@@ -368,15 +438,29 @@
   </header>
   <main class="page">
 
-    <section class="auth-card">
+    <section class="hero-block reveal" style="margin-top: 24px;">
+      <span class="hero-label">Access</span>
+      <h1 class="hero-title">Member sign in and account creation</h1>
+      <p class="hero-copy">Secure your UCSB member profile and access the club directory, voting tools, and executive resources with one seamless experience.</p>
+    </section>
+
+    <section class="auth-card reveal">
 
       <!-- STEP 1: Start -->
       <div id="step-choice">
         <h1>Welcome</h1>
         <p class="subtitle">Choose whether to log in with your existing account or create a new UCSB member account.</p>
-        <div class="auth-links" style="justify-content:flex-start; margin-top:24px; gap:14px;">
-          <button type="button" id="open-login-btn" class="auth-btn">Login</button>
-          <button type="button" id="open-signup-btn" class="auth-btn">Create New Account</button>
+        <div class="auth-choice-grid">
+          <div class="auth-choice-card">
+            <h2>Existing member</h2>
+            <p>Log in using your UCSB email and password to access member resources and the club directory.</p>
+            <button type="button" id="open-login-btn" class="auth-btn">Login</button>
+          </div>
+          <div class="auth-choice-card">
+            <h2>New member</h2>
+            <p>Create a UCSB member account to join the Applied Economics Club and vote on topics.</p>
+            <button type="button" id="open-signup-btn" class="auth-btn">Create Account</button>
+          </div>
         </div>
       </div>
 

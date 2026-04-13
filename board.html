@@ -131,6 +131,53 @@
       background: rgba(196,164,72,0.12);
     }
 
+    .hero-label {
+      display: inline-flex;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(196,164,72,0.14);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      max-width: fit-content;
+    }
+
+    .hero-title {
+      margin: 0 0 16px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.05;
+    }
+
+    .hero-copy {
+      color: rgba(255,255,255,0.78);
+      max-width: 670px;
+      font-size: 1rem;
+      line-height: 1.84;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .board-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(196,164,72,0.22);
+      box-shadow: 0 26px 62px rgba(0,0,0,0.24);
+    }
+
+    .board-card {
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
     .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -215,7 +262,13 @@
   </header>
   <main class="page">
 
-    <section class="board-grid">
+    <section class="hero-block reveal">
+      <span class="hero-label">Leadership</span>
+      <h1 class="hero-title">Executive board driving the club forward</h1>
+      <p class="hero-copy">Our board blends strategy, curriculum design, member engagement, and operations to keep the club moving with professional rigor and student energy.</p>
+    </section>
+
+    <section class="board-grid reveal">
       <div class="board-card">
         <span>President</span>
         <h3>Samuel Millen</h3>

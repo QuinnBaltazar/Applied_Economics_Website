@@ -131,6 +131,92 @@
       background: rgba(196,164,72,0.12);
     }
 
+    .hero-label {
+      display: inline-flex;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(196,164,72,0.14);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      max-width: fit-content;
+    }
+
+    .hero-title {
+      margin: 0 0 16px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.05;
+    }
+
+    .hero-copy {
+      color: rgba(255,255,255,0.78);
+      max-width: 670px;
+      font-size: 1rem;
+      line-height: 1.84;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.75s ease, transform 0.75s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .topic-grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      margin-top: 22px;
+    }
+
+    .topic-item {
+      position: relative;
+      padding: 28px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.15);
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .topic-item:hover {
+      transform: translateY(-3px);
+      border-color: rgba(196,164,72,0.22);
+      box-shadow: 0 22px 48px rgba(0,0,0,0.2);
+    }
+
+    .topic-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      background: rgba(196,164,72,0.12);
+      color: var(--accent);
+      font-size: 0.74rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .topic-item h2 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+
+    .topic-item p {
+      margin: 0;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.75;
+    }
+
     .panel, .card, .content-card, .hero-block, .vote-card, .auth-card, .auth-gate {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -221,23 +307,29 @@
   </header>
   <main class="page">
 
-    <section class="content-card">
-      <h1>Topics Covered</h1>
-      <p>Our club dives into applied economics through market research, policy analysis, and practical finance applications. These topics help members build the skills they need for real-world economic careers.</p>
+    <section class="hero-block reveal">
+      <span class="hero-label">Topics</span>
+      <h1 class="hero-title">Club curriculum with a finance edge</h1>
+      <p class="hero-copy">These are the core themes members explore through voting, case studies, and speaker sessions. Each topic is grounded in applied economics, investment strategy, and wealth management.</p>
+    </section>
 
-      <div class="topic-list">
-        <div class="topic-item">
+    <section class="content-card reveal">
+      <div class="topic-grid">
+        <article class="topic-item">
+          <span class="topic-badge">Market Strategy</span>
           <h2>Market Analysis</h2>
           <p>Explore equity trends, sector performance, and macro drivers to understand how financial markets behave.</p>
-        </div>
-        <div class="topic-item">
+        </article>
+        <article class="topic-item">
+          <span class="topic-badge">Policy Impact</span>
           <h2>Economic Policy</h2>
-          <p>Understand policy impacts on growth, employment, and investment through real case studies and debate.</p>
-        </div>
-        <div class="topic-item">
+          <p>Understand policy effects on growth, employment, and investment through real case studies and debate.</p>
+        </article>
+        <article class="topic-item">
+          <span class="topic-badge">Analytics</span>
           <h2>Data & Strategy</h2>
           <p>Use quantitative tools and research frameworks to evaluate decisions and build evidence-backed recommendations.</p>
-        </div>
+        </article>
       </div>
     </section>
 
