@@ -544,13 +544,31 @@
 
     async function getFirebaseMember(email) { return fbGet(`members/${eKey(email)}`); }
     async function saveFirebaseMember(member) { await fbSet(`members/${eKey(member.email)}`, member); }
+
+    // ── SHA-256 helper (Web Crypto API) ───────────────────────
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+    // Compare entered password against stored value, supporting plaintext→hash migration
+    async function passwordMatches(stored, entered) {
+      if (!stored || !entered) return false;
+      const hashed = await sha256(entered);
+      return stored === hashed || stored === entered; // hashed first, plaintext fallback
+    }
+
     function logActivity(email, name, type, detail) {
       fbPost('activity', { email, name: name||'', type, detail, at: Date.now() });
     }
 
     // ── Session ───────────────────────────────────────────────
     function getSession() {
-      try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; }
+      try {
+        const s = JSON.parse(localStorage.getItem('aec-session'));
+        if (!s) return null;
+        if (s.loginAt && Date.now() - s.loginAt > SESSION_TTL) { localStorage.removeItem('aec-session'); return null; }
+        return s;
+      } catch { return null; }
     }
     function sanitizeMemberForSession(member) {
       if (!member) return null;
@@ -572,8 +590,10 @@
         updatedAt: Date.now()
       };
     }
+    const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
     function setSession(member) {
       const data = sanitizeMemberForSession(member);
+      if (!data.loginAt) data.loginAt = Date.now();
       localStorage.setItem('aec-session', JSON.stringify(data));
     }
     function clearSession() { localStorage.removeItem('aec-session'); }
@@ -704,13 +724,15 @@
       if (fbMember) {
         const existing = { ...fbMember, lastSeen: Date.now() };
         if (currentAuthMode === 'signup') {
-          if (existing.password && existing.password !== currentPassword) {
+          if (existing.password && !(await passwordMatches(existing.password, currentPassword))) {
             setMsg('code-msg', 'An account with this email already exists. Please log in instead.', 'error');
             return;
           }
-          if (!existing.password) existing.password = currentPassword;
+          // Store/migrate to hashed password
+          if (currentPassword) existing.password = await sha256(currentPassword);
         }
-        if (currentAuthMode === 'login' || (currentAuthMode === 'signup' && existing.password === currentPassword)) {
+        const pwdOk = await passwordMatches(existing.password, currentPassword);
+        if (currentAuthMode === 'login' || (currentAuthMode === 'signup' && pwdOk)) {
           await saveFirebaseMember(existing);
           setSession(existing);
           revealMemberNav();
@@ -780,9 +802,14 @@
         setMsg('login-msg', 'Account not found. Please create a new account.', 'error');
         return;
       }
-      if (member.password !== password) {
+      if (!(await passwordMatches(member.password, password))) {
         setMsg('login-msg', 'Incorrect password. Please try again.', 'error');
         return;
+      }
+      // Migrate plaintext password to hash on successful login
+      if (member.password === password) {
+        member.password = await sha256(password);
+        await saveFirebaseMember(member);
       }
       const signedIn = buildMemberProfile({ ...member, lastSeen: Date.now(), authProvider: 'password' });
       await saveFirebaseMember(signedIn);
@@ -872,7 +899,7 @@
         ...base,
         email: currentEmail, name, subject, learn, goal,
         preferredEmail, field,
-        password: currentPassword || base.password || '',
+        password: (currentPassword ? await sha256(currentPassword) : base.password) || '',
         authProvider: 'password',
         isAdmin: base.isAdmin === true || currentEmail === ADMIN_EMAIL,
         joinedAt: base.joinedAt || Date.now(),

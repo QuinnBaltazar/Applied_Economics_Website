@@ -460,7 +460,8 @@
 
     function updateAdminLinkVisibility() {
       try {
-        var session = JSON.parse(localStorage.getItem('aec-session') || 'null');
+        var raw = JSON.parse(localStorage.getItem('aec-session') || 'null');
+        var session = raw && raw.loginAt && Date.now() - raw.loginAt > 30*24*60*60*1000 ? (localStorage.removeItem('aec-session'), null) : raw;
         var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true);
         var l = document.getElementById('admin-nav-link');
         if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';

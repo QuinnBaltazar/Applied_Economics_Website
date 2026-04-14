@@ -727,7 +727,8 @@
     ];
 
     // ── Helpers ───────────────────────────────────────────────
-    function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
+    const SESSION_TTL = 30*24*60*60*1000;
+    function getSession() { try { const s=JSON.parse(localStorage.getItem('aec-session')); if(!s)return null; if(s.loginAt&&Date.now()-s.loginAt>SESSION_TTL){localStorage.removeItem('aec-session');return null;} return s; } catch { return null; } }
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function fmt(n) { return `${n||0} vote${(n||0)===1?'':'s'}`; }
     function getMember(email) {
@@ -826,13 +827,14 @@
       return d ? Object.entries(d).map(([k,v]) => ({ key:k, ...v })) : [];
     }
     async function addCustomTopic(name, desc, email) {
-      const t = { name, desc: desc||'', votes:1, createdBy: email||'anonymous' };
+      // Submit to pending-topics for admin moderation instead of directly to custom-topics
+      const t = { name, desc: desc||'', createdBy: email||'anonymous', submittedAt: Date.now() };
       if (!FB_READY) {
         const list = JSON.parse(localStorage.getItem('aec-custom-topics')||'[]');
-        const e = { ...t, key: Date.now().toString() }; list.push(e);
+        const e = { ...t, votes:1, key: Date.now().toString() }; list.push(e);
         localStorage.setItem('aec-custom-topics', JSON.stringify(list)); return e;
       }
-      const r = await fbPost('custom-topics', t);
+      const r = await fbPost('pending-topics', t);
       return r ? { key: r.name, ...t } : null;
     }
     async function saveTopicEdit(key, name, desc) {
@@ -969,11 +971,28 @@
       highlightCurrentNav();
 
       // Load Firebase data in parallel
-      const [counts, customTopics, userVote] = await Promise.all([
-        loadCounts(), loadCustomTopics(), getUserVote(session)
+      const [counts, customTopics, userVote, voteWindow] = await Promise.all([
+        loadCounts(), loadCustomTopics(), getUserVote(session), fbGet('vote-window')
       ]);
 
       updateResults(counts);
+
+      // Check vote window
+      if (voteWindow && voteWindow.open && voteWindow.close) {
+        const now = Date.now();
+        const fmt = ts => new Date(ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+        if (now < voteWindow.open) {
+          const m = document.getElementById('vote-message');
+          m.textContent = `Voting opens ${fmt(voteWindow.open)}.`;
+          m.style.color = 'rgba(255,200,80,0.9)';
+          document.getElementById('vote-btn').disabled = true;
+        } else if (now > voteWindow.close) {
+          const m = document.getElementById('vote-message');
+          m.textContent = `Voting closed ${fmt(voteWindow.close)}.`;
+          m.style.color = 'rgba(255,100,100,0.9)';
+          document.getElementById('vote-btn').disabled = true;
+        }
+      }
 
       // Not signed in — show auth gate, hide form, still show counts
       if (!session) {
@@ -1021,7 +1040,7 @@
           const [newTopics, newVote] = await Promise.all([loadCustomTopics(), getUserVote(session)]);
           renderCustomTopics(newTopics, session, newVote);
           wireOtherToggle();
-          showMessage(`Thanks — your vote for "${name}" has been recorded.`);
+          showMessage(`Topic submitted — pending admin approval before it appears on the vote page.`);
         } else {
           await incrementCount(topic);
           await saveUserVote(session, topic);

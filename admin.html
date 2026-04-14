@@ -292,6 +292,11 @@
 
       <!-- Custom (Other) topics -->
       <div class="admin-section">
+        <h2>Pending Topics <span id="pending-badge" style="display:none;background:rgba(255,160,50,0.2);color:rgba(255,160,50,0.9);border-radius:999px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:8px;vertical-align:middle;"></span></h2>
+        <div id="pending-topics-list"></div>
+      </div>
+
+      <div class="admin-section">
         <h2>Member-Submitted Topics</h2>
         <div id="custom-topics-list"></div>
       </div>
@@ -299,6 +304,9 @@
       <!-- Members management -->
       <div class="admin-section">
         <h2>Members</h2>
+        <div style="margin-bottom:12px;">
+          <button class="reset-pwd-btn" id="btn-export-csv" style="font-size:0.85rem;padding:8px 18px;">Export CSV</button>
+        </div>
         <div id="admin-members-list"></div>
       </div>
 
@@ -312,6 +320,29 @@
       <div class="admin-section">
         <h2>Club Messages</h2>
         <div id="admin-messages-list"></div>
+      </div>
+
+      <!-- Vote window -->
+      <div class="admin-section">
+        <h2>Vote Window</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:520px;">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.42);margin-bottom:6px;">Opens</label>
+              <input type="datetime-local" id="vw-open" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:12px;color:#fff;padding:10px 14px;font:inherit;outline:none;transition:border-color 0.2s;" />
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.42);margin-bottom:6px;">Closes</label>
+              <input type="datetime-local" id="vw-close" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:12px;color:#fff;padding:10px 14px;font:inherit;outline:none;transition:border-color 0.2s;" />
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="reset-btn" id="btn-save-window" style="margin:0;padding:10px 22px;">Save Window</button>
+            <button class="reset-btn" id="btn-clear-window" style="margin:0;padding:10px 22px;opacity:0.7;">Clear (Always Open)</button>
+            <span id="vw-status" style="font-size:0.85rem;color:rgba(255,255,255,0.5);"></span>
+          </div>
+          <p id="vw-current" style="font-size:0.82rem;color:rgba(255,255,255,0.38);"></p>
+        </div>
       </div>
 
       <!-- Email blast -->
@@ -332,6 +363,15 @@
             <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;message_body&#125;&#125;</code>.
           </p>
         </div>
+      </div>
+
+      <!-- Vote history -->
+      <div class="admin-section">
+        <h2>Vote History</h2>
+        <div style="margin-bottom:12px;">
+          <button class="reset-btn" id="btn-snapshot" style="margin:0;padding:10px 22px;">Save Snapshot of Current Results</button>
+        </div>
+        <div id="vote-history-list"></div>
       </div>
 
       <!-- Reset controls -->
@@ -455,7 +495,8 @@
       });
     }
 
-    function getSession() { try { return JSON.parse(localStorage.getItem('aec-session')); } catch { return null; } }
+    const SESSION_TTL = 30*24*60*60*1000;
+    function getSession() { try { const s=JSON.parse(localStorage.getItem('aec-session')); if(!s)return null; if(s.loginAt&&Date.now()-s.loginAt>SESSION_TTL){localStorage.removeItem('aec-session');return null;} return s; } catch { return null; } }
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function eKey(email) { return email.replace(/[.@#$[\]/]/g, '_'); }
 
@@ -503,6 +544,44 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(t)}</td><td>${counts[t] || 0}</td>`;
         tbody.appendChild(tr);
+      });
+    }
+
+    function renderPendingTopics(rawPending) {
+      const container = document.getElementById('pending-topics-list');
+      const badge = document.getElementById('pending-badge');
+      const pending = rawPending ? Object.entries(rawPending).map(([k,v]) => ({key:k,...v})) : [];
+      if (pending.length) { badge.textContent = pending.length; badge.style.display = 'inline'; }
+      else { badge.style.display = 'none'; }
+      if (!pending.length) { container.innerHTML = '<p class="empty-state">No pending topics.</p>'; return; }
+      container.innerHTML = '';
+      pending.sort((a,b) => (a.submittedAt||0)-(b.submittedAt||0)).forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'topic-row';
+        const timeStr = t.submittedAt ? new Date(t.submittedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        row.innerHTML = `
+          <div class="topic-row-info">
+            <div class="topic-row-name">${escapeHtml(t.name)}</div>
+            <div class="topic-row-meta">${escapeHtml(t.desc||'')} &nbsp;·&nbsp; By ${escapeHtml(t.createdBy||'anonymous')} &nbsp;·&nbsp; ${escapeHtml(timeStr)}</div>
+          </div>
+          <button class="reset-pwd-btn" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);" data-key="${escapeHtml(t.key)}">Approve</button>
+          <button class="delete-topic-btn" data-key="${escapeHtml(t.key)}" style="margin-left:6px;">Reject</button>
+        `;
+        row.querySelector('[style*="Approve"]').addEventListener('click', async function() {
+          const key = this.dataset.key;
+          // Move to custom-topics
+          await fetch(`${DB_URL}/custom-topics.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:t.name, desc:t.desc||'', votes:0, createdBy:t.createdBy||'anonymous' }) });
+          await fbDelete(`pending-topics/${key}`);
+          await refresh();
+          setMsg(`"${t.name}" approved and added to the vote page.`);
+        });
+        row.querySelector('.delete-topic-btn').addEventListener('click', async function() {
+          if (!confirm(`Reject "${t.name}"?`)) return;
+          await fbDelete(`pending-topics/${this.dataset.key}`);
+          await refresh();
+          setMsg(`"${t.name}" rejected.`);
+        });
+        container.appendChild(row);
       });
     }
 
@@ -615,14 +694,30 @@
       });
     }
 
+    const ACTIVITY_PAGE = 20;
+    let activityAllEntries = [];
+    let activityShown = 0;
+
     function renderActivityLog(entries) {
+      activityAllEntries = entries || [];
+      activityShown = 0;
       const container = document.getElementById('activity-log');
-      if (!entries || !entries.length) {
+      if (!activityAllEntries.length) {
         container.innerHTML = '<p class="empty-state">No activity recorded yet.</p>';
         return;
       }
       container.innerHTML = '';
-      entries.slice(0, 60).forEach(e => {
+      renderActivityPage();
+    }
+
+    function renderActivityPage() {
+      const container = document.getElementById('activity-log');
+      // Remove existing "Load more" button if present
+      const old = container.querySelector('.load-more-btn');
+      if (old) old.remove();
+
+      const slice = activityAllEntries.slice(activityShown, activityShown + ACTIVITY_PAGE);
+      slice.forEach(e => {
         const row = document.createElement('div');
         row.className = 'activity-row';
         const typeLabel = { join:'Join', signin:'Sign In', vote:'Vote', topic_submit:'Topic', card_edit:'Edit' }[e.type] || e.type;
@@ -637,6 +732,16 @@
           '<div class="activity-time">' + escapeHtml(timeStr) + '</div>';
         container.appendChild(row);
       });
+      activityShown += slice.length;
+
+      if (activityShown < activityAllEntries.length) {
+        const btn = document.createElement('button');
+        btn.className = 'load-more-btn reset-pwd-btn';
+        btn.style.cssText = 'margin-top:12px;width:100%;text-align:center;padding:8px;';
+        btn.textContent = `Load more (${activityAllEntries.length - activityShown} remaining)`;
+        btn.addEventListener('click', renderActivityPage);
+        container.appendChild(btn);
+      }
     }
 
     function renderVoteRecords(rawRecords, rawMembers) {
@@ -714,14 +819,15 @@
     }
 
     async function refresh() {
-      const [rawCounts, rawCustom, rawActivity, rawVoteRecords, rawMembers] = await Promise.all([
+      const [rawCounts, rawCustom, rawActivity, rawVoteRecords, rawMembers, rawPending] = await Promise.all([
         fbGet('vote-counts'), fbGet('custom-topics'), fbGet('activity'),
-        fbGet('vote-records'), fbGet('members')
+        fbGet('vote-records'), fbGet('members'), fbGet('pending-topics')
       ]);
       const counts = rawCounts || {};
       const topics = rawCustom ? Object.entries(rawCustom).map(([k,v]) => ({ key:k,...v })) : [];
       renderCounts(counts);
       renderVoteRecords(rawVoteRecords || {}, rawMembers || {});
+      renderPendingTopics(rawPending);
       renderCustomTopics(topics);
 
       // Activity log — sort newest first
@@ -730,6 +836,8 @@
         : [];
       renderActivityLog(actEntries);
       await renderAdminMessages();
+      await loadVoteWindow();
+      await renderVoteHistory();
     }
 
     // ── Reset handlers ────────────────────────────────────────
@@ -740,6 +848,111 @@
       await refresh();
       setMsg(`Done — ${label}.`);
     }
+
+    // ── Vote Window ───────────────────────────────────────────
+    async function loadVoteWindow() {
+      const vw = await fbGet('vote-window');
+      const openEl = document.getElementById('vw-open');
+      const closeEl = document.getElementById('vw-close');
+      const currentEl = document.getElementById('vw-current');
+      if (vw && vw.open) openEl.value = new Date(vw.open - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+      if (vw && vw.close) closeEl.value = new Date(vw.close - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+      if (vw && vw.open && vw.close) {
+        const fmt = ts => new Date(ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+        currentEl.textContent = `Current window: ${fmt(vw.open)} → ${fmt(vw.close)}`;
+      } else {
+        currentEl.textContent = 'No window set — voting is always open.';
+      }
+    }
+
+    // ── Vote History ─────────────────────────────────────────
+    async function saveSnapshot() {
+      const counts = await fbGet('vote-counts');
+      if (!counts) { setMsg('No vote data to snapshot.', true); return; }
+      const label = prompt('Label for this snapshot (e.g. "Spring 2026 — Week 3"):');
+      if (!label) return;
+      await fetch(`${DB_URL}/vote-history.json`, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ label, counts, savedAt: Date.now() }) });
+      setMsg('Snapshot saved.');
+      await renderVoteHistory();
+    }
+
+    async function renderVoteHistory() {
+      const container = document.getElementById('vote-history-list');
+      const raw = await fbGet('vote-history');
+      if (!raw) { container.innerHTML = '<p class="empty-state">No snapshots saved yet.</p>'; return; }
+      const entries = Object.entries(raw).map(([k,v]) => ({key:k,...v})).sort((a,b) => (b.savedAt||0)-(a.savedAt||0));
+      container.innerHTML = '';
+      entries.forEach(e => {
+        const div = document.createElement('div');
+        div.style.cssText = 'margin-bottom:18px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;';
+        const timeStr = e.savedAt ? new Date(e.savedAt).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        const counts = e.counts || {};
+        const total = Object.values(counts).reduce((a,b)=>a+b,0);
+        const rows = BASE_TOPICS.map(t => `<tr><td style="padding:4px 10px 4px 0;color:rgba(255,255,255,0.75);font-size:0.88rem;">${escapeHtml(t)}</td><td style="padding:4px 0;font-weight:700;color:var(--accent);">${counts[t]||0}</td><td style="padding:4px 0 4px 10px;font-size:0.8rem;color:rgba(255,255,255,0.35);">${total?Math.round((counts[t]||0)/total*100):0}%</td></tr>`).join('');
+        div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div><strong style="font-size:0.95rem;">${escapeHtml(e.label||'Untitled')}</strong> <span style="font-size:0.78rem;color:rgba(255,255,255,0.35);margin-left:8px;">${escapeHtml(timeStr)} &nbsp;·&nbsp; ${total} votes</span></div>
+          <button class="delete-msg-btn" data-key="${escapeHtml(e.key)}">Delete</button>
+        </div>
+        <table style="border-collapse:collapse;">${rows}</table>`;
+        div.querySelector('.delete-msg-btn').addEventListener('click', async function() {
+          if (!confirm('Delete this snapshot?')) return;
+          await fbDelete('vote-history/' + this.dataset.key);
+          await renderVoteHistory();
+        });
+        container.appendChild(div);
+      });
+    }
+
+    // ── CSV Export ────────────────────────────────────────────
+    document.getElementById('btn-export-csv').addEventListener('click', async () => {
+      const raw = await fbGet('members');
+      if (!raw) { setMsg('No members to export.', true); return; }
+      const emailMap = new Map();
+      Object.values(raw).filter(m => m && m.email && m.name).forEach(m => {
+        const prev = emailMap.get(m.email);
+        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
+      });
+      const members = Array.from(emailMap.values()).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      const cols = ['Name','Email','Area of Interest','Want to Learn','Field','Joined','Admin'];
+      const rows = members.map(m => [
+        m.name||'', m.email||'', m.subject||'', m.learn||'', m.field||'',
+        m.joinedAt ? new Date(m.joinedAt).toLocaleDateString('en-US') : '',
+        m.isAdmin ? 'Yes' : ''
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+      const csv = [cols.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `aec-members-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('btn-snapshot').addEventListener('click', saveSnapshot);
+
+    document.getElementById('btn-save-window').addEventListener('click', async () => {
+      const openVal  = document.getElementById('vw-open').value;
+      const closeVal = document.getElementById('vw-close').value;
+      const statusEl = document.getElementById('vw-status');
+      if (!openVal || !closeVal) { statusEl.textContent = 'Set both dates first.'; return; }
+      const openTs  = new Date(openVal).getTime();
+      const closeTs = new Date(closeVal).getTime();
+      if (closeTs <= openTs) { statusEl.textContent = 'Close must be after Open.'; return; }
+      await fbSet('vote-window', { open: openTs, close: closeTs });
+      statusEl.textContent = 'Saved.';
+      await loadVoteWindow();
+      setTimeout(() => statusEl.textContent = '', 2000);
+    });
+
+    document.getElementById('btn-clear-window').addEventListener('click', async () => {
+      if (!confirm('Remove the vote window? Voting will be open at all times.')) return;
+      await fbDelete('vote-window');
+      document.getElementById('vw-open').value = '';
+      document.getElementById('vw-close').value = '';
+      document.getElementById('vw-current').textContent = 'No window set — voting is always open.';
+      document.getElementById('vw-status').textContent = 'Cleared.';
+      setTimeout(() => document.getElementById('vw-status').textContent = '', 2000);
+    });
 
     document.getElementById('btn-send-blast').addEventListener('click', sendEmailBlast);
 
