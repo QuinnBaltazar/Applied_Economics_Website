@@ -204,6 +204,47 @@
       .card { margin: 24px 16px; padding: 24px 20px; }
     }
 
+    /* ── STATS BAR ── */
+    .stats-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
+    .stat-pill { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:18px 20px; display:flex; flex-direction:column; gap:5px; transition:border-color 0.2s; }
+    .stat-pill:hover { border-color:rgba(196,164,72,0.22); }
+    .stat-pill-value { font-size:1.75rem; font-weight:800; color:#fff; letter-spacing:-0.03em; line-height:1; }
+    .stat-pill-label { font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.38); }
+    @media (max-width:600px) { .stats-bar { grid-template-columns:repeat(2,1fr); } }
+
+    /* ── SECTION TABS ── */
+    .admin-tabs-wrap {
+      position:sticky; top:64px; z-index:50;
+      margin:-34px -34px 32px -34px;
+      padding:0 34px;
+      background:rgba(7,22,48,0.97); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(255,255,255,0.07);
+    }
+    .admin-tabs { display:flex; overflow-x:auto; scrollbar-width:none; gap:0; }
+    .admin-tabs::-webkit-scrollbar { display:none; }
+    .admin-tab {
+      flex-shrink:0; padding:14px 16px; background:none; border:none; border-bottom:2px solid transparent;
+      color:rgba(255,255,255,0.42); font:600 0.85rem/1 inherit; cursor:pointer; white-space:nowrap;
+      transition:color 0.18s, border-color 0.18s; display:inline-flex; align-items:center; gap:6px;
+    }
+    .admin-tab:hover { color:rgba(255,255,255,0.82); }
+    .admin-tab.active { color:#fff; border-bottom-color:var(--accent); }
+    .tab-badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      background:rgba(255,160,50,0.25); color:rgba(255,160,50,0.95);
+      border-radius:999px; padding:1px 7px; font-size:0.68rem; font-weight:700; min-width:18px;
+    }
+    @media (max-width:600px) { .admin-tabs-wrap { margin:-24px -20px 24px -20px; padding:0 20px; } }
+
+    /* ── MEMBER SEARCH ── */
+    .member-search-wrap { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+    .member-search-input { flex:1; min-width:180px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:12px; color:#fff; padding:10px 16px; font:inherit; font-size:0.9rem; outline:none; transition:border-color 0.2s; }
+    .member-search-input::placeholder { color:rgba(255,255,255,0.3); }
+    .member-search-input:focus { border-color:var(--accent); }
+
+    /* ── TAB PANELS ── */
+    .admin-section.tab-hidden { display:none !important; }
+
     /* ── MOBILE NAV ── */
     .nav-toggle {
       display: none; flex-direction: column; justify-content: center; align-items: center;
@@ -260,8 +301,28 @@
       <h1>Admin Panel</h1>
       <p class="sub" id="admin-sub"></p>
 
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-pill"><div class="stat-pill-value" id="stat-members">—</div><div class="stat-pill-label">Members</div></div>
+        <div class="stat-pill"><div class="stat-pill-value" id="stat-votes">—</div><div class="stat-pill-label">Votes Cast</div></div>
+        <div class="stat-pill"><div class="stat-pill-value" id="stat-pending">—</div><div class="stat-pill-label">Pending Topics</div></div>
+        <div class="stat-pill"><div class="stat-pill-value" id="stat-messages">—</div><div class="stat-pill-label">Messages</div></div>
+      </div>
+
+      <!-- Tab Strip -->
+      <div class="admin-tabs-wrap">
+        <div class="admin-tabs" id="admin-tabs">
+          <button class="admin-tab active" data-target="panel-overview">Overview</button>
+          <button class="admin-tab" data-target="panel-members">Members</button>
+          <button class="admin-tab" data-target="panel-topics">Topics <span class="tab-badge" id="tab-badge-topics" style="display:none"></span></button>
+          <button class="admin-tab" data-target="panel-activity">Activity</button>
+          <button class="admin-tab" data-target="panel-messages">Messages <span class="tab-badge" id="tab-badge-messages" style="display:none"></span></button>
+          <button class="admin-tab" data-target="panel-settings">Settings</button>
+        </div>
+      </div>
+
       <!-- Quick links -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-overview">
         <h2>Quick Links</h2>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <a href="https://console.firebase.google.com/project/applied-economics-club/database/applied-economics-club-default-rtdb/data" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,160,50,0.35);color:rgba(255,160,50,0.9);text-decoration:none;font-size:0.88rem;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,160,50,0.1)'" onmouseout="this.style.background='transparent'">
@@ -276,7 +337,7 @@
       </div>
 
       <!-- Live vote counts -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-overview">
         <h2>Live Vote Counts</h2>
         <table class="counts-table">
           <thead><tr><th>Topic</th><th style="text-align:right">Votes</th></tr></thead>
@@ -285,45 +346,46 @@
       </div>
 
       <!-- Vote records (who voted for what) -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-overview">
         <h2>Vote Records</h2>
         <div id="vote-records-list"></div>
       </div>
 
       <!-- Custom (Other) topics -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-topics">
         <h2>Pending Topics <span id="pending-badge" style="display:none;background:rgba(255,160,50,0.2);color:rgba(255,160,50,0.9);border-radius:999px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:8px;vertical-align:middle;"></span></h2>
         <div id="pending-topics-list"></div>
       </div>
 
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-topics">
         <h2>Member-Submitted Topics</h2>
         <div id="custom-topics-list"></div>
       </div>
 
       <!-- Members management -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-members">
         <h2>Members</h2>
-        <div style="margin-bottom:12px;">
-          <button class="reset-pwd-btn" id="btn-export-csv" style="font-size:0.85rem;padding:8px 18px;">Export CSV</button>
+        <div class="member-search-wrap">
+          <input type="search" class="member-search-input" id="admin-member-search" placeholder="Filter by name, email, or interest…" />
+          <button class="reset-pwd-btn" id="btn-export-csv" style="font-size:0.85rem;padding:8px 18px;flex-shrink:0;">Export CSV</button>
         </div>
         <div id="admin-members-list"></div>
       </div>
 
       <!-- Activity log -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-activity">
         <h2>Recent Activity</h2>
         <div id="activity-log"></div>
       </div>
 
       <!-- Club messages moderation -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-messages">
         <h2>Club Messages</h2>
         <div id="admin-messages-list"></div>
       </div>
 
       <!-- Vote window -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-settings">
         <h2>Vote Window</h2>
         <div style="display:flex;flex-direction:column;gap:12px;max-width:520px;">
           <div style="display:flex;gap:16px;flex-wrap:wrap;">
@@ -346,7 +408,7 @@
       </div>
 
       <!-- Email blast -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-settings">
         <h2>Email Members</h2>
         <div style="display:flex;flex-direction:column;gap:12px;max-width:640px;">
           <input type="text" id="blast-subject" placeholder="Subject line…" maxlength="200" style="width:100%;" />
@@ -366,7 +428,7 @@
       </div>
 
       <!-- Vote history -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-settings">
         <h2>Vote History</h2>
         <div style="margin-bottom:12px;">
           <button class="reset-btn" id="btn-snapshot" style="margin:0;padding:10px 22px;">Save Snapshot of Current Results</button>
@@ -375,7 +437,7 @@
       </div>
 
       <!-- Reset controls -->
-      <div class="admin-section">
+      <div class="admin-section" data-panel="panel-settings">
         <h2>Reset Controls</h2>
         <div class="reset-grid">
           <button class="reset-btn" id="btn-reset-custom">
@@ -553,6 +615,8 @@
       const pending = rawPending ? Object.entries(rawPending).map(([k,v]) => ({key:k,...v})) : [];
       if (pending.length) { badge.textContent = pending.length; badge.style.display = 'inline'; }
       else { badge.style.display = 'none'; }
+      const topicsBadge = document.getElementById('tab-badge-topics');
+      if (topicsBadge) { topicsBadge.textContent = pending.length; topicsBadge.style.display = pending.length ? 'inline-flex' : 'none'; }
       if (!pending.length) { container.innerHTML = '<p class="empty-state">No pending topics.</p>'; return; }
       container.innerHTML = '';
       pending.sort((a,b) => (a.submittedAt||0)-(b.submittedAt||0)).forEach(t => {
@@ -793,7 +857,11 @@
       if (!raw) { container.innerHTML = '<p class="empty-state">No messages yet.</p>'; return; }
       const msgs = Object.entries(raw).map(([k,v]) => ({key:k,...v}))
                          .sort((a,b) => (a.at||0)-(b.at||0));
-      if (!msgs.length) { container.innerHTML = '<p class="empty-state">No messages yet.</p>'; return; }
+      if (!msgs.length) { container.innerHTML = '<p class="empty-state">No messages yet.</p>'; document.getElementById('stat-messages').textContent = 0; return; }
+      document.getElementById('stat-messages').textContent = msgs.length;
+      // Update tab badge
+      const msgBadge = document.getElementById('tab-badge-messages');
+      if (msgBadge) { msgBadge.textContent = msgs.length; msgBadge.style.display = msgs.length ? 'inline-flex' : 'none'; }
       container.innerHTML = '';
       msgs.forEach(msg => {
         const initials = (msg.name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
@@ -825,6 +893,7 @@
       ]);
       const counts = rawCounts || {};
       const topics = rawCustom ? Object.entries(rawCustom).map(([k,v]) => ({ key:k,...v })) : [];
+      updateStats(rawMembers, rawVoteRecords, rawPending);
       renderCounts(counts);
       renderVoteRecords(rawVoteRecords || {}, rawMembers || {});
       renderPendingTopics(rawPending);
@@ -988,6 +1057,47 @@
       })
     );
 
+    // ── Tab switching ─────────────────────────────────────────
+    function switchTab(targetPanel) {
+      document.querySelectorAll('.admin-section[data-panel]').forEach(s => {
+        s.classList.toggle('tab-hidden', s.dataset.panel !== targetPanel);
+      });
+      document.querySelectorAll('.admin-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.target === targetPanel);
+      });
+    }
+
+    function initAdminTabs() {
+      document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.addEventListener('click', function() { switchTab(this.dataset.target); });
+      });
+      switchTab('panel-overview');
+    }
+
+    // ── Stats bar ─────────────────────────────────────────────
+    function updateStats(rawMembers, rawVoteRecords, rawPending) {
+      if (rawMembers) {
+        const emails = new Set(Object.values(rawMembers).filter(m=>m&&m.email).map(m=>m.email));
+        document.getElementById('stat-members').textContent = emails.size;
+      }
+      document.getElementById('stat-votes').textContent =
+        rawVoteRecords ? Object.keys(rawVoteRecords).length : 0;
+      document.getElementById('stat-pending').textContent =
+        rawPending ? Object.keys(rawPending).length : 0;
+    }
+
+    // ── Member search ─────────────────────────────────────────
+    function initMemberSearch() {
+      const input = document.getElementById('admin-member-search');
+      if (!input) return;
+      input.addEventListener('input', function() {
+        const q = this.value.trim().toLowerCase();
+        document.querySelectorAll('#admin-members-list .member-row').forEach(row => {
+          row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+        });
+      });
+    }
+
     // ── Init ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async function() {
       const session = getSession();
@@ -1009,6 +1119,8 @@
       }
 
       highlightCurrentNav();
+      initAdminTabs();
+      initMemberSearch();
       document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
 
       // Show Members nav link — admin is always signed in
