@@ -69,26 +69,27 @@
     .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
 
     /* ── PAGE HEADER ── */
-    .hero-block { margin: 32px 24px 12px; padding: 34px; background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.12); border-radius: 28px; box-shadow: 0 26px 60px rgba(0,0,0,0.18); display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .hero-block { margin: 32px 24px 12px; padding: 34px 38px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid var(--accent); border-radius: 0 28px 28px 0; box-shadow: 0 20px 60px rgba(0,0,0,0.22); display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
     .hero-block-text h1 { font-size: clamp(2.4rem,4vw,3.8rem); margin-bottom: 10px; letter-spacing: -0.03em; }
     .hero-block-text p { color: rgba(255,255,255,0.82); font-size: 1rem; line-height: 1.75; max-width: 600px; }
-    .member-count-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 88px; padding: 18px; background: rgba(112,177,255,0.1); border: 1px solid rgba(112,177,255,0.2); border-radius: 20px; flex-shrink: 0; }
+    .member-count-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 88px; padding: 18px; background: rgba(196,164,72,0.08); border: 1px solid rgba(196,164,72,0.18); border-radius: 20px; flex-shrink: 0; }
     .member-count-badge strong { font-size: 2.4rem; font-weight: 800; color: var(--accent); line-height: 1; }
     .member-count-badge span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 4px; }
 
     /* ── GRID ── */
     .members-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); margin: 20px 24px 48px; }
-    .member-card { background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 18px 50px rgba(0,0,0,0.14); transition: transform 0.22s ease, border-color 0.22s ease; animation: cardIn 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+    .member-card { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 30px 28px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 16px 44px rgba(0,0,0,0.16); transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s; animation: cardIn 0.4s cubic-bezier(0.4,0,0.2,1) both; }
+    .member-card::before { content: ''; display: block; width: 28px; height: 2px; background: var(--accent); border-radius: 2px; margin-bottom: 14px; }
     @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    .member-card:hover { transform: translateY(-4px); border-color: rgba(112,177,255,0.4); }
-    .member-card.own-card { border-color: rgba(112,177,255,0.3); background: rgba(12,42,92,0.96); }
-    .member-badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .member-card:hover { transform: translateY(-4px); border-color: rgba(196,164,72,0.26); box-shadow: 0 26px 60px rgba(0,0,0,0.22); }
+    .member-card.own-card { border-color: rgba(196,164,72,0.22); background: rgba(196,164,72,0.04); }
+    .member-badge { display: inline-flex; padding: 5px 13px; border-radius: 999px; background: rgba(196,164,72,0.1); color: var(--accent); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; align-self: flex-start; }
     .member-name { font-size: 1.2rem; font-weight: 700; color: #fff; }
     .member-subject { font-size: 0.85rem; color: rgba(255,255,255,0.55); font-weight: 500; }
     .member-learn { font-size: 0.92rem; color: rgba(255,255,255,0.8); line-height: 1.65; margin-top: 6px; flex: 1; }
     .member-meta { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
-    .edit-member-btn { margin-top: 14px; align-self: flex-start; background: transparent; border: 1px solid rgba(112,177,255,0.35); color: var(--accent); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
-    .edit-member-btn:hover { background: rgba(112,177,255,0.1); border-color: var(--accent); }
+    .edit-member-btn { margin-top: 14px; align-self: flex-start; background: transparent; border: 1px solid rgba(196,164,72,0.3); color: var(--accent); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+    .edit-member-btn:hover { background: rgba(196,164,72,0.08); border-color: rgba(196,164,72,0.6); }
 
     /* ── EDIT FORM ── */
     .member-edit-form { display: flex; flex-direction: column; gap: 11px; }
@@ -198,7 +199,7 @@
     }
     @keyframes navLinkIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
     @media (hover:none) {
-      .member-card:active { transform:translateY(-2px); border-color:rgba(112,177,255,0.25); }
+      .member-card:active { transform:translateY(-2px); border-color:rgba(196,164,72,0.22); }
       .auth-gate-btn:active, .edit-member-btn:active, .change-pwd-btn:active { transform:scale(0.96); }
       .message-send-btn:active { transform:scale(0.96); filter:brightness(1.04); }
       .nav-toggle:active { background:rgba(255,255,255,.12) !important; }

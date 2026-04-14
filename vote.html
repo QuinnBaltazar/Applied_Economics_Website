@@ -271,14 +271,25 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      padding: 24px 22px 20px;
+      padding: 30px 28px 24px;
       border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.11);
-      background: rgba(255, 255, 255, 0.03);
-      transition: border-color 0.22s ease, transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--surface);
+      box-shadow: 0 16px 44px rgba(0,0,0,0.16);
+      transition: border-color 0.25s, transform 0.25s, background 0.25s, box-shadow 0.25s;
       cursor: pointer;
       /* Staggered entrance animation */
       animation: voteCardIn 0.45s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    .vote-option::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin-bottom: 6px;
+      flex-shrink: 0;
     }
     .vote-option:nth-child(1) { animation-delay: 0.05s; }
     .vote-option:nth-child(2) { animation-delay: 0.10s; }
@@ -292,10 +303,10 @@
     }
 
     .vote-option:hover {
-      border-color: rgba(196, 164, 72, 0.4);
-      transform: translateY(-3px);
-      background: rgba(255, 255, 255, 0.055);
-      box-shadow: 0 18px 44px rgba(0,0,0,0.2);
+      border-color: rgba(196, 164, 72, 0.26);
+      transform: translateY(-4px);
+      background: var(--surface);
+      box-shadow: 0 26px 60px rgba(0,0,0,0.22);
     }
 
     /* Gold highlight when the radio inside is selected */
