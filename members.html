@@ -68,8 +68,14 @@
     .auth-gate-btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 30px; border-radius: 999px; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.97rem; text-decoration: none; transition: transform 0.2s, filter 0.2s; }
     .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
 
+    /* ── GOLD DIVIDER / SECTION LABEL ── */
+    .gold-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(196,164,72,0.2), transparent); margin: 28px 24px; }
+    .section-label { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); margin: 0 24px 18px; }
+    @media (max-width: 760px) { .gold-divider { margin: 20px 16px; } .section-label { margin: 0 16px 16px; } }
+
     /* ── PAGE HEADER ── */
-    .hero-block { margin: 32px 24px 12px; padding: 34px 38px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid var(--accent); border-radius: 0 28px 28px 0; box-shadow: 0 20px 60px rgba(0,0,0,0.22); display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .hero-block { margin: 40px 24px 0; padding: 44px 42px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid var(--accent); border-radius: 0 24px 24px 0; box-shadow: 0 20px 60px rgba(0,0,0,0.22); display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .hero-eyebrow { display: inline-flex; padding: 6px 16px; border-radius: 999px; background: rgba(196,164,72,0.12); color: var(--accent); font-size: .7rem; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; margin-bottom: 16px; }
     .hero-block-text h1 { font-size: clamp(2.4rem,4vw,3.8rem); margin-bottom: 10px; letter-spacing: -0.03em; }
     .hero-block-text p { color: rgba(255,255,255,0.82); font-size: 1rem; line-height: 1.75; max-width: 600px; }
     .member-count-badge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 88px; padding: 18px; background: rgba(196,164,72,0.08); border: 1px solid rgba(196,164,72,0.18); border-radius: 20px; flex-shrink: 0; }
@@ -162,7 +168,7 @@
     .footer strong { color: #C4A448; font-weight: 600; }
 
     @media (max-width: 760px) {
-      .hero-block { margin: 24px 16px 12px; }
+      .hero-block { margin: 24px 16px 0; padding: 28px 22px; }
       .members-grid { margin: 16px 16px 40px; }
     }
 
@@ -241,6 +247,7 @@
     <div id="members-content" style="display:none;">
       <header class="hero-block">
         <div class="hero-block-text">
+          <span class="hero-eyebrow">Club Directory</span>
           <h1>Members</h1>
           <p>Verified members of UCSB Applied Economics Club. Click "Edit my card" to update your profile — changes sync instantly across all devices.</p>
         </div>
@@ -250,7 +257,11 @@
         </div>
       </header>
 
-      <div class="search-wrap" style="margin-top:16px;">
+      <div class="gold-divider"></div>
+
+      <span class="section-label">Member directory</span>
+
+      <div class="search-wrap">
         <input type="search" class="member-search" id="member-search" placeholder="Search members by name, interest, or field…" />
       </div>
 
