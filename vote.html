@@ -615,6 +615,11 @@
       <p id="session-note" class="vote-note" style="display:none;"></p>
       <p>One vote per member. Select the topic you want the club to cover next, then submit. Your choice helps shape the next lecture and industry speaker session.</p>
 
+      <div id="auth-gate-vote" class="auth-gate-row" style="display:none;">
+        <p><strong>Sign in to vote.</strong> Only signed-in members can cast a vote. It takes 30 seconds.</p>
+        <a href="signin.html" class="btn-primary" style="white-space:nowrap;font-size:.9rem;padding:10px 22px;">Sign In</a>
+      </div>
+
       <form id="vote-form" class="vote-form">
         <div class="vote-options">
           <label class="vote-option">
@@ -733,6 +738,11 @@
       return session && (session.email === ADMIN_EMAIL || session.isAdmin === true || getMember(session.email)?.isAdmin === true);
     }
     function eKey(email) { return email.replace(/[.@#$[\]/]/g,'_'); }
+    async function checkIsMember(email) {
+      if (!email) return false;
+      if (FB_READY) return !!(await fbGet(`members/${eKey(email)}`));
+      return !!getMember(email);
+    }
 
     // ── Firebase REST ─────────────────────────────────────────
     async function fbGet(p) {
@@ -867,7 +877,10 @@
             </div>
           </div>
           ${isOwner ? `<button type="button" class="edit-btn" id="edit-btn-${t.key}">Edit</button>` : ''}
-          <span class="vote-count">${fmt(t.votes)}</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;gap:8px;">
+            <span class="topic-email-tag">${escapeHtml(t.createdBy || '')}</span>
+            <span class="vote-count">${fmt(t.votes)}</span>
+          </div>
         `;
         anchor.parentNode.insertBefore(card, anchor);
         if (isOwner) setupTopicEditBtn(t.key, t.name, t.desc||'');
@@ -961,6 +974,16 @@
       ]);
 
       updateResults(counts);
+
+      // Not signed in — show auth gate, hide form, still show counts
+      if (!session) {
+        document.getElementById('auth-gate-vote').style.display = 'flex';
+        document.getElementById('vote-form').style.display = 'none';
+        renderCustomTopics(customTopics, null, null);
+        wireOtherToggle();
+        return;
+      }
+
       renderCustomTopics(customTopics, session, userVote);
       wireOtherToggle();
 
@@ -984,6 +1007,8 @@
           const name = document.getElementById('other-topic-name').value.trim();
           const desc = document.getElementById('other-topic-desc').value.trim();
           if (!name) { showMessage('Please enter a topic name for your "Other" suggestion.', true); btn.disabled=false; btn.textContent='Submit Vote'; return; }
+          const isMember = await checkIsMember(session?.email);
+          if (!isMember) { showMessage('Only verified club members can suggest new topics. Contact a board member to get added.', true); btn.disabled=false; btn.textContent='Submit Vote'; return; }
           await addCustomTopic(name, desc, session?.email);
           await saveUserVote(session, name);
           if (session && FB_READY) fbPost('activity', { email: session.email, name: session.name||'', type: 'topic_submit', detail: `Submitted topic: ${name}`, at: Date.now() });
