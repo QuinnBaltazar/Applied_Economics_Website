@@ -245,6 +245,21 @@
     /* ── TAB PANELS ── */
     .admin-section.tab-hidden { display:none !important; }
 
+    /* ── COLLAPSIBLE SECTIONS ── */
+    .admin-section h2 { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; }
+    .section-caret { opacity: 0.4; flex-shrink: 0; transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), opacity 0.2s; }
+    .admin-section h2:hover .section-caret { opacity: 0.75; }
+    .admin-section.collapsed h2 .section-caret { transform: rotate(-90deg); }
+    .section-body { overflow: hidden; }
+    .admin-section.collapsed .section-body { display: none; }
+
+    /* ── VOTE BAR ── */
+    .vote-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .vote-bar-track { flex: 1; background: rgba(255,255,255,0.07); border-radius: 999px; height: 6px; overflow: hidden; }
+    .vote-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.55s cubic-bezier(0.4,0,0.2,1); }
+    .vote-bar-num { min-width: 36px; text-align: right; color: var(--accent); font-weight: 700; font-size: 0.9rem; }
+    .vote-bar-pct { min-width: 38px; text-align: right; color: rgba(255,255,255,0.32); font-size: 0.8rem; }
+
     /* ── MOBILE NAV ── */
     .nav-toggle {
       display: none; flex-direction: column; justify-content: center; align-items: center;
@@ -262,12 +277,26 @@
       .brand-full { display: none; }
       .brand-abbr { display: inline; }
       .main-nav {
-        display: none; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0;
+        display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0;
         background: rgba(9,15,26,.97); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
         border-bottom: 1px solid rgba(196,164,72,.14); padding: 12px 16px 20px; gap: 4px;
+        opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden;
+        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.22s;
       }
-      .main-nav.open { display: flex; }
-      .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; }
+      .main-nav.open {
+        opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible;
+        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1);
+      }
+      .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; opacity: 0; transform: translateX(-6px); }
+      .main-nav.open a { opacity: 1; transform: none; transition: opacity 0.18s ease, transform 0.18s ease; }
+      .main-nav.open a:nth-child(1) { transition-delay: 0.04s; }
+      .main-nav.open a:nth-child(2) { transition-delay: 0.07s; }
+      .main-nav.open a:nth-child(3) { transition-delay: 0.10s; }
+      .main-nav.open a:nth-child(4) { transition-delay: 0.13s; }
+      .main-nav.open a:nth-child(5) { transition-delay: 0.16s; }
+      .main-nav.open a:nth-child(6) { transition-delay: 0.19s; }
+      .main-nav.open a:nth-child(7) { transition-delay: 0.22s; }
+      @media (hover: none) { .main-nav a:active { background: rgba(255,255,255,0.1); } }
     }
   </style>
 </head>
@@ -340,7 +369,7 @@
       <div class="admin-section" data-panel="panel-overview">
         <h2>Live Vote Counts</h2>
         <table class="counts-table">
-          <thead><tr><th>Topic</th><th style="text-align:right">Votes</th></tr></thead>
+          <thead><tr><th>Topic</th><th>Distribution</th></tr></thead>
           <tbody id="counts-tbody"></tbody>
         </table>
       </div>
@@ -602,9 +631,18 @@
     function renderCounts(counts) {
       const tbody = document.getElementById('counts-tbody');
       tbody.innerHTML = '';
+      const total = BASE_TOPICS.reduce((s, t) => s + (counts[t] || 0), 0);
       BASE_TOPICS.forEach(t => {
+        const n = counts[t] || 0;
+        const pct = total ? Math.round(n / total * 100) : 0;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(t)}</td><td>${counts[t] || 0}</td>`;
+        tr.innerHTML =
+          `<td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t)}</td>` +
+          `<td><div class="vote-bar-wrap">` +
+            `<div class="vote-bar-track"><div class="vote-bar-fill" style="width:${pct}%"></div></div>` +
+            `<span class="vote-bar-num">${n}</span>` +
+            `<span class="vote-bar-pct">${pct}%</span>` +
+          `</div></td>`;
         tbody.appendChild(tr);
       });
     }
@@ -1086,6 +1124,22 @@
         rawPending ? Object.keys(rawPending).length : 0;
     }
 
+    // ── Collapsible sections ──────────────────────────────────
+    function initCollapsibleSections() {
+      const CARET_SVG = `<svg class="section-caret" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      document.querySelectorAll('.admin-section').forEach(section => {
+        const h2 = section.querySelector('h2');
+        if (!h2) return;
+        h2.insertAdjacentHTML('beforeend', CARET_SVG);
+        // Wrap all non-h2 children in a .section-body div
+        const body = document.createElement('div');
+        body.className = 'section-body';
+        Array.from(section.children).filter(c => c !== h2).forEach(c => body.appendChild(c));
+        section.appendChild(body);
+        h2.addEventListener('click', () => section.classList.toggle('collapsed'));
+      });
+    }
+
     // ── Member search ─────────────────────────────────────────
     function initMemberSearch() {
       const input = document.getElementById('admin-member-search');
@@ -1120,6 +1174,7 @@
 
       highlightCurrentNav();
       initAdminTabs();
+      initCollapsibleSections();
       initMemberSearch();
       document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
 
