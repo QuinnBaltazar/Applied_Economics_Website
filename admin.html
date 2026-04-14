@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin | UCSB Applied Economics Club</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     :root {
       --bg: #090F1A;
@@ -143,6 +144,31 @@
     .remove-member-btn { background: transparent; border: 1px solid rgba(255,80,80,0.4); color: rgba(255,120,120,0.8); border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-family: inherit; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
     .remove-member-btn:hover { background: rgba(255,80,80,0.12); }
 
+    /* ── Password reset button ── */
+    .reset-pwd-btn { background: transparent; border: 1px solid rgba(100,180,255,0.4); color: rgba(100,180,255,0.9); border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; font-family: inherit; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .reset-pwd-btn:hover { background: rgba(100,180,255,0.1); border-color: rgba(100,180,255,0.8); }
+
+    /* ── Vote records table ── */
+    .vote-records-table { width: 100%; border-collapse: collapse; }
+    .vote-records-table th, .vote-records-table td { text-align: left; padding: 10px 14px; font-size: 0.92rem; border-bottom: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
+    .vote-records-table th { color: rgba(255,255,255,0.48); font-size: 0.78rem; letter-spacing: 0.07em; text-transform: uppercase; }
+    .vote-records-table tr:last-child td { border-bottom: none; }
+    .vr-name { font-weight: 600; }
+    .vr-email { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-top: 1px; }
+    .vr-topic { color: var(--accent); font-weight: 600; }
+    .vr-time { font-size: 0.8rem; color: rgba(255,255,255,0.38); white-space: nowrap; }
+
+    /* ── Admin messages ── */
+    .admin-msg-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .admin-msg-item:last-child { border-bottom: none; }
+    .admin-msg-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(196,164,72,0.18); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; color: var(--accent); flex-shrink: 0; }
+    .admin-msg-body { flex: 1; min-width: 0; }
+    .admin-msg-who { font-size: 0.88rem; font-weight: 600; }
+    .admin-msg-meta { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+    .admin-msg-text { font-size: 0.9rem; color: rgba(255,255,255,0.78); margin-top: 4px; word-break: break-word; }
+    .delete-msg-btn { background: transparent; border: 1px solid rgba(255,80,80,0.35); color: rgba(255,120,120,0.75); border-radius: 999px; padding: 4px 11px; font-size: 0.78rem; font-family: inherit; cursor: pointer; transition: background 0.2s; flex-shrink: 0; margin-top: 2px; white-space: nowrap; }
+    .delete-msg-btn:hover { background: rgba(255,80,80,0.1); border-color: rgba(255,80,80,0.7); }
+
     /* ── Reset buttons ── */
     .reset-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     .reset-btn {
@@ -234,6 +260,21 @@
       <h1>Admin Panel</h1>
       <p class="sub" id="admin-sub"></p>
 
+      <!-- Quick links -->
+      <div class="admin-section">
+        <h2>Quick Links</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="https://console.firebase.google.com/project/applied-economics-club/database/applied-economics-club-default-rtdb/data" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(255,160,50,0.35);color:rgba(255,160,50,0.9);text-decoration:none;font-size:0.88rem;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,160,50,0.1)'" onmouseout="this.style.background='transparent'">
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.8 25.7L10.6 4.6l7.2 13.2-12 7.9z" fill="#FFA000"/><path d="M10.6 4.6l5.2 9.5 1.9 3.7-7.1-13.2z" fill="#F57F17"/><path d="M15.8 14.1L10.6 4.6 26.2 25.7l-10.4-11.6z" fill="#FFCA28"/><path d="M5.8 25.7l20.4 0-10.4-11.6-10 11.6z" fill="#FFA000"/></svg>
+            Firebase Database
+          </a>
+          <a href="https://dashboard.emailjs.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(100,180,255,0.35);color:rgba(100,180,255,0.9);text-decoration:none;font-size:0.88rem;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.1)'" onmouseout="this.style.background='transparent'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+            EmailJS Dashboard
+          </a>
+        </div>
+      </div>
+
       <!-- Live vote counts -->
       <div class="admin-section">
         <h2>Live Vote Counts</h2>
@@ -241,6 +282,12 @@
           <thead><tr><th>Topic</th><th style="text-align:right">Votes</th></tr></thead>
           <tbody id="counts-tbody"></tbody>
         </table>
+      </div>
+
+      <!-- Vote records (who voted for what) -->
+      <div class="admin-section">
+        <h2>Vote Records</h2>
+        <div id="vote-records-list"></div>
       </div>
 
       <!-- Custom (Other) topics -->
@@ -259,6 +306,32 @@
       <div class="admin-section">
         <h2>Recent Activity</h2>
         <div id="activity-log"></div>
+      </div>
+
+      <!-- Club messages moderation -->
+      <div class="admin-section">
+        <h2>Club Messages</h2>
+        <div id="admin-messages-list"></div>
+      </div>
+
+      <!-- Email blast -->
+      <div class="admin-section">
+        <h2>Email Members</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:640px;">
+          <input type="text" id="blast-subject" placeholder="Subject line…" maxlength="200" style="width:100%;" />
+          <textarea id="blast-body" placeholder="Message body…" maxlength="2000" rows="5" style="width:100%;resize:vertical;"></textarea>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <button class="reset-btn" id="btn-send-blast" style="margin:0;padding:12px 24px;flex-shrink:0;">Send to All Members</button>
+            <span id="blast-status" style="font-size:0.88rem;color:rgba(255,255,255,0.55);"></span>
+          </div>
+          <p style="font-size:0.78rem;color:rgba(255,255,255,0.32);margin-top:2px;">
+            Requires <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">EMAILJS_BLAST_TEMPLATE</code> to be configured in admin.html.
+            Create an EmailJS template with variables: <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;to_email&#125;&#125;</code>,
+            <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;member_name&#125;&#125;</code>,
+            <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;subject&#125;&#125;</code>,
+            <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;message_body&#125;&#125;</code>.
+          </p>
+        </div>
       </div>
 
       <!-- Reset controls -->
@@ -298,6 +371,78 @@
       'Venture Capital','Wealth Management','Trading',
       'Current Market Bull and Bear Cases','Investment Banking'
     ];
+
+    // ── EmailJS (for password reset emails) ───────────────────
+    // Same service as signin.html. Create a second template in EmailJS:
+    //   Variables: {{to_email}}, {{member_name}}, {{club_name}}
+    //   Subject: "Your AEC account password has been reset"
+    //   Body: "Hi {{member_name}}, an admin has cleared your AEC password.
+    //          Visit sign in to re-verify your email and set a new password."
+    // Then replace 'YOUR_RESET_TEMPLATE_ID' below with the new template ID.
+    const EMAILJS_PUBLIC_KEY      = '8NT7ERI9_COG0opnM';
+    const EMAILJS_SERVICE_ID      = 'service_q979uh8';
+    const EMAILJS_RESET_TEMPLATE  = 'YOUR_RESET_TEMPLATE_ID';
+    const EMAILJS_BLAST_TEMPLATE  = 'template_ttjq5tl'; // create in EmailJS; vars: {{to_email}}, {{member_name}}, {{subject}}, {{message_body}}
+    const EMAILJS_ADMIN_READY     = EMAILJS_RESET_TEMPLATE !== 'YOUR_RESET_TEMPLATE_ID';
+    const EMAILJS_BLAST_READY     = EMAILJS_BLAST_TEMPLATE !== 'YOUR_BLAST_TEMPLATE_ID';
+    if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    async function sendPasswordResetEmail(email, name) {
+      if (!EMAILJS_ADMIN_READY) return false;
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_RESET_TEMPLATE, {
+          to_email: email, member_name: name, club_name: 'UCSB Applied Economics Club'
+        });
+        return true;
+      } catch(e) { console.error('EmailJS reset error:', e); return false; }
+    }
+
+    async function sendEmailBlast() {
+      const subject  = document.getElementById('blast-subject').value.trim();
+      const body     = document.getElementById('blast-body').value.trim();
+      const statusEl = document.getElementById('blast-status');
+      const btn      = document.getElementById('btn-send-blast');
+
+      if (!subject || !body) { statusEl.textContent = 'Please enter a subject and message.'; statusEl.style.color = '#ffb3b3'; return; }
+      if (!EMAILJS_BLAST_READY) {
+        statusEl.innerHTML = 'Set <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">EMAILJS_BLAST_TEMPLATE</code> in admin.html first.';
+        statusEl.style.color = '#ffb3b3'; return;
+      }
+      if (!confirm(`Send "${subject}" to all club members? This cannot be undone.`)) return;
+
+      btn.disabled = true;
+      statusEl.style.color = 'rgba(255,255,255,0.55)';
+      statusEl.textContent = 'Loading members…';
+
+      const raw = await fbGet('members');
+      if (!raw) { statusEl.textContent = 'Could not load members.'; statusEl.style.color = '#ffb3b3'; btn.disabled = false; return; }
+
+      // Deduplicate by email
+      const emailMap = new Map();
+      Object.values(raw).filter(m => m && m.email && m.name).forEach(m => {
+        const prev = emailMap.get(m.email);
+        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
+      });
+      const members = Array.from(emailMap.values());
+
+      let sent = 0, failed = 0;
+      for (const m of members) {
+        statusEl.textContent = `Sending… ${sent + failed + 1} / ${members.length}`;
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_BLAST_TEMPLATE, {
+            to_email: m.email, member_name: m.name,
+            subject, message_body: body, club_name: 'UCSB Applied Economics Club'
+          });
+          sent++;
+        } catch(e) { console.error('Blast send error for', m.email, e); failed++; }
+        // Small delay to avoid rate-limiting
+        await new Promise(r => setTimeout(r, 150));
+      }
+
+      statusEl.textContent = `Done — ${sent} sent${failed ? ', ' + failed + ' failed' : ''}.`;
+      statusEl.style.color = failed ? '#ffb3b3' : 'rgba(100,220,130,0.9)';
+      btn.disabled = false;
+    }
 
     window.addEventListener('scroll', function() {
       document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
@@ -442,6 +587,18 @@
           });
           actions.appendChild(toggleBtn);
 
+          const resetPwdBtn = document.createElement('button');
+          resetPwdBtn.className = 'reset-pwd-btn';
+          resetPwdBtn.textContent = 'Reset Password';
+          resetPwdBtn.addEventListener('click', async () => {
+            if (!confirm('Reset password for ' + member.name + '? They will need to re-verify via email to log back in.')) return;
+            const updated = Object.assign({}, member, { password: null });
+            await fbSet('members/' + eKey(member.email), updated);
+            const emailSent = await sendPasswordResetEmail(member.email, member.name);
+            setMsg('Password cleared for ' + member.name + '.' + (emailSent ? ' Reset email sent.' : ' (Set EMAILJS_RESET_TEMPLATE in admin.html to also send a notification email.)'));
+          });
+          actions.appendChild(resetPwdBtn);
+
           const removeBtn = document.createElement('button');
           removeBtn.className = 'remove-member-btn';
           removeBtn.textContent = 'Remove';
@@ -482,13 +639,89 @@
       });
     }
 
+    function renderVoteRecords(rawRecords, rawMembers) {
+      const container = document.getElementById('vote-records-list');
+      if (!rawRecords || !Object.keys(rawRecords).length) {
+        container.innerHTML = '<p class="empty-state">No votes cast yet.</p>';
+        return;
+      }
+      // Build eKey → member map for fast name lookup
+      const membersByKey = {};
+      if (rawMembers) {
+        Object.values(rawMembers).filter(m => m && m.email).forEach(m => {
+          membersByKey[eKey(m.email)] = m;
+        });
+      }
+      const entries = Object.entries(rawRecords).map(([k, v]) => {
+        const member = membersByKey[k];
+        return {
+          name:  member ? member.name  : '(Unknown)',
+          email: member ? member.email : k.replace(/_at_/g,'@').replace(/_dot_/g,'.'),
+          topic: v.topic || '—',
+          ts:    v.ts    || 0
+        };
+      }).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+      const table = document.createElement('table');
+      table.className = 'vote-records-table';
+      table.innerHTML = '<thead><tr><th>Member</th><th>Voted For</th><th style="text-align:right">Date</th></tr></thead>';
+      const tbody = document.createElement('tbody');
+      entries.forEach(e => {
+        const tr = document.createElement('tr');
+        const timeStr = e.ts ? new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+        tr.innerHTML =
+          '<td><div class="vr-name">' + escapeHtml(e.name) + '</div>' +
+              '<div class="vr-email">' + escapeHtml(e.email) + '</div></td>' +
+          '<td class="vr-topic">' + escapeHtml(e.topic) + '</td>' +
+          '<td class="vr-time" style="text-align:right">' + escapeHtml(timeStr) + '</td>';
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    async function renderAdminMessages() {
+      const container = document.getElementById('admin-messages-list');
+      container.innerHTML = '<p class="empty-state">Loading messages...</p>';
+      const raw = await fbGet('messages');
+      if (!raw) { container.innerHTML = '<p class="empty-state">No messages yet.</p>'; return; }
+      const msgs = Object.entries(raw).map(([k,v]) => ({key:k,...v}))
+                         .sort((a,b) => (a.at||0)-(b.at||0));
+      if (!msgs.length) { container.innerHTML = '<p class="empty-state">No messages yet.</p>'; return; }
+      container.innerHTML = '';
+      msgs.forEach(msg => {
+        const initials = (msg.name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+        const timeStr = msg.at ? new Date(msg.at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        const row = document.createElement('div');
+        row.className = 'admin-msg-item';
+        row.innerHTML =
+          '<div class="admin-msg-avatar">' + escapeHtml(initials) + '</div>' +
+          '<div class="admin-msg-body">' +
+            '<div class="admin-msg-who">' + escapeHtml(msg.name||'Member') +
+              ' <span class="admin-msg-meta">' + escapeHtml(msg.email||'') + ' &nbsp;·&nbsp; ' + escapeHtml(timeStr) + '</span></div>' +
+            '<div class="admin-msg-text">' + escapeHtml(msg.text||'') + '</div>' +
+          '</div>' +
+          '<button class="delete-msg-btn" data-key="' + escapeHtml(msg.key) + '">Delete</button>';
+        row.querySelector('.delete-msg-btn').addEventListener('click', async function() {
+          if (!confirm('Delete this message?')) return;
+          await fbDelete('messages/' + this.dataset.key);
+          setMsg('Message deleted.');
+          await renderAdminMessages();
+        });
+        container.appendChild(row);
+      });
+    }
+
     async function refresh() {
-      const [rawCounts, rawCustom, rawActivity] = await Promise.all([
-        fbGet('vote-counts'), fbGet('custom-topics'), fbGet('activity')
+      const [rawCounts, rawCustom, rawActivity, rawVoteRecords, rawMembers] = await Promise.all([
+        fbGet('vote-counts'), fbGet('custom-topics'), fbGet('activity'),
+        fbGet('vote-records'), fbGet('members')
       ]);
       const counts = rawCounts || {};
       const topics = rawCustom ? Object.entries(rawCustom).map(([k,v]) => ({ key:k,...v })) : [];
       renderCounts(counts);
+      renderVoteRecords(rawVoteRecords || {}, rawMembers || {});
       renderCustomTopics(topics);
 
       // Activity log — sort newest first
@@ -496,6 +729,7 @@
         ? Object.values(rawActivity).sort((a,b) => (b.at||0)-(a.at||0))
         : [];
       renderActivityLog(actEntries);
+      await renderAdminMessages();
     }
 
     // ── Reset handlers ────────────────────────────────────────
@@ -506,6 +740,8 @@
       await refresh();
       setMsg(`Done — ${label}.`);
     }
+
+    document.getElementById('btn-send-blast').addEventListener('click', sendEmailBlast);
 
     document.getElementById('btn-reset-custom').addEventListener('click', () =>
       confirmReset('clear all member-submitted topics', async () => {

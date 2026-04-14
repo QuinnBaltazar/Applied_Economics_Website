@@ -101,6 +101,31 @@
     .cancel-member-btn { padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.65); font-size: 0.88rem; font-family: inherit; cursor: pointer; }
     .edit-msg { font-size: 0.88rem; color: #ffb3b3; min-height: 1em; }
 
+    /* ── MESSAGING ── */
+    .messages-section { margin: 0 24px 48px; }
+    .messages-section h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .messages-card { background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 24px 28px; box-shadow: 0 18px 50px rgba(0,0,0,0.14); }
+    .message-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+    .message-feed:empty::after { content: 'No messages yet — say hello!'; color: rgba(255,255,255,0.35); font-size: 0.9rem; padding: 16px 0; display: block; text-align: center; }
+    .message-item { display: flex; gap: 12px; padding: 13px 15px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+    .message-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(196,164,72,0.18); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+    .message-body { flex: 1; min-width: 0; }
+    .message-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
+    .message-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
+    .message-time { font-size: 0.73rem; color: rgba(255,255,255,0.32); }
+    .message-text { font-size: 0.92rem; color: rgba(255,255,255,0.82); line-height: 1.6; word-break: break-word; }
+    .message-compose { display: flex; gap: 10px; align-items: flex-end; margin-top: 4px; }
+    .message-input { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; color: #fff; padding: 11px 15px; font: inherit; font-size: 0.95rem; resize: none; outline: none; transition: border-color 0.2s; min-height: 46px; }
+    .message-input::placeholder { color: rgba(255,255,255,0.35); }
+    .message-input:focus { border-color: var(--accent); }
+    .message-send-btn { padding: 11px 22px; border-radius: 999px; border: none; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.92rem; font-family: inherit; cursor: pointer; transition: transform 0.2s, filter 0.2s; white-space: nowrap; flex-shrink: 0; }
+    .message-send-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+    .message-send-btn:disabled { opacity: 0.6; transform: none; }
+    .msg-delete-btn { background: transparent; border: none; color: rgba(255,80,80,0.4); cursor: pointer; font-size: 0.78rem; padding: 4px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; flex-shrink: 0; margin-top: 2px; line-height: 1; }
+    .msg-delete-btn:hover { color: rgba(255,80,80,0.9); background: rgba(255,80,80,0.08); }
+    .message-status { font-size: 0.83rem; color: rgba(255,255,255,0.4); margin-top: 8px; min-height: 1.1em; }
+    @media (max-width: 760px) { .messages-section { margin: 0 16px 40px; } .messages-card { padding: 18px 16px; } }
+
     /* Page glow */
     body::before {
       content: '';
@@ -194,6 +219,19 @@
       <div class="members-grid" id="members-grid">
         <div class="state-msg">Loading members&hellip;</div>
       </div>
+
+      <!-- Club messages -->
+      <section class="messages-section" id="messages-section">
+        <h2>Club Messages</h2>
+        <div class="messages-card">
+          <div class="message-feed" id="message-feed"></div>
+          <div class="message-compose">
+            <textarea class="message-input" id="message-input" placeholder="Send a message to the club…" rows="1" maxlength="500"></textarea>
+            <button class="message-send-btn" id="message-send-btn">Send</button>
+          </div>
+          <p class="message-status" id="message-status"></p>
+        </div>
+      </section>
     </div>
 
     <footer class="footer">
@@ -208,7 +246,51 @@
     async function fbGet(p) { try { const r=await fetch(`${DB_URL}/${p}.json`); return r.ok?r.json():null; } catch{return null;} }
     async function fbSet(p,d) { try{await fetch(`${DB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{} }
     async function fbPost(p,d) { try{await fetch(`${DB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch{} }
+    async function fbDelete(p) { try{await fetch(`${DB_URL}/${p}.json`,{method:'DELETE'});}catch{} }
     function logActivity(email,name,type,detail) { fbPost('activity',{email,name:name||'',type,detail,at:Date.now()}); }
+
+    // ── Messaging ─────────────────────────────────────────────
+    async function loadMessages() {
+      const raw = await fbGet('messages');
+      if (!raw) return [];
+      return Object.entries(raw).map(([k,v]) => ({key:k,...v})).sort((a,b) => (a.at||0)-(b.at||0));
+    }
+
+    function renderMessages(messages, session, isAdmin) {
+      const feed = document.getElementById('message-feed');
+      feed.innerHTML = '';
+      if (!messages.length) {
+        feed.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:0.9rem;text-align:center;padding:20px 0;">No messages yet — say hello!</div>';
+        return;
+      }
+      messages.forEach(msg => {
+        const initials = (msg.name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+        const timeStr = msg.at ? new Date(msg.at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        const isOwn = session && msg.email === session.email;
+        const canDelete = isAdmin || isOwn;
+        const div = document.createElement('div');
+        div.className = 'message-item';
+        div.innerHTML =
+          '<div class="message-avatar">'+esc(initials)+'</div>'+
+          '<div class="message-body">'+
+            '<div class="message-header">'+
+              '<span class="message-name">'+esc(msg.name||'Member')+'</span>'+
+              '<span class="message-time">'+esc(timeStr)+'</span>'+
+            '</div>'+
+            '<div class="message-text">'+esc(msg.text||'')+'</div>'+
+          '</div>'+
+          (canDelete ? '<button class="msg-delete-btn" data-key="'+esc(msg.key)+'" title="Delete">&#x2715;</button>' : '');
+        if (canDelete) {
+          div.querySelector('.msg-delete-btn').addEventListener('click', async function() {
+            if (!confirm('Delete this message?')) return;
+            await fbDelete('messages/'+this.dataset.key);
+            renderMessages(await loadMessages(), session, isAdmin);
+          });
+        }
+        feed.appendChild(div);
+      });
+      feed.scrollTop = feed.scrollHeight;
+    }
 
     function getSession() { try{return JSON.parse(localStorage.getItem('aec-session'));}catch{return null;} }
     function setSession(m) { localStorage.setItem('aec-session',JSON.stringify(m)); }
@@ -340,6 +422,38 @@
         const card=createMemberCard(m,m.email===session.email);
         card.style.animationDelay=(i*35)+'ms';
         grid.appendChild(card);
+      });
+
+      // Load and render messages
+      const [msgs] = await Promise.all([loadMessages()]);
+      renderMessages(msgs, session, isAdminSess(session));
+
+      // Send message handler
+      document.getElementById('message-send-btn').addEventListener('click', async function() {
+        const input = document.getElementById('message-input');
+        const status = document.getElementById('message-status');
+        const text = input.value.trim();
+        if (!text) return;
+        this.disabled = true;
+        status.textContent = 'Sending…';
+        await fbPost('messages', {
+          email: session.email,
+          name:  session.name || 'Member',
+          text,
+          at: Date.now()
+        });
+        input.value = '';
+        status.textContent = '';
+        this.disabled = false;
+        renderMessages(await loadMessages(), session, isAdminSess(session));
+      });
+
+      // Allow Enter (without Shift) to send
+      document.getElementById('message-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.getElementById('message-send-btn').click();
+        }
       });
     });
 

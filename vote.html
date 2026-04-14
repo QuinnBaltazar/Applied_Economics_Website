@@ -810,12 +810,12 @@
         counts['Current Market Bull and Bear Cases']||0,
         counts['Investment Banking']||0
       ];
-      const max = Math.max(...vals, 1);
+      const total = vals.reduce((a, b) => a + b, 0);
       [['bar-vc','Venture Capital'],['bar-wm','Wealth Management'],['bar-trading','Trading'],
        ['bar-bullbear','Current Market Bull and Bear Cases'],['bar-ib','Investment Banking']
       ].forEach(([id, topic]) => {
         const el = document.getElementById(id);
-        if (el) el.style.width = Math.round((counts[topic]||0) / max * 100) + '%';
+        if (el) el.style.width = (total > 0 ? Math.round((counts[topic]||0) / total * 100) : 0) + '%';
       });
     }
 
@@ -1008,7 +1008,13 @@
           const desc = document.getElementById('other-topic-desc').value.trim();
           if (!name) { showMessage('Please enter a topic name for your "Other" suggestion.', true); btn.disabled=false; btn.textContent='Submit Vote'; return; }
           const isMember = await checkIsMember(session?.email);
-          if (!isMember) { showMessage('Only verified club members can suggest new topics. Contact a board member to get added.', true); btn.disabled=false; btn.textContent='Submit Vote'; return; }
+          if (!isMember) {
+            const m = document.getElementById('vote-message');
+            m.innerHTML = 'Only verified club members can suggest topics. <a href="signin.html" style="color:var(--accent);text-decoration:underline;">Sign in</a> with your member account to continue.';
+            m.style.color = '#ffb3b3';
+            btn.disabled = false; btn.textContent = 'Submit Vote';
+            return;
+          }
           await addCustomTopic(name, desc, session?.email);
           await saveUserVote(session, name);
           if (session && FB_READY) fbPost('activity', { email: session.email, name: session.name||'', type: 'topic_submit', detail: `Submitted topic: ${name}`, at: Date.now() });
