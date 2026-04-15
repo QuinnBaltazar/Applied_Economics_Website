@@ -158,6 +158,21 @@
     .vr-topic { color: var(--accent); font-weight: 600; }
     .vr-time { font-size: 0.8rem; color: rgba(255,255,255,0.38); white-space: nowrap; }
 
+    /* ── Submission rows ── */
+    .submission-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.07); flex-wrap: wrap; }
+    .submission-row:last-child { border-bottom: none; }
+    .sub-info { flex: 1; min-width: 200px; }
+    .sub-who { font-size: 0.9rem; font-weight: 700; }
+    .sub-meta { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
+    .sub-track { color: var(--accent); font-size: 0.82rem; font-weight: 600; }
+    .sub-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 0.82rem; color: rgba(100,180,255,0.85); text-decoration: none; word-break: break-all; }
+    .sub-link:hover { text-decoration: underline; }
+    .sub-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+    .approve-btn { padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(76,184,122,0.4); color: rgba(100,220,140,0.9); background: rgba(76,184,122,0.06); font-size: 0.82rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .approve-btn:hover { background: rgba(76,184,122,0.14); }
+    .reject-sub-btn { padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,100,80,0.35); color: rgba(255,130,110,0.85); background: transparent; font-size: 0.82rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .reject-sub-btn:hover { background: rgba(255,80,60,0.08); }
+
     /* ── Admin messages ── */
     .admin-msg-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
     .admin-msg-item:last-child { border-bottom: none; }
@@ -310,7 +325,7 @@
       <a href="index.html">Home</a>
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
-      <a href="topics.html">Topics</a>
+      <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
       <a href="board.html">Board</a>
       <a href="admin.html">Admin</a>
@@ -344,6 +359,7 @@
           <button class="admin-tab active" data-target="panel-overview">Overview</button>
           <button class="admin-tab" data-target="panel-members">Members</button>
           <button class="admin-tab" data-target="panel-topics">Topics <span class="tab-badge" id="tab-badge-topics" style="display:none"></span></button>
+          <button class="admin-tab" data-target="panel-tracks">Submissions <span class="tab-badge" id="tab-badge-submissions" style="display:none"></span></button>
           <button class="admin-tab" data-target="panel-activity">Activity</button>
           <button class="admin-tab" data-target="panel-messages">Messages <span class="tab-badge" id="tab-badge-messages" style="display:none"></span></button>
           <button class="admin-tab" data-target="panel-settings">Settings</button>
@@ -399,6 +415,16 @@
           <button class="reset-pwd-btn" id="btn-export-csv" style="font-size:0.85rem;padding:8px 18px;flex-shrink:0;">Export CSV</button>
         </div>
         <div id="admin-members-list"></div>
+      </div>
+
+      <!-- Track submissions -->
+      <div class="admin-section" data-panel="panel-tracks">
+        <h2>Pending Submissions <span id="submissions-badge" style="display:none;background:rgba(255,160,50,0.2);color:rgba(255,160,50,0.9);border-radius:999px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:8px;vertical-align:middle;"></span></h2>
+        <div id="submissions-list"></div>
+      </div>
+      <div class="admin-section" data-panel="panel-tracks">
+        <h2>Approved Submissions</h2>
+        <div id="approved-submissions-list"></div>
       </div>
 
       <!-- Activity log -->
@@ -924,6 +950,99 @@
       });
     }
 
+    // ── Track Submissions ─────────────────────────────────────
+    async function loadSubmissions() {
+      const rawAll = await fbGet('submissions');
+      // Flatten all user submissions into a list
+      const all = [];
+      if (rawAll) {
+        Object.entries(rawAll).forEach(([userKey, trackMap]) => {
+          if (!trackMap) return;
+          Object.entries(trackMap).forEach(([trackId, idxMap]) => {
+            if (!idxMap) return;
+            Object.entries(idxMap).forEach(([idx, sub]) => {
+              if (sub) all.push({ ...sub, _userKey: userKey, _storageIdx: idx });
+            });
+          });
+        });
+      }
+      const pending  = all.filter(s => s.status === 'pending').sort((a,b) => (a.submittedAt||0)-(b.submittedAt||0));
+      const approved = all.filter(s => s.status === 'approved').sort((a,b) => (b.submittedAt||0)-(a.submittedAt||0));
+
+      // Update badge
+      const badge = document.getElementById('tab-badge-submissions');
+      if (badge) { badge.textContent = pending.length; badge.style.display = pending.length ? 'inline-flex' : 'none'; }
+      const secBadge = document.getElementById('submissions-badge');
+      if (secBadge) { secBadge.textContent = pending.length; secBadge.style.display = pending.length ? 'inline' : 'none'; }
+
+      renderSubmissionsList('submissions-list', pending, true);
+      renderSubmissionsList('approved-submissions-list', approved, false);
+    }
+
+    function renderSubmissionsList(containerId, list, showActions) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      if (!list.length) { container.innerHTML = '<p class="empty-state">None.</p>'; return; }
+      container.innerHTML = '';
+      list.forEach(sub => {
+        const row = document.createElement('div');
+        row.className = 'submission-row';
+        const timeStr = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        const reviewStr = sub.reviewedAt ? ' · Reviewed ' + new Date(sub.reviewedAt).toLocaleString('en-US',{month:'short',day:'numeric'}) : '';
+        row.innerHTML = `
+          <div class="sub-info">
+            <div class="sub-who">${escapeHtml(sub.name || sub.email)}</div>
+            <div class="sub-meta">${escapeHtml(sub.email)} &nbsp;·&nbsp; ${timeStr}${reviewStr}</div>
+            <div class="sub-track">${escapeHtml(sub.trackName)} &nbsp;·&nbsp; ${escapeHtml(sub.moduleName)}</div>
+            <a class="sub-link" href="${escapeHtml(sub.link)}" target="_blank" rel="noopener">↗ View Deliverable</a>
+          </div>
+          ${showActions ? `
+          <div class="sub-actions">
+            <button class="approve-btn">Approve ✓</button>
+            <button class="reject-sub-btn">Reject…</button>
+          </div>` : `<div class="sub-actions"><span style="font-size:.8rem;color:rgba(76,184,122,0.7);font-weight:700;">✓ Approved</span></div>`}
+        `;
+        if (showActions) {
+          row.querySelector('.approve-btn').addEventListener('click', async function() {
+            this.disabled = true; this.textContent = 'Approving…';
+            await approveSubmission(sub);
+            await loadSubmissions();
+            setMsg(`Approved: ${sub.name || sub.email} — ${sub.moduleName}`);
+          });
+          row.querySelector('.reject-sub-btn').addEventListener('click', async function() {
+            const note = prompt('Rejection note for ' + (sub.name || sub.email) + ' (optional):') ?? '';
+            if (note === null) return; // cancelled
+            this.disabled = true; this.textContent = 'Rejecting…';
+            await rejectSubmission(sub, note);
+            await loadSubmissions();
+            setMsg(`Returned for revision: ${sub.name || sub.email} — ${sub.moduleName}`);
+          });
+        }
+        container.appendChild(row);
+      });
+    }
+
+    async function approveSubmission(sub) {
+      const key = eKey(sub.email);
+      // Mark submission approved
+      await fbSet(`submissions/${key}/${sub.trackId}/${sub.idx}`, { ...sub, status: 'approved', reviewedAt: Date.now() });
+      // Update track-progress: set module as complete
+      const trackData = await fbGet(`track-progress/${key}`) || {};
+      const arr = Array.isArray(trackData[sub.trackId]) ? [...trackData[sub.trackId]] : Array(5).fill(false);
+      arr[parseInt(sub.idx, 10)] = true;
+      await fbSet(`track-progress/${key}/${sub.trackId}`, arr);
+      // Log activity
+      await fetch(`${DB_URL}/activity.json`, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email: sub.email, name: sub.name||'', type: 'module_approved',
+          detail: `${sub.trackName} · ${sub.moduleName} approved`, at: Date.now() }) });
+    }
+
+    async function rejectSubmission(sub, reviewNote) {
+      const key = eKey(sub.email);
+      await fbSet(`submissions/${key}/${sub.trackId}/${sub.idx}`,
+        { ...sub, status: 'rejected', reviewNote: reviewNote || '', reviewedAt: Date.now() });
+    }
+
     async function refresh() {
       const [rawCounts, rawCustom, rawActivity, rawVoteRecords, rawMembers, rawPending] = await Promise.all([
         fbGet('vote-counts'), fbGet('custom-topics'), fbGet('activity'),
@@ -945,6 +1064,7 @@
       await renderAdminMessages();
       await loadVoteWindow();
       await renderVoteHistory();
+      await loadSubmissions();
     }
 
     // ── Reset handlers ────────────────────────────────────────

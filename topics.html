@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Topics | UCSB Applied Economics Club</title>
+  <title>Career Tracks | UCSB Applied Economics Club</title>
   <style>
     :root {
-      --bg:       #090F1A;
-      --surface:  #0E1829;
-      --navy:     #162438;
-      --gold:     #C4A448;
-      --gold-lt:  #D4B55E;
-      --steel:    #2B4A6F;
-      --text:     #FFFFFF;
-      --muted:    rgba(255,255,255,0.62);
-      --border:   rgba(255,255,255,0.07);
-      --shadow:   0 24px 60px rgba(0,0,0,0.26);
+      --bg:      #090F1A;
+      --surface: #0E1829;
+      --navy:    #162438;
+      --gold:    #C4A448;
+      --gold-lt: #D4B55E;
+      --steel:   #2B4A6F;
+      --text:    #FFFFFF;
+      --muted:   rgba(255,255,255,0.62);
+      --border:  rgba(255,255,255,0.07);
+      --shadow:  0 24px 60px rgba(0,0,0,0.26);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,15 +32,7 @@
     .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; position: relative; z-index: 1; overflow-x: hidden; }
 
     /* ── NAV ── */
-    .topbar {
-      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
-      background: rgba(9,15,26,0.78); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      transition: background .35s, box-shadow .35s, border-color .35s;
-      animation: navDown .55s cubic-bezier(.4,0,.2,1) both;
-    }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(20px, 4vw, 56px); height: 64px; background: rgba(9,15,26,0.78); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border-bottom: 1px solid rgba(255,255,255,0.05); transition: background .35s, box-shadow .35s, border-color .35s; animation: navDown .55s cubic-bezier(.4,0,.2,1) both; }
     @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .topbar.scrolled { background: rgba(9,15,26,.97); box-shadow: 0 2px 40px rgba(0,0,0,.45); border-color: rgba(196,164,72,.14); }
     .brand { font-size: .78rem; font-weight: 800; color: #fff; letter-spacing: .22em; text-transform: uppercase; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: color .2s; }
@@ -53,163 +45,136 @@
     .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,.08); }
 
     /* ── HERO ── */
-    .hero-section {
-      margin: 40px 24px 0;
-      padding: 44px 42px;
-      background: var(--surface);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-left: 3px solid var(--gold);
-      border-radius: 0 24px 24px 0;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.22);
-    }
-    .hero-eyebrow {
-      display: inline-flex; padding: 6px 16px; border-radius: 999px;
-      background: rgba(196,164,72,0.12); color: var(--gold);
-      font-size: .7rem; font-weight: 700; letter-spacing: .28em; text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-    .hero-title {
-      font-size: clamp(2rem, 4vw, 3.2rem);
-      font-weight: 800; letter-spacing: -.03em; line-height: 1.07;
-      margin-bottom: 14px;
-    }
+    .hero-section { margin: 40px 24px 0; padding: 44px 42px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid var(--gold); border-radius: 0 24px 24px 0; box-shadow: 0 20px 60px rgba(0,0,0,0.22); }
+    .hero-eyebrow { display: inline-flex; padding: 6px 16px; border-radius: 999px; background: rgba(196,164,72,0.12); color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; margin-bottom: 16px; }
+    .hero-title { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.07; margin-bottom: 14px; }
     .hero-copy { color: rgba(255,255,255,0.78); font-size: 1rem; line-height: 1.82; max-width: 680px; }
 
     /* ── STATS BAR ── */
-    .stats-bar {
-      margin: 28px 24px 0;
-      padding: 20px 28px;
-      background: rgba(196,164,72,0.05);
-      border: 1px solid rgba(196,164,72,0.13);
-      border-radius: 18px;
-      display: flex; gap: 0; align-items: center; flex-wrap: wrap;
-    }
-    .stats-item {
-      flex: 1; text-align: center;
-      padding: 8px 16px;
-      min-width: 110px;
-    }
+    .stats-bar { margin: 28px 24px 0; padding: 20px 28px; background: rgba(196,164,72,0.05); border: 1px solid rgba(196,164,72,0.13); border-radius: 18px; display: flex; gap: 0; align-items: center; flex-wrap: wrap; }
+    .stats-item { flex: 1; text-align: center; padding: 8px 16px; min-width: 110px; }
     .stats-item + .stats-item { border-left: 1px solid rgba(255,255,255,0.07); }
     .stats-num { font-size: 1.8rem; font-weight: 800; color: var(--gold); line-height: 1; display: block; }
     .stats-lbl { font-size: .72rem; font-weight: 600; color: rgba(255,255,255,0.45); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; display: block; }
 
-    /* ── GOLD DIVIDER ── */
-    .gold-divider {
-      height: 1px;
-      background: linear-gradient(to right, transparent, rgba(196,164,72,0.2), transparent);
-      margin: 36px 24px;
-    }
+    /* ── DIVIDER + LABEL ── */
+    .gold-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(196,164,72,0.2), transparent); margin: 36px 24px; }
+    .section-label { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin: 0 24px 18px; }
 
-    /* ── SECTION LABEL ── */
-    .section-label {
-      display: block; font-size: .7rem; font-weight: 700;
-      letter-spacing: .22em; text-transform: uppercase; color: var(--gold);
-      margin: 0 24px 18px;
-    }
+    /* ── TRACKS GRID ── */
+    .tracks-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); margin: 0 24px; }
 
-    /* ── TOPIC GRID ── */
-    .topic-grid {
-      display: grid; gap: 20px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      margin: 0 24px;
-    }
-    .topic-card {
+    .track-card {
       background: var(--surface);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px; padding: 30px 28px;
+      border-radius: 24px; padding: 28px 26px 24px;
       box-shadow: 0 16px 44px rgba(0,0,0,0.16);
       transition: transform .25s, border-color .25s, box-shadow .25s;
-      position: relative;
+      display: flex; flex-direction: column;
+      text-decoration: none; color: inherit;
+      cursor: pointer;
     }
-    .topic-card::before {
-      content: ''; display: block;
-      width: 28px; height: 2px;
-      background: var(--gold); border-radius: 2px;
-      margin-bottom: 18px;
-    }
-    .topic-card:hover { transform: translateY(-4px); border-color: rgba(196,164,72,0.26); box-shadow: 0 26px 60px rgba(0,0,0,0.22); }
-    .topic-badge {
-      display: inline-flex; padding: 5px 13px; border-radius: 999px;
-      background: rgba(196,164,72,0.1); color: var(--gold);
-      font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-    .topic-name { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 10px; }
-    .topic-desc { color: rgba(255,255,255,0.72); font-size: .93rem; line-height: 1.75; }
+    .track-card:hover { transform: translateY(-4px); border-color: rgba(196,164,72,0.3); box-shadow: 0 26px 60px rgba(0,0,0,0.22); }
+
+    .track-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .track-badge { display: inline-flex; padding: 5px 13px; border-radius: 999px; background: rgba(196,164,72,0.1); color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .track-module-count { font-size: .75rem; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: .04em; }
+
+    .track-name { font-size: 1.22rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
+    .track-tagline { color: rgba(255,255,255,0.5); font-size: .875rem; margin-bottom: 18px; line-height: 1.5; }
+
+    .track-highlights { list-style: none; margin-bottom: 22px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .track-highlights li { font-size: .855rem; color: rgba(255,255,255,0.6); padding-left: 16px; position: relative; line-height: 1.5; }
+    .track-highlights li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-size: .72rem; top: 2px; font-weight: 700; }
+
+    .track-progress-wrap { padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+    .track-progress-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .track-progress-text { font-size: .78rem; color: rgba(255,255,255,0.4); }
+    .track-credits-text { font-size: .78rem; color: var(--gold); font-weight: 600; }
+    .progress-bar-track { height: 4px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius: 4px; transition: width .7s cubic-bezier(.4,0,.2,1); width: 0%; }
+
+    .track-cta-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+    .track-status-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.12); flex-shrink: 0; transition: background .3s, box-shadow .3s; }
+    .track-status-dot.started { background: var(--gold); box-shadow: 0 0 8px rgba(196,164,72,0.45); }
+    .track-status-dot.complete { background: #4CB87A; box-shadow: 0 0 8px rgba(76,184,122,0.45); }
+    .track-start-btn { font-size: .82rem; font-weight: 700; color: var(--gold); letter-spacing: .04em; }
 
     /* ── HOW IT WORKS ── */
-    .how-section {
-      margin: 52px 24px 0;
-      padding: 40px 40px;
-      background: var(--surface);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-    }
+    .how-section { margin: 52px 24px 0; padding: 40px 40px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: var(--shadow); }
     .how-header { margin-bottom: 32px; }
     .how-header .section-label { margin: 0 0 10px; }
     .how-header h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -.02em; }
     .how-steps { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     .how-step { display: flex; flex-direction: column; gap: 10px; }
-    .step-num {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: rgba(196,164,72,0.12); border: 1px solid rgba(196,164,72,0.22);
-      display: flex; align-items: center; justify-content: center;
-      font-size: .88rem; font-weight: 800; color: var(--gold);
-      flex-shrink: 0;
-    }
+    .step-num { width: 36px; height: 36px; border-radius: 10px; background: rgba(196,164,72,0.12); border: 1px solid rgba(196,164,72,0.22); display: flex; align-items: center; justify-content: center; font-size: .88rem; font-weight: 800; color: var(--gold); flex-shrink: 0; }
     .how-step h3 { font-size: 1rem; font-weight: 700; color: #fff; }
     .how-step p { font-size: .9rem; color: rgba(255,255,255,0.62); line-height: 1.68; }
 
+    /* ── YOUR PROGRESS ── */
+    .your-progress { margin: 36px 24px 0; padding: 32px 36px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: var(--shadow); display: none; }
+    .your-progress.visible { display: block; }
+    .your-progress .section-label { margin: 0 0 22px; }
+    .progress-tracks-list { display: flex; flex-direction: column; gap: 14px; }
+    .progress-row { display: flex; align-items: center; gap: 14px; }
+    .progress-row-name { font-size: .875rem; font-weight: 600; color: rgba(255,255,255,0.8); width: 170px; flex-shrink: 0; }
+    .progress-row-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.07); border-radius: 6px; overflow: hidden; }
+    .progress-row-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius: 6px; transition: width .9s cubic-bezier(.4,0,.2,1); }
+    .progress-row-frac { font-size: .78rem; color: rgba(255,255,255,0.38); width: 36px; text-align: right; flex-shrink: 0; }
+
+    .credits-summary { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .credits-total { font-size: 1rem; color: rgba(255,255,255,0.6); }
+    .credits-total strong { color: var(--gold); font-size: 1.6rem; font-weight: 800; margin-right: 6px; vertical-align: middle; }
+    .credits-note { font-size: .82rem; color: rgba(255,255,255,0.35); }
+
     /* ── CTA ── */
-    .cta-section {
-      margin: 36px 24px 52px;
-      padding: 36px 40px;
-      background: var(--surface);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
-    }
+    .cta-section { margin: 36px 24px 52px; padding: 36px 40px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
     .cta-text h2 { font-size: 1.45rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -.02em; }
     .cta-text p { color: rgba(255,255,255,0.62); font-size: .95rem; line-height: 1.65; }
-    .btn-primary {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 14px 28px; border-radius: 999px;
-      background: var(--gold); color: #090F1A;
-      font-weight: 700; font-size: .95rem; text-decoration: none;
-      box-shadow: 0 8px 28px rgba(196,164,72,0.28);
-      transition: transform .2s, filter .2s, box-shadow .2s;
-      white-space: nowrap; flex-shrink: 0;
-    }
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; padding: 14px 28px; border-radius: 999px; background: var(--gold); color: #090F1A; font-weight: 700; font-size: .95rem; text-decoration: none; box-shadow: 0 8px 28px rgba(196,164,72,0.28); transition: transform .2s, filter .2s, box-shadow .2s; white-space: nowrap; flex-shrink: 0; }
     .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 14px 36px rgba(196,164,72,0.36); }
 
     /* ── FOOTER ── */
-    .footer {
-      margin: 0 24px 44px; text-align: center;
-      color: rgba(255,255,255,0.25); font-size: .88rem;
-      border-top: 1px solid var(--border); padding-top: 28px;
-    }
+    .footer { margin: 0 24px 44px; text-align: center; color: rgba(255,255,255,0.25); font-size: .88rem; border-top: 1px solid var(--border); padding-top: 28px; }
     .footer strong { color: var(--gold); font-weight: 600; }
+
+    /* ── LEADERBOARD ── */
+    .leaderboard-section { margin: 36px 24px 0; padding: 32px 36px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: var(--shadow); display: none; }
+    .leaderboard-section.visible { display: block; }
+    .leaderboard-section .section-label { margin: 0 0 10px; }
+    .lb-title { font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
+    .lb-desc { font-size: .88rem; color: rgba(255,255,255,0.45); margin-bottom: 26px; }
+    .lb-list { display: flex; flex-direction: column; gap: 10px; }
+    .lb-row { display: flex; align-items: center; gap: 14px; }
+    .lb-rank { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; flex-shrink: 0; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35); }
+    .lb-rank.gold { background: rgba(196,164,72,0.18); color: var(--gold); }
+    .lb-rank.silver { background: rgba(200,200,220,0.13); color: rgba(200,200,220,0.8); }
+    .lb-rank.bronze { background: rgba(180,120,60,0.15); color: rgba(200,150,80,0.9); }
+    .lb-name { font-size: .88rem; font-weight: 600; color: rgba(255,255,255,0.82); width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-bar-wrap { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 5px; overflow: hidden; }
+    .lb-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius: 5px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+    .lb-credits { font-size: .78rem; color: rgba(255,255,255,0.38); width: 72px; text-align: right; flex-shrink: 0; white-space: nowrap; }
 
     /* ── REVEAL ── */
     .reveal { opacity: 0; transform: translateY(22px); transition: opacity .75s ease, transform .75s ease; }
     .reveal.visible { opacity: 1; transform: none; }
 
-    @media (max-width: 640px) {
+    /* ── MOBILE ── */
+    @media (max-width: 700px) {
       .hero-section { margin: 24px 16px 0; padding: 28px 22px; }
-      .stats-bar { margin: 20px 16px 0; }
-      .topic-grid { margin: 0 16px; }
-      .how-section, .cta-section { margin-left: 16px; margin-right: 16px; padding: 28px 22px; }
+      .stats-bar { margin: 20px 16px 0; padding: 16px 18px; }
+      .tracks-grid { margin: 0 16px; grid-template-columns: 1fr; }
+      .leaderboard-section { margin: 24px 16px 0; padding: 28px 22px; }
+      .lb-name { width: 110px; }
+      .how-section, .cta-section, .your-progress { margin-left: 16px; margin-right: 16px; padding: 28px 22px; }
       .footer { margin: 0 16px 40px; }
+      .progress-row-name { width: 120px; font-size: .8rem; }
+      .gold-divider { margin: 28px 16px; }
+      .section-label { margin: 0 16px 16px; }
     }
 
     /* ── MOBILE NAV ── */
-    .nav-toggle {
-      display: none; flex-direction: column; justify-content: center; align-items: center;
-      gap: 5px; width: 40px; height: 40px; background: none; border: none;
-      cursor: pointer; padding: 8px; border-radius: 8px; transition: background .2s; flex-shrink: 0;
-    }
+    .nav-toggle { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 8px; border-radius: 8px; transition: background .2s; flex-shrink: 0; }
     .nav-toggle:hover { background: rgba(255,255,255,.06); }
     .nav-toggle span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: transform .25s, opacity .25s; transform-origin: center; }
     .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
@@ -220,25 +185,14 @@
       .nav-toggle { display: flex; }
       .brand-full { display: none; }
       .brand-abbr { display: inline; }
-      .main-nav {
-        display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0;
-        background: rgba(9,15,26,.97); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-        border-bottom: 1px solid rgba(196,164,72,.14); padding: 12px 16px 20px; gap: 4px;
-        opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden;
-        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.22s;
-      }
-      .main-nav.open {
-        opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible;
-        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1);
-      }
+      .main-nav { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: rgba(9,15,26,.97); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border-bottom: 1px solid rgba(196,164,72,.14); padding: 12px 16px 20px; gap: 4px; opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden; transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.22s; }
+      .main-nav.open { opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible; transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1); }
       .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; }
       .main-nav.open a { animation: navLinkIn 0.18s cubic-bezier(0.4,0,0.2,1) both; }
       .main-nav.open a:nth-child(1){animation-delay:.04s}.main-nav.open a:nth-child(2){animation-delay:.08s}.main-nav.open a:nth-child(3){animation-delay:.12s}.main-nav.open a:nth-child(4){animation-delay:.16s}.main-nav.open a:nth-child(5){animation-delay:.20s}.main-nav.open a:nth-child(6){animation-delay:.24s}
     }
     @keyframes navLinkIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
-    @media (hover:none) {
-      .nav-toggle:active { background:rgba(255,255,255,.12) !important; }
-    }
+    @media (hover:none) { .nav-toggle:active { background:rgba(255,255,255,.12) !important; } }
   </style>
 </head>
 <body>
@@ -251,117 +205,282 @@
       <a href="index.html">Home</a>
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
-      <a href="topics.html">Topics</a>
+      <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
       <a href="board.html">Board</a>
       <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
     </nav>
   </header>
+
   <main class="page">
 
     <!-- Hero -->
     <section class="hero-section reveal">
-      <span class="hero-eyebrow">Curriculum</span>
-      <h1 class="hero-title">Club topics with a finance edge</h1>
-      <p class="hero-copy">These are the core themes members explore through voting, case studies, and speaker sessions — grounded in applied economics, investment strategy, and real-world market dynamics.</p>
+      <span class="hero-eyebrow">Career Tracks</span>
+      <h1 class="hero-title">Build real skills.<br>Earn real influence.</h1>
+      <p class="hero-copy">Seven career-focused tracks built around projects, case studies, and real-world tools. Complete modules to earn credits — every credit adds to your vote weight and moves you up the speaker queue.</p>
     </section>
 
     <!-- Stats bar -->
     <div class="stats-bar reveal">
       <div class="stats-item">
-        <span class="stats-num">6+</span>
-        <span class="stats-lbl">Core Topics</span>
+        <span class="stats-num">7</span>
+        <span class="stats-lbl">Tracks</span>
       </div>
       <div class="stats-item">
-        <span class="stats-num">1</span>
-        <span class="stats-lbl">Vote Per Member</span>
+        <span class="stats-num">35</span>
+        <span class="stats-lbl">Modules</span>
       </div>
       <div class="stats-item">
-        <span class="stats-num">IRL</span>
-        <span class="stats-lbl">Industry Speakers</span>
+        <span class="stats-num">+1</span>
+        <span class="stats-lbl">Vote per Credit</span>
       </div>
       <div class="stats-item">
-        <span class="stats-num">&#8734;</span>
-        <span class="stats-lbl">Submit Your Own</span>
+        <span class="stats-num">&#10025;</span>
+        <span class="stats-lbl">Speaker Priority</span>
       </div>
     </div>
 
     <div class="gold-divider"></div>
+    <span class="section-label reveal">Choose your track</span>
 
-    <!-- Topic label -->
-    <span class="section-label reveal">Current topic pool</span>
+    <!-- Tracks Grid -->
+    <section class="tracks-grid reveal">
 
-    <!-- Topic cards -->
-    <section class="topic-grid reveal">
-      <article class="topic-card">
-        <span class="topic-badge">Market Strategy</span>
-        <div class="topic-name">Market Analysis</div>
-        <p class="topic-desc">Explore equity trends, sector performance, and macro drivers to understand how financial markets price risk and opportunity.</p>
-      </article>
-      <article class="topic-card">
-        <span class="topic-badge">Policy Impact</span>
-        <div class="topic-name">Economic Policy</div>
-        <p class="topic-desc">Understand how policy decisions ripple through growth, employment, and investment via real case studies and structured debate.</p>
-      </article>
-      <article class="topic-card">
-        <span class="topic-badge">Analytics</span>
-        <div class="topic-name">Data &amp; Strategy</div>
-        <p class="topic-desc">Use quantitative tools and research frameworks to evaluate decisions and build evidence-backed investment recommendations.</p>
-      </article>
-      <article class="topic-card">
-        <span class="topic-badge">Early Stage</span>
-        <div class="topic-name">Venture Capital</div>
-        <p class="topic-desc">Explore early-stage investing, startup funding mechanics, term sheets, and how VCs evaluate businesses for scale.</p>
-      </article>
-      <article class="topic-card">
-        <span class="topic-badge">Markets</span>
-        <div class="topic-name">Trading &amp; Derivatives</div>
-        <p class="topic-desc">Study market microstructure, risk management frameworks, and trade execution across equities, options, and futures.</p>
-      </article>
-      <article class="topic-card">
-        <span class="topic-badge">Deals</span>
-        <div class="topic-name">Investment Banking</div>
-        <p class="topic-desc">Review M&amp;A deal sourcing, financial modeling, and advisory best practices used in real capital markets transactions.</p>
-      </article>
+      <a class="track-card" href="track.html?id=ib">
+        <div class="track-card-top">
+          <span class="track-badge">Finance</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Investment Banking</div>
+        <div class="track-tagline">What analysts actually do on deals</div>
+        <ul class="track-highlights">
+          <li>Build a DCF model from scratch</li>
+          <li>Analyze a real M&amp;A transaction</li>
+          <li>Write a buy-side pitch book</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="ib">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="ib">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="ib"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="ib"></div>
+            <span class="track-start-btn" data-btn="ib">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="track-card" href="track.html?id=trading">
+        <div class="track-card-top">
+          <span class="track-badge">Markets</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Trading &amp; Markets</div>
+        <div class="track-tagline">Execute, size, and defend real trades</div>
+        <ul class="track-highlights">
+          <li>Evaluate a live trade setup</li>
+          <li>Build a risk management framework</li>
+          <li>Price options and attribute P&amp;L</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="trading">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="trading">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="trading"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="trading"></div>
+            <span class="track-start-btn" data-btn="trading">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="track-card" href="track.html?id=er">
+        <div class="track-card-top">
+          <span class="track-badge">Research</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Equity Research</div>
+        <div class="track-tagline">Cover a stock like a sell-side analyst</div>
+        <ul class="track-highlights">
+          <li>Build a bottoms-up revenue model</li>
+          <li>Write a stock initiation report</li>
+          <li>Present your thesis to the group</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="er">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="er">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="er"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="er"></div>
+            <span class="track-start-btn" data-btn="er">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="track-card" href="track.html?id=adtech">
+        <div class="track-card-top">
+          <span class="track-badge">Ad Tech</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Ad Tech &amp; Media</div>
+        <div class="track-tagline">Run real campaigns on The Trade Desk</div>
+        <ul class="track-highlights">
+          <li>Navigate The Trade Desk platform</li>
+          <li>Build a full audience targeting strategy</li>
+          <li>Analyze campaign ROAS and optimize</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="adtech">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="adtech">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="adtech"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="adtech"></div>
+            <span class="track-start-btn" data-btn="adtech">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="track-card" href="track.html?id=vc">
+        <div class="track-card-top">
+          <span class="track-badge">Venture</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Venture Capital</div>
+        <div class="track-tagline">Evaluate startups and write deal memos</div>
+        <ul class="track-highlights">
+          <li>Score a real startup pitch</li>
+          <li>Model a cap table through Series A</li>
+          <li>Write a one-page investment memo</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="vc">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="vc">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="vc"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="vc"></div>
+            <span class="track-start-btn" data-btn="vc">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="track-card" href="track.html?id=consulting">
+        <div class="track-card-top">
+          <span class="track-badge">Strategy</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Consulting</div>
+        <div class="track-tagline">Solve cases like a first-year analyst</div>
+        <ul class="track-highlights">
+          <li>Structure problems with MECE issue trees</li>
+          <li>Crack a profitability case cold</li>
+          <li>Build a McKinsey-style recommendation deck</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="consulting">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="consulting">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="consulting"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="consulting"></div>
+            <span class="track-start-btn" data-btn="consulting">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="track-card" href="track.html?id=macro">
+        <div class="track-card-top">
+          <span class="track-badge">Macro</span>
+          <span class="track-module-count">5 modules</span>
+        </div>
+        <div class="track-name">Macro &amp; Policy</div>
+        <div class="track-tagline">Trade the economic cycle</div>
+        <ul class="track-highlights">
+          <li>Parse a Fed statement and predict the next move</li>
+          <li>Construct a rates trade thesis</li>
+          <li>Write a 1-page economic brief</li>
+        </ul>
+        <div class="track-progress-wrap">
+          <div class="track-progress-label">
+            <span class="track-progress-text" data-track="macro">0 / 5 modules</span>
+            <span class="track-credits-text" data-credits="macro">0 credits</span>
+          </div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" data-fill="macro"></div></div>
+          <div class="track-cta-row">
+            <div class="track-status-dot" data-dot="macro"></div>
+            <span class="track-start-btn" data-btn="macro">Start Track →</span>
+          </div>
+        </div>
+      </a>
+
     </section>
+
+    <div class="gold-divider"></div>
 
     <!-- How it works -->
     <section class="how-section reveal">
       <div class="how-header">
-        <span class="section-label">How sessions work</span>
-        <h2>From vote to industry insight</h2>
+        <span class="section-label">How tracks work</span>
+        <h2>From module to influence</h2>
       </div>
       <div class="how-steps">
         <div class="how-step">
           <div class="step-num">01</div>
-          <h3>Members Vote</h3>
-          <p>Every session topic is put to a club-wide vote. Each member gets one vote — the curriculum is always what the group actually wants to learn.</p>
+          <h3>Choose a Track</h3>
+          <p>Pick the career path you're most curious about — IB, trading, VC, consulting, and more. Each track is self-contained and starts from zero.</p>
         </div>
         <div class="how-step">
           <div class="step-num">02</div>
-          <h3>We Prepare</h3>
-          <p>The curriculum team builds materials, case studies, and discussion frameworks around the winning topic so sessions have real depth.</p>
+          <h3>Complete Modules</h3>
+          <p>Work through project-based modules using real tools — Excel models, live platforms, case studies. Each module produces a real deliverable.</p>
         </div>
         <div class="how-step">
           <div class="step-num">03</div>
-          <h3>Speaker Session</h3>
-          <p>An industry practitioner from the field joins to bridge theory and practice — sharing how the concept actually plays out in their career.</p>
+          <h3>Earn Credits</h3>
+          <p>Every completed module earns 1 credit. Credits stack across all tracks — the more you finish, the more influence you accumulate.</p>
         </div>
         <div class="how-step">
           <div class="step-num">04</div>
-          <h3>Open Discussion</h3>
-          <p>Members engage directly with the speaker, ask questions, and debate real-world implications — building both knowledge and network.</p>
+          <h3>Unlock Influence</h3>
+          <p>Credits boost your vote weight on the topic ballot and move you to the front of the speaker Q&amp;A queue at every club event.</p>
         </div>
       </div>
+    </section>
+
+    <!-- Your Progress (shown only when logged in) -->
+    <section class="your-progress" id="your-progress">
+      <span class="section-label">Your progress</span>
+      <div class="progress-tracks-list" id="progress-tracks-list"></div>
+      <div class="credits-summary">
+        <div class="credits-total"><strong id="total-credits">0</strong> total credits earned</div>
+        <div class="credits-note">Each credit adds +1 to your vote weight</div>
+      </div>
+    </section>
+
+    <!-- Leaderboard (shown when Firebase data exists) -->
+    <section class="leaderboard-section" id="leaderboard-section">
+      <span class="section-label">Credit Leaderboard</span>
+      <h2 class="lb-title">Top members</h2>
+      <p class="lb-desc">Ranked by total track credits earned. Credits boost vote weight and move you up the speaker Q&amp;A queue.</p>
+      <div id="leaderboard-list" class="lb-list"></div>
     </section>
 
     <!-- CTA -->
     <section class="cta-section reveal">
       <div class="cta-text">
-        <h2>Help pick the next topic</h2>
-        <p>Every member gets one vote. Cast yours to shape what the club covers next.</p>
+        <h2 id="cta-title">Start earning credits</h2>
+        <p id="cta-copy">Pick a track and complete your first module today.</p>
       </div>
-      <a href="vote.html" class="btn-primary">Vote Now</a>
+      <a href="signin.html" class="btn-primary" id="cta-btn">Sign In to Start</a>
     </section>
 
     <footer class="footer">
@@ -370,6 +489,159 @@
   </main>
 
   <script>
+    /* ── Firebase ── */
+    var DB_URL = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+    var FB_READY = DB_URL !== 'YOUR_FIREBASE_DB_URL';
+    function fbGet(p) {
+      if (!FB_READY) return Promise.resolve(null);
+      return fetch(DB_URL + '/' + p + '.json').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
+    }
+    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    var TRACK_IDS = ['ib','trading','er','adtech','vc','consulting','macro'];
+    var TRACK_NAMES = {
+      ib: 'Investment Banking',
+      trading: 'Trading & Markets',
+      er: 'Equity Research',
+      adtech: 'Ad Tech & Media',
+      vc: 'Venture Capital',
+      consulting: 'Consulting',
+      macro: 'Macro & Policy'
+    };
+
+    function getProgress() {
+      try { return JSON.parse(localStorage.getItem('aec-track-progress') || '{}'); } catch(e) { return {}; }
+    }
+
+    function getSession() {
+      try {
+        var raw = JSON.parse(localStorage.getItem('aec-session') || 'null');
+        if (raw && raw.loginAt && Date.now() - raw.loginAt > 30*24*60*60*1000) {
+          localStorage.removeItem('aec-session'); return null;
+        }
+        return raw;
+      } catch(e) { return null; }
+    }
+
+    function countCompleted(progress, id) {
+      var arr = progress[id];
+      if (!Array.isArray(arr)) return 0;
+      return arr.filter(Boolean).length;
+    }
+
+    function initTrackCards() {
+      var progress = getProgress();
+      TRACK_IDS.forEach(function(id) {
+        var done = countCompleted(progress, id);
+        var pct = (done / 5) * 100;
+
+        var ptEl = document.querySelector('[data-track="' + id + '"]');
+        if (ptEl) ptEl.textContent = done + ' / 5 modules';
+
+        var crEl = document.querySelector('[data-credits="' + id + '"]');
+        if (crEl) crEl.textContent = done + ' credit' + (done !== 1 ? 's' : '');
+
+        var fillEl = document.querySelector('[data-fill="' + id + '"]');
+        if (fillEl) setTimeout(function(el, p) { return function() { el.style.width = p + '%'; }; }(fillEl, pct), 150);
+
+        var dotEl = document.querySelector('[data-dot="' + id + '"]');
+        if (dotEl) {
+          if (done === 5) dotEl.classList.add('complete');
+          else if (done > 0) dotEl.classList.add('started');
+        }
+
+        var btnEl = document.querySelector('[data-btn="' + id + '"]');
+        if (btnEl) {
+          if (done === 5) btnEl.textContent = 'Completed ✓';
+          else if (done > 0) btnEl.textContent = 'Continue →';
+          else btnEl.textContent = 'Start Track →';
+        }
+      });
+    }
+
+    function buildProgressSection(session, progress) {
+      if (!session) return;
+      var section = document.getElementById('your-progress');
+      if (section) section.classList.add('visible');
+
+      var list = document.getElementById('progress-tracks-list');
+      if (!list) return;
+
+      var total = 0;
+      var html = '';
+      TRACK_IDS.forEach(function(id) {
+        var done = countCompleted(progress, id);
+        total += done;
+        var pct = (done / 5) * 100;
+        html += '<div class="progress-row">' +
+          '<div class="progress-row-name">' + TRACK_NAMES[id] + '</div>' +
+          '<div class="progress-row-bar"><div class="progress-row-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="progress-row-frac">' + done + '/5</div>' +
+          '</div>';
+      });
+      list.innerHTML = html;
+
+      var credEl = document.getElementById('total-credits');
+      if (credEl) credEl.textContent = total;
+    }
+
+    function updateCTA(session, progress) {
+      var title = document.getElementById('cta-title');
+      var copy = document.getElementById('cta-copy');
+      var btn = document.getElementById('cta-btn');
+      if (!session) {
+        if (title) title.textContent = 'Sign in to track your progress';
+        if (copy) copy.textContent = 'Create an account to save credits, earn vote weight, and unlock speaker priority.';
+        if (btn) { btn.href = 'signin.html'; btn.textContent = 'Sign In'; }
+      } else {
+        var totalDone = TRACK_IDS.reduce(function(sum, id) { return sum + countCompleted(progress, id); }, 0);
+        var nextTrack = TRACK_IDS.find(function(id) { return countCompleted(progress, id) > 0 && countCompleted(progress, id) < 5; });
+        if (!nextTrack) nextTrack = TRACK_IDS.find(function(id) { return countCompleted(progress, id) === 0; });
+        if (title) title.textContent = totalDone > 0 ? 'Keep building' : 'Start your first track';
+        if (copy) copy.textContent = totalDone > 0
+          ? 'You have ' + totalDone + ' credit' + (totalDone !== 1 ? 's' : '') + ' earned. Every completed module strengthens your voice in the club.'
+          : 'Pick a track and complete your first module today.';
+        if (btn) { btn.href = 'track.html?id=' + (nextTrack || 'ib'); btn.textContent = totalDone > 0 ? 'Continue →' : 'Pick a Track →'; }
+      }
+    }
+
+    /* ── LEADERBOARD ── */
+    function loadLeaderboard() {
+      if (!FB_READY) return;
+      fbGet('track-progress').then(function(data) {
+        if (!data) return;
+        var members = [];
+        Object.values(data).forEach(function(userData) {
+          if (!userData || !userData.meta) return;
+          var total = TRACK_IDS.reduce(function(sum, id) {
+            var arr = userData[id];
+            return sum + (Array.isArray(arr) ? arr.filter(Boolean).length : 0);
+          }, 0);
+          if (total > 0) members.push({ name: userData.meta.name || userData.meta.email, credits: total });
+        });
+        members.sort(function(a, b) { return b.credits - a.credits; });
+        var top = members.slice(0, 10);
+        if (top.length === 0) return;
+
+        var section = document.getElementById('leaderboard-section');
+        if (section) section.classList.add('visible');
+        var list = document.getElementById('leaderboard-list');
+        if (!list) return;
+
+        list.innerHTML = top.map(function(m, i) {
+          var rankClass = i === 0 ? 'lb-rank gold' : i === 1 ? 'lb-rank silver' : i === 2 ? 'lb-rank bronze' : 'lb-rank';
+          var barPct = Math.round(m.credits / 35 * 100);
+          return '<div class="lb-row">' +
+            '<span class="' + rankClass + '">' + (i+1) + '</span>' +
+            '<span class="lb-name">' + escHtml(m.name) + '</span>' +
+            '<span class="lb-bar-wrap"><span class="lb-bar-fill" style="width:' + barPct + '%"></span></span>' +
+            '<span class="lb-credits">' + m.credits + ' credit' + (m.credits !== 1 ? 's' : '') + '</span>' +
+            '</div>';
+        }).join('');
+      });
+    }
+
+    /* ── NAV ── */
     window.addEventListener('scroll', function() {
       document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
     }, { passive: true });
@@ -383,8 +655,7 @@
 
     function updateAdminLinkVisibility() {
       try {
-        var raw = JSON.parse(localStorage.getItem('aec-session') || 'null');
-        var session = raw && raw.loginAt && Date.now() - raw.loginAt > 30*24*60*60*1000 ? (localStorage.removeItem('aec-session'), null) : raw;
+        var session = getSession();
         var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true);
         var l = document.getElementById('admin-nav-link');
         if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
@@ -392,22 +663,29 @@
         if (ml) ml.style.display = session ? 'inline-flex' : 'none';
         var sl = document.querySelector('.main-nav a[href="signin.html"]');
         if (sl) sl.textContent = session ? 'Profile' : 'Sign In';
-      } catch (e) {}
+      } catch(e) {}
     }
 
     document.addEventListener('DOMContentLoaded', function() {
       highlightCurrentNav();
       updateAdminLinkVisibility();
-      var reveals = document.querySelectorAll('.reveal');
+
+      var session = getSession();
+      var progress = getProgress();
+      initTrackCards();
+      buildProgressSection(session, progress);
+      updateCTA(session, progress);
+      loadLeaderboard();
+
       var observer = new IntersectionObserver(function(entries, obs) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) { entry.target.classList.add('visible'); obs.unobserve(entry.target); }
         });
-      }, { threshold: 0.1 });
-      reveals.forEach(function(el) { observer.observe(el); });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
     });
 
-    // Mobile nav toggle
+    /* ── MOBILE NAV ── */
     (function() {
       var btn = document.getElementById('nav-toggle');
       var nav = document.getElementById('main-nav');

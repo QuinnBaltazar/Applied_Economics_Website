@@ -623,7 +623,7 @@
       <a href="index.html">Home</a>
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
-      <a href="topics.html">Topics</a>
+      <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
       <a href="board.html">Board</a>
       <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
@@ -818,14 +818,24 @@
       if (Object.keys(n).length) await fbPatch('vote-counts', n);
       return { ...n, ...c };
     }
-    async function incrementCount(topic) {
+    function getTrackCredits() {
+      try {
+        const p = JSON.parse(localStorage.getItem('aec-track-progress') || '{}');
+        return ['ib','trading','er','adtech','vc','consulting','macro'].reduce((s, id) => {
+          const arr = p[id]; return s + (Array.isArray(arr) ? arr.filter(Boolean).length : 0);
+        }, 0);
+      } catch { return 0; }
+    }
+
+    async function incrementCount(topic, weight) {
+      weight = weight || 1;
       if (!FB_READY) {
         const c = JSON.parse(localStorage.getItem('aec-vote-counts')||'{}');
-        c[topic] = (c[topic]||0) + 1;
+        c[topic] = (c[topic]||0) + weight;
         localStorage.setItem('aec-vote-counts', JSON.stringify(c)); return;
       }
       const c = await fbGet('vote-counts') || {};
-      await fbPatch('vote-counts', { [topic]: (c[topic]||0) + 1 });
+      await fbPatch('vote-counts', { [topic]: (c[topic]||0) + weight });
     }
     function updateResults(counts) {
       document.getElementById('count-vc').textContent       = fmt(counts['Venture Capital']);
@@ -983,6 +993,10 @@
       const session = getSession();
       const isAdmin = isSessionAdmin(session);
 
+      // Track credits + vote weight
+      const totalCredits = getTrackCredits();
+      const voteWeight = 1 + Math.floor(totalCredits / 5);
+
       // Session indicator + nav links
       if (session) {
         const note = document.getElementById('session-note');
@@ -991,12 +1005,15 @@
         if (ml) ml.style.display = 'inline-flex';
         const sl = document.querySelector('.main-nav a[href="signin.html"]');
         if (sl) sl.textContent = 'Profile';
+        const creditsBadge = totalCredits > 0
+          ? ` &nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700;">${totalCredits} track credit${totalCredits!==1?'s':''}</span> &nbsp;·&nbsp; Vote weight: <strong style="color:var(--accent);">${voteWeight}×</strong>`
+          : '';
         if (isAdmin) {
           const link = document.getElementById('admin-nav-link');
           if (link) link.style.display = 'inline-flex';
-          note.innerHTML = `Signed in as ${escapeHtml(session.email)} &nbsp;·&nbsp; <a href="admin.html" style="color:var(--accent);text-decoration:underline;">Admin Panel</a>`;
+          note.innerHTML = `Signed in as ${escapeHtml(session.email)} &nbsp;·&nbsp; <a href="admin.html" style="color:var(--accent);text-decoration:underline;">Admin Panel</a>${creditsBadge}`;
         } else {
-          note.textContent = `Signed in as ${session.email}`;
+          note.innerHTML = `Signed in as ${escapeHtml(session.email)}${creditsBadge}`;
         }
       }
       highlightCurrentNav();
@@ -1073,11 +1090,15 @@
           wireOtherToggle();
           showMessage(`Topic submitted — pending admin approval before it appears on the vote page.`);
         } else {
-          await incrementCount(topic);
+          await incrementCount(topic, voteWeight);
           await saveUserVote(session, topic);
-          if (session && FB_READY) fbPost('activity', { email: session.email, name: session.name||'', type: 'vote', detail: `Voted for ${topic}`, at: Date.now() });
+          if (session && FB_READY) {
+            fbPatch(`vote-records/${eKey(session.email)}`, { credits: totalCredits, voteWeight });
+            fbPost('activity', { email: session.email, name: session.name||'', type: 'vote', detail: `Voted for ${topic} (weight ${voteWeight}×)`, at: Date.now() });
+          }
           updateResults(await loadCounts());
-          showMessage(`Thanks — your vote for "${topic}" has been recorded.`);
+          const weightNote = voteWeight > 1 ? ` Your ${totalCredits} track credits applied a ${voteWeight}× weight.` : '';
+          showMessage(`Thanks — your vote for "${topic}" has been recorded.${weightNote}`);
         }
         lockForm();
       });
