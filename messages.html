@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages | UCSB Applied Economics Club</title>
+  <style>
+    :root {
+      --bg: #090F1A;
+      --surface: #0E1829;
+      --surface-soft: #12213A;
+      --accent: #C4A448;
+      --accent-soft: #D4B55E;
+      --text: #FFFFFF;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 24px 60px rgba(0,0,0,0.26);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* ── NAV ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
+      background: rgba(9,15,26,0.84); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
+      animation: navDown 0.5s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .topbar.scrolled { background: rgba(9,15,26,0.98); box-shadow: 0 2px 38px rgba(0,0,0,0.42); border-color: rgba(196,164,72,0.15); }
+    .brand { font-size: 0.85rem; font-weight: 800; color: #fff; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: color 0.2s; }
+    .brand:hover { color: var(--accent); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
+    .main-nav a { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 8px 13px; color: rgba(255,255,255,0.72); text-decoration: none; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.03em; border-radius: 10px; transition: color 0.2s, background 0.2s; }
+    .main-nav a::after { content: ''; position: absolute; bottom: 5px; left: 13px; right: 13px; height: 2px; background: var(--accent); border-radius: 2px; transform: scaleX(0); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1); transform-origin: center; }
+    .main-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,0.12); }
+    .nav-unread {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: #031a40; font-size: 0.65rem; font-weight: 800;
+      border-radius: 999px; min-width: 16px; height: 16px; padding: 0 4px; line-height: 1;
+    }
+
+    /* ── MOBILE NAV ── */
+    .nav-toggle { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: none; border: none; cursor: pointer; padding: 8px; border-radius: 8px; transition: background .2s; flex-shrink: 0; }
+    .nav-toggle:hover { background: rgba(255,255,255,.06); }
+    .nav-toggle span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: transform .25s, opacity .25s; transform-origin: center; }
+    .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .brand-abbr { display: none; }
+    @media (max-width: 640px) {
+      .nav-toggle { display: flex; }
+      .brand-full { display: none; }
+      .brand-abbr { display: inline; }
+      .main-nav { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: rgba(9,15,26,.97); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border-bottom: 1px solid rgba(196,164,72,.14); padding: 12px 16px 20px; gap: 4px; opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden; transition: opacity 0.22s, transform 0.22s, visibility 0s linear 0.22s; }
+      .main-nav.open { opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible; transition: opacity 0.22s, transform 0.22s; }
+      .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; }
+    }
+
+    /* ── PAGE SHELL ── */
+    .page { height: 100%; padding-top: 64px; display: flex; flex-direction: column; max-width: 100%; }
+
+    /* ── AUTH GATE ── */
+    .auth-gate-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .auth-gate { padding: 56px 44px; max-width: 480px; width: 100%; text-align: center; background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; box-shadow: 0 26px 60px rgba(0,0,0,0.2); }
+    .auth-gate-icon { font-size: 3rem; margin-bottom: 20px; display: block; }
+    .auth-gate h2 { font-size: 1.8rem; margin-bottom: 12px; letter-spacing: -0.02em; }
+    .auth-gate p { color: rgba(255,255,255,0.72); font-size: 0.97rem; line-height: 1.7; margin-bottom: 28px; }
+    .auth-gate-btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 30px; border-radius: 999px; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.97rem; text-decoration: none; transition: transform 0.2s, filter 0.2s; }
+    .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+
+    /* ── DM LAYOUT ── */
+    .dm-outer { flex: 1; overflow: hidden; padding: 16px 24px 24px; }
+    .dm-wrap {
+      height: 100%;
+      display: flex;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+    }
+
+    /* ── INBOX PANEL ── */
+    .inbox-panel {
+      width: 300px;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .inbox-header {
+      padding: 20px 20px 14px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      letter-spacing: -0.01em;
+    }
+    .inbox-search-wrap {
+      padding: 12px 12px 8px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .inbox-search {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #fff;
+      padding: 9px 12px;
+      font: inherit;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .inbox-search:focus { border-color: var(--accent); }
+    .inbox-search::placeholder { color: rgba(255,255,255,0.3); }
+    .member-suggestions {
+      display: none;
+      position: absolute;
+      top: calc(100% - 4px);
+      left: 12px; right: 12px;
+      background: #0c1628;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 20;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+    }
+    .suggest-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    }
+    .suggest-item:hover { background: rgba(255,255,255,0.06); }
+    .suggest-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(196,164,72,0.18); color: var(--accent);
+      font-weight: 700; font-size: 0.78rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .suggest-name { font-size: 0.9rem; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .suggest-subject { font-size: 0.74rem; color: rgba(255,255,255,0.38); flex-shrink: 0; }
+    .conv-list { flex: 1; overflow-y: auto; }
+    .conv-list::-webkit-scrollbar { width: 4px; }
+    .conv-list::-webkit-scrollbar-track { background: transparent; }
+    .conv-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    .conv-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px; cursor: pointer; transition: background 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .conv-item:hover { background: rgba(255,255,255,0.04); }
+    .conv-item.active { background: rgba(196,164,72,0.08); border-right: 2px solid var(--accent); }
+    .conv-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(196,164,72,0.18); color: var(--accent);
+      font-weight: 700; font-size: 0.88rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .conv-info { flex: 1; min-width: 0; }
+    .conv-name-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .conv-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-time { font-size: 0.7rem; color: rgba(255,255,255,0.32); flex-shrink: 0; }
+    .conv-preview-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
+    .conv-preview { font-size: 0.79rem; color: rgba(255,255,255,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .unread-badge {
+      background: var(--accent); color: #031a40;
+      font-size: 0.66rem; font-weight: 800;
+      border-radius: 999px; padding: 2px 7px; flex-shrink: 0;
+    }
+    .conv-empty { padding: 36px 20px; text-align: center; color: rgba(255,255,255,0.32); font-size: 0.87rem; line-height: 1.7; }
+
+    /* ── THREAD PANEL ── */
+    .thread-panel {
+      flex: 1; display: flex; flex-direction: column;
+      background: rgba(7,22,48,0.97); min-width: 0;
+    }
+    .thread-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.28); text-align: center; padding: 40px;
+    }
+    .thread-empty-icon { font-size: 2.8rem; margin-bottom: 16px; opacity: 0.45; }
+    .thread-empty p { font-size: 0.92rem; line-height: 1.75; max-width: 260px; }
+    .thread-active { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    .thread-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0; background: rgba(7,22,48,0.99);
+    }
+    .back-btn {
+      display: none; background: none; border: none; color: rgba(255,255,255,0.55);
+      font-size: 1.2rem; cursor: pointer; padding: 4px 8px;
+      border-radius: 8px; transition: background 0.15s; flex-shrink: 0; line-height: 1;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .thread-header-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(196,164,72,0.18); color: var(--accent);
+      font-weight: 700; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .thread-header-name { font-weight: 700; font-size: 1rem; }
+    .thread-messages {
+      flex: 1; overflow-y: auto;
+      padding: 20px; display: flex; flex-direction: column; gap: 2px;
+    }
+    .thread-messages::-webkit-scrollbar { width: 4px; }
+    .thread-messages::-webkit-scrollbar-track { background: transparent; }
+    .thread-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+    .thread-no-msgs {
+      text-align: center; color: rgba(255,255,255,0.28);
+      font-size: 0.88rem; padding: 48px 0; align-self: center;
+    }
+    .msg-row { display: flex; margin-bottom: 3px; }
+    .msg-row.mine { justify-content: flex-end; }
+    .msg-row.theirs { justify-content: flex-start; }
+    /* Group bubbles: if same sender in sequence, reduce gap */
+    .msg-row + .msg-row.mine,
+    .msg-row + .msg-row.theirs { margin-bottom: 1px; }
+    .msg-bubble {
+      max-width: 68%; padding: 9px 14px; border-radius: 18px;
+    }
+    .msg-bubble.mine {
+      background: rgba(196,164,72,0.14); border: 1px solid rgba(196,164,72,0.22);
+      border-bottom-right-radius: 4px;
+    }
+    .msg-bubble.theirs {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-text { font-size: 0.92rem; color: rgba(255,255,255,0.9); line-height: 1.55; word-break: break-word; white-space: pre-wrap; }
+    .msg-time { font-size: 0.67rem; color: rgba(255,255,255,0.26); margin-top: 4px; }
+    .msg-row.mine .msg-time { text-align: right; }
+    .thread-compose {
+      display: flex; gap: 10px; align-items: flex-end;
+      padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.07);
+      background: rgba(7,22,48,0.99); flex-shrink: 0;
+    }
+    .compose-input {
+      flex: 1; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14); border-radius: 14px;
+      color: #fff; padding: 11px 15px; font: inherit; font-size: 0.93rem;
+      resize: none; outline: none; transition: border-color 0.2s;
+      min-height: 44px; max-height: 120px; overflow-y: auto; line-height: 1.5;
+    }
+    .compose-input::placeholder { color: rgba(255,255,255,0.3); }
+    .compose-input:focus { border-color: var(--accent); }
+    .compose-send {
+      padding: 11px 22px; border-radius: 999px; border: none;
+      background: var(--accent); color: #031a40;
+      font-weight: 700; font-size: 0.92rem; font-family: inherit;
+      cursor: pointer; transition: transform 0.2s, filter 0.2s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .compose-send:hover { transform: translateY(-2px); filter: brightness(1.06); }
+    .compose-send:disabled { opacity: 0.6; transform: none; cursor: default; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      .dm-outer { padding: 0; }
+      .dm-wrap { border-radius: 0; border: none; border-top: 1px solid rgba(255,255,255,0.08); }
+      .inbox-panel { width: 100%; }
+      .thread-panel { display: none; width: 100%; }
+      .dm-wrap.thread-open .inbox-panel { display: none; }
+      .dm-wrap.thread-open .thread-panel { display: flex; }
+      .back-btn { display: flex; align-items: center; justify-content: center; }
+      .thread-messages { padding: 14px; }
+      .thread-compose { padding: 10px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="index.html"><span class="brand-full">UCSB Applied Economics Club</span><span class="brand-abbr">UCSB&nbsp;AEC</span></a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" id="main-nav">
+      <a href="index.html">Home</a>
+      <a href="vote.html">Vote</a>
+      <a href="signin.html">Sign In</a>
+      <a href="topics.html">Tracks</a>
+      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="messages.html" id="messages-nav-link" style="display:none">Messages <span class="nav-unread" id="nav-unread-badge" style="display:none"></span></a>
+      <a href="board.html">Board</a>
+      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <!-- Not signed in -->
+    <div id="auth-gate" style="display:none;">
+      <div class="auth-gate-wrap">
+        <div class="auth-gate">
+          <span class="auth-gate-icon">&#128274;</span>
+          <h2>Members Only</h2>
+          <p>Sign in with your UCSB email to access member-to-member messaging.</p>
+          <a href="signin.html" class="auth-gate-btn">Sign In to Continue</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- DM UI -->
+    <div id="dm-content" style="display:none; flex:1; flex-direction:column; min-height:0;">
+      <div class="dm-outer">
+        <div class="dm-wrap" id="dm-wrap">
+
+          <!-- Left: Inbox -->
+          <div class="inbox-panel">
+            <div class="inbox-header">Messages</div>
+            <div class="inbox-search-wrap">
+              <input type="search" class="inbox-search" id="inbox-search" placeholder="Find a member to message&hellip;" autocomplete="off" />
+              <div class="member-suggestions" id="member-suggestions"></div>
+            </div>
+            <div class="conv-list" id="conv-list">
+              <div class="conv-empty">Loading&hellip;</div>
+            </div>
+          </div>
+
+          <!-- Right: Thread -->
+          <div class="thread-panel">
+            <div class="thread-empty" id="thread-empty">
+              <div class="thread-empty-icon">&#128172;</div>
+              <p>Select a conversation or search for a member above to start one.</p>
+            </div>
+            <div class="thread-active" id="thread-active">
+              <div class="thread-header" id="thread-header"></div>
+              <div class="thread-messages" id="thread-messages"></div>
+              <div class="thread-compose">
+                <textarea class="compose-input" id="compose-input" placeholder="Send a message&hellip;" rows="1" maxlength="2000"></textarea>
+                <button class="compose-send" id="compose-send">Send</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const DB_URL      = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function eKey(e) { return String(e).replace(/[.@#$[\]/]/g,'_'); }
+    function convId(a, b) { return [eKey(a), eKey(b)].sort().join('__'); }
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function initials(name) { return (name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase(); }
+    function fmtTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts), now = new Date(), diff = Date.now() - ts;
+      if (diff < 86400000 && d.getDate() === now.getDate()) return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      if (diff < 7*86400000) return d.toLocaleDateString('en-US',{weekday:'short'});
+      return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }
+    function fmtFull(ts) {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    }
+
+    // ── Firebase REST ─────────────────────────────────────────────────────────
+    async function fbGet(p) { try { const r=await fetch(`${DB_URL}/${p}.json`); return r.ok?r.json():null; } catch { return null; } }
+    async function fbSet(p,d) { try { await fetch(`${DB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); } catch {} }
+    async function fbPost(p,d) { try { const r=await fetch(`${DB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok?r.json():null; } catch { return null; } }
+
+    // ── Session ───────────────────────────────────────────────────────────────
+    const SESSION_TTL = 30*24*60*60*1000;
+    function getSession() { try{const s=JSON.parse(localStorage.getItem('aec-session'));if(!s)return null;if(s.loginAt&&Date.now()-s.loginAt>SESSION_TTL){localStorage.removeItem('aec-session');return null;}return s;}catch{return null;} }
+    function isAdminSess(s) { return s&&(s.email===ADMIN_EMAIL||s.isAdmin===true); }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    let mySession   = null;
+    let allMembers  = [];
+    let activeConvId = null;
+    let threadPoll  = null;
+    let inboxPoll   = null;
+
+    // ── Conversations ─────────────────────────────────────────────────────────
+    async function loadConversations() {
+      const dms = await fbGet('dms');
+      if (!dms) return [];
+      return Object.entries(dms)
+        .filter(([,v]) => v && v.meta && Array.isArray(v.meta.participants) && v.meta.participants.includes(mySession.email))
+        .map(([k,v]) => ({ id:k, ...v.meta }))
+        .sort((a,b) => (b.lastAt||0) - (a.lastAt||0));
+    }
+
+    function renderConvList(convs) {
+      const list = document.getElementById('conv-list');
+      list.innerHTML = '';
+      if (!convs.length) {
+        list.innerHTML = '<div class="conv-empty">No conversations yet.<br>Search for a member above to start messaging.</div>';
+        return;
+      }
+      convs.forEach(conv => {
+        const partnerEmail = (conv.participants||[]).find(e => e !== mySession.email) || '';
+        const partnerName  = (conv.names && conv.names[eKey(partnerEmail)]) || partnerEmail || 'Member';
+        const myUnread     = conv['unread_'+eKey(mySession.email)] || 0;
+
+        const item = document.createElement('div');
+        item.className = 'conv-item' + (conv.id === activeConvId ? ' active' : '');
+        item.dataset.convId       = conv.id;
+        item.dataset.partnerEmail = partnerEmail;
+        item.innerHTML =
+          '<div class="conv-avatar">'+esc(initials(partnerName))+'</div>'+
+          '<div class="conv-info">'+
+            '<div class="conv-name-row">'+
+              '<span class="conv-name">'+esc(partnerName)+'</span>'+
+              '<span class="conv-time">'+esc(fmtTime(conv.lastAt))+'</span>'+
+            '</div>'+
+            '<div class="conv-preview-row">'+
+              '<span class="conv-preview">'+esc((conv.lastMsg||'').slice(0,60))+'</span>'+
+              (myUnread > 0 ? '<span class="unread-badge">'+myUnread+'</span>' : '')+
+            '</div>'+
+          '</div>';
+        item.addEventListener('click', () => openConversation(partnerEmail, partnerName));
+        list.appendChild(item);
+      });
+    }
+
+    async function refreshInbox() {
+      const convs = await loadConversations();
+      renderConvList(convs);
+      // Update nav badge
+      const total = convs.reduce((sum,c) => sum + (c['unread_'+eKey(mySession.email)]||0), 0);
+      const badge = document.getElementById('nav-unread-badge');
+      if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'inline-flex' : 'none'; }
+    }
+
+    // ── Open / create a conversation ──────────────────────────────────────────
+    async function openConversation(partnerEmail, partnerName) {
+      if (!partnerEmail) return;
+      const cid = convId(mySession.email, partnerEmail);
+      activeConvId = cid;
+
+      // Ensure meta exists (creates conv if first message not yet sent)
+      const existingMeta = await fbGet('dms/'+cid+'/meta');
+      if (!existingMeta) {
+        const names = {};
+        names[eKey(mySession.email)] = mySession.name || 'Member';
+        names[eKey(partnerEmail)]    = partnerName;
+        await fbSet('dms/'+cid+'/meta', {
+          participants: [mySession.email, partnerEmail],
+          names,
+          lastMsg: '',
+          lastAt: 0,
+          ['unread_'+eKey(mySession.email)]: 0,
+          ['unread_'+eKey(partnerEmail)]: 0
+        });
+      } else {
+        // Mark as read
+        await fbSet('dms/'+cid+'/meta/unread_'+eKey(mySession.email), 0);
+      }
+
+      // Render thread header
+      document.getElementById('thread-empty').style.display = 'none';
+      const threadActive = document.getElementById('thread-active');
+      threadActive.style.display = 'flex';
+      document.getElementById('thread-header').innerHTML =
+        '<button class="back-btn" id="back-btn">&#8592;</button>'+
+        '<div class="thread-header-avatar">'+esc(initials(partnerName))+'</div>'+
+        '<div class="thread-header-name">'+esc(partnerName)+'</div>';
+
+      document.getElementById('back-btn').addEventListener('click', () => {
+        document.getElementById('dm-wrap').classList.remove('thread-open');
+      });
+
+      // Mobile: show thread panel
+      document.getElementById('dm-wrap').classList.add('thread-open');
+
+      // Highlight active conv in list
+      document.querySelectorAll('.conv-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.partnerEmail === partnerEmail);
+      });
+
+      // Focus compose
+      document.getElementById('compose-input').focus();
+
+      // Load messages
+      await refreshThread();
+
+      // Start polling
+      clearInterval(threadPoll);
+      threadPoll = setInterval(refreshThread, 5000);
+    }
+
+    // ── Thread ────────────────────────────────────────────────────────────────
+    async function refreshThread() {
+      if (!activeConvId) return;
+      const raw = await fbGet('dms/'+activeConvId+'/messages');
+      const msgs = raw
+        ? Object.entries(raw).map(([k,v])=>({key:k,...v})).sort((a,b)=>(a.at||0)-(b.at||0))
+        : [];
+      renderThread(msgs);
+    }
+
+    function renderThread(msgs) {
+      const feed = document.getElementById('thread-messages');
+      const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
+      feed.innerHTML = '';
+      if (!msgs.length) {
+        feed.innerHTML = '<div class="thread-no-msgs">No messages yet — say hello!</div>';
+      } else {
+        msgs.forEach(msg => {
+          const isMine = msg.from === mySession.email;
+          const row = document.createElement('div');
+          row.className = 'msg-row '+(isMine?'mine':'theirs');
+          row.innerHTML =
+            '<div class="msg-bubble '+(isMine?'mine':'theirs')+'">'+
+              '<div class="msg-text">'+esc(msg.body)+'</div>'+
+              '<div class="msg-time">'+esc(fmtFull(msg.at))+'</div>'+
+            '</div>';
+          feed.appendChild(row);
+        });
+      }
+      if (atBottom || msgs.length <= 3) feed.scrollTop = feed.scrollHeight;
+    }
+
+    // ── Send ──────────────────────────────────────────────────────────────────
+    async function sendMessage() {
+      if (!activeConvId) return;
+      const input = document.getElementById('compose-input');
+      const body  = input.value.trim();
+      if (!body) return;
+
+      const btn = document.getElementById('compose-send');
+      btn.disabled = true;
+
+      // Load meta to get partner info
+      const meta = await fbGet('dms/'+activeConvId+'/meta');
+      const partnerEmail = meta && Array.isArray(meta.participants)
+        ? meta.participants.find(e => e !== mySession.email)
+        : null;
+      const partnerKey = partnerEmail ? eKey(partnerEmail) : null;
+
+      // Post message
+      await fbPost('dms/'+activeConvId+'/messages', {
+        from:     mySession.email,
+        fromName: mySession.name || 'Member',
+        body,
+        at: Date.now()
+      });
+
+      // Update meta (lastMsg, lastAt, increment partner unread)
+      if (meta) {
+        const updatedMeta = Object.assign({}, meta, {
+          lastMsg: body.slice(0, 80),
+          lastAt:  Date.now(),
+          ['unread_'+eKey(mySession.email)]: 0
+        });
+        if (partnerKey) updatedMeta['unread_'+partnerKey] = (meta['unread_'+partnerKey]||0) + 1;
+        await fbSet('dms/'+activeConvId+'/meta', updatedMeta);
+      }
+
+      input.value = '';
+      input.style.height = 'auto';
+      btn.disabled = false;
+      input.focus();
+
+      await refreshThread();
+      await refreshInbox();
+    }
+
+    // ── Member search ─────────────────────────────────────────────────────────
+    async function setupMemberSearch() {
+      const raw = await fbGet('members');
+      if (!raw) return;
+      // Deduplicate by email, exclude self
+      const emailMap = new Map();
+      Object.values(raw).filter(m=>m&&m.name&&m.email&&m.email!==mySession.email).forEach(m => {
+        const prev = emailMap.get(m.email);
+        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
+      });
+      allMembers = Array.from(emailMap.values()).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+
+      const searchInput = document.getElementById('inbox-search');
+      const suggestBox  = document.getElementById('member-suggestions');
+
+      searchInput.addEventListener('input', function() {
+        const q = this.value.trim().toLowerCase();
+        if (!q) { suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
+        const matches = allMembers.filter(m =>
+          (m.name||'').toLowerCase().includes(q) || (m.email||'').toLowerCase().includes(q)
+        ).slice(0, 7);
+        if (!matches.length) { suggestBox.style.display='none'; return; }
+        suggestBox.innerHTML = '';
+        matches.forEach(m => {
+          const item = document.createElement('div');
+          item.className = 'suggest-item';
+          item.innerHTML =
+            '<span class="suggest-avatar">'+esc(initials(m.name))+'</span>'+
+            '<span class="suggest-name">'+esc(m.name)+'</span>'+
+            '<span class="suggest-subject">'+esc((m.subject||'').slice(0,20))+'</span>';
+          item.addEventListener('click', () => {
+            searchInput.value = '';
+            suggestBox.style.display = 'none';
+            openConversation(m.email, m.name);
+          });
+          suggestBox.appendChild(item);
+        });
+        suggestBox.style.display = 'block';
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.inbox-search-wrap')) suggestBox.style.display = 'none';
+      });
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Nav scroll
+      window.addEventListener('scroll', () =>
+        document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8)
+      , { passive: true });
+
+      // Nav highlight
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a =>
+        a.classList.toggle('active', a.getAttribute('href') === page)
+      );
+
+      mySession = getSession();
+
+      if (!mySession) {
+        document.getElementById('auth-gate').style.display = 'block';
+        return;
+      }
+
+      // Reveal nav links
+      const ml = document.getElementById('members-nav-link');
+      if (ml) ml.style.display = 'inline-flex';
+      const sl = document.querySelector('.main-nav a[href="signin.html"]');
+      if (sl) sl.textContent = 'Profile';
+      document.getElementById('messages-nav-link').style.display = 'inline-flex';
+      if (isAdminSess(mySession)) {
+        const al = document.getElementById('admin-nav-link');
+        if (al) al.style.display = 'inline-flex';
+      }
+
+      // Show DM UI
+      const dmContent = document.getElementById('dm-content');
+      dmContent.style.display = 'flex';
+
+      // Load members for search + initial inbox
+      await Promise.all([setupMemberSearch(), refreshInbox()]);
+
+      // Check ?with= param (from member card "Message" button)
+      const params     = new URLSearchParams(window.location.search);
+      const withParam  = params.get('with');
+      if (withParam) {
+        const partner = allMembers.find(m => m.email === withParam);
+        if (partner) {
+          await openConversation(partner.email, partner.name);
+        } else {
+          // Partner might not be in allMembers (e.g. admin), try to get name from existing conv
+          const convs = await loadConversations();
+          const existing = convs.find(c => (c.participants||[]).includes(withParam));
+          if (existing) {
+            const pName = (existing.names && existing.names[eKey(withParam)]) || withParam;
+            await openConversation(withParam, pName);
+          } else {
+            // Open with email as fallback name
+            await openConversation(withParam, withParam);
+          }
+        }
+      }
+
+      // Inbox poll every 15s
+      inboxPoll = setInterval(refreshInbox, 15000);
+
+      // Compose handlers
+      document.getElementById('compose-send').addEventListener('click', sendMessage);
+      document.getElementById('compose-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+      });
+      document.getElementById('compose-input').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+
+      // Mobile nav toggle
+      (function() {
+        var btn = document.getElementById('nav-toggle');
+        var nav = document.getElementById('main-nav');
+        if (!btn || !nav) return;
+        btn.addEventListener('click', function() {
+          var open = nav.classList.toggle('open');
+          btn.classList.toggle('open', open);
+          btn.setAttribute('aria-expanded', String(open));
+        });
+        nav.querySelectorAll('a').forEach(function(a) {
+          a.addEventListener('click', function() {
+            nav.classList.remove('open');
+            btn.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+          });
+        });
+      })();
+    });
+  </script>
+</body>
+</html>

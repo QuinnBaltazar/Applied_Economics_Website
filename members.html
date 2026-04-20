@@ -96,6 +96,8 @@
     .member-meta { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
     .edit-member-btn { margin-top: 14px; align-self: flex-start; background: transparent; border: 1px solid rgba(196,164,72,0.3); color: var(--accent); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
     .edit-member-btn:hover { background: rgba(196,164,72,0.08); border-color: rgba(196,164,72,0.6); }
+    .msg-member-btn { margin-top: 14px; align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 1px solid rgba(100,180,255,0.28); color: rgba(100,180,255,0.85); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; text-decoration: none; transition: background 0.2s, border-color 0.2s; cursor: pointer; }
+    .msg-member-btn:hover { background: rgba(100,180,255,0.08); border-color: rgba(100,180,255,0.55); }
 
     /* ── EDIT FORM ── */
     .member-edit-form { display: flex; flex-direction: column; gap: 11px; }
@@ -227,6 +229,7 @@
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
       <a href="board.html">Board</a>
       <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
     </nav>
@@ -385,6 +388,12 @@
         pwdBtn.type='button'; pwdBtn.className='change-pwd-btn'; pwdBtn.textContent='Change Password';
         pwdBtn.addEventListener('click',()=>showChangePassword(art,member,pwdBtn));
         art.appendChild(pwdBtn);
+      } else {
+        const msgBtn = document.createElement('a');
+        msgBtn.href = 'messages.html?with='+encodeURIComponent(member.email);
+        msgBtn.className = 'msg-member-btn';
+        msgBtn.innerHTML = '&#128172; Message';
+        art.appendChild(msgBtn);
       }
       return art;
     }
@@ -490,6 +499,8 @@
       // Reveal nav
       const ml=document.getElementById('members-nav-link');
       if(ml) ml.style.display='inline-flex';
+      const msgL=document.getElementById('messages-nav-link');
+      if(msgL) msgL.style.display='inline-flex';
       const sl=document.querySelector('.main-nav a[href="signin.html"]');
       if(sl) sl.textContent='Profile';
       if(isAdminSess(session)){

@@ -328,6 +328,7 @@
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
       <a href="board.html">Board</a>
       <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
     </nav>
@@ -1925,6 +1926,8 @@
         if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
         var ml = document.getElementById('members-nav-link');
         if (ml) ml.style.display = session ? 'inline-flex' : 'none';
+        var msgL = document.getElementById('messages-nav-link');
+        if (msgL) msgL.style.display = session ? 'inline-flex' : 'none';
         var sl = document.querySelector('.main-nav a[href="signin.html"]');
         if (sl) sl.textContent = session ? 'Profile' : 'Sign In';
       } catch(e) {}

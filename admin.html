@@ -327,6 +327,7 @@
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
       <a href="board.html">Board</a>
       <a href="admin.html">Admin</a>
     </nav>
@@ -1301,6 +1302,8 @@
       // Show Members nav link — admin is always signed in
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'inline-flex';
+      const msgL = document.getElementById('messages-nav-link');
+      if (msgL) msgL.style.display = 'inline-flex';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
       if (sl) sl.textContent = 'Profile';
 

@@ -149,6 +149,7 @@
     .field-label { font-size: .76rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,0.48); }
     .req { color: var(--gold); }
     .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.3); }
+    .field-hint { font-size: .78rem; color: rgba(255,255,255,0.35); line-height: 1.5; margin-top: 2px; }
     .auth-input, .auth-textarea {
       background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.11);
       border-radius: 14px; color: #fff; padding: 13px 16px;
@@ -305,6 +306,7 @@
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" style="display:none">Members</a>
+      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
       <a href="board.html">Board</a>
       <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
     </nav>
@@ -426,32 +428,43 @@
             <span class="step-logo-text">New Member</span>
           </div>
           <h1>Join AEC</h1>
-          <p class="subtitle">You're verified — fill this out to complete your membership profile.</p>
+          <p class="subtitle">You're verified — a few quick questions to build your member profile. This helps us connect you with the right people and tailor club discussions.</p>
           <form id="new-member-form" class="auth-form" novalidate>
             <div class="field-group">
               <label class="field-label" for="nm-name">Full Name <span class="req">*</span></label>
               <input type="text" id="nm-name" class="auth-input" placeholder="Your full name" maxlength="80" />
+              <span class="field-hint">Shown on your member card in the directory.</span>
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-subject">Area of Interest <span class="req">*</span></label>
               <input type="text" id="nm-subject" class="auth-input" placeholder="e.g. Finance, Macroeconomics, Policy…" maxlength="80" />
+              <span class="field-hint">Helps us group related topics and introduce you to members with shared interests.</span>
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-learn">What do you want to learn? <span class="req">*</span></label>
               <textarea id="nm-learn" class="auth-textarea" placeholder="Topics, skills, or concepts you're hoping to develop through the club." maxlength="400" rows="3"></textarea>
+              <span class="field-hint">We use this to shape future sessions, reading lists, and speaker invitations.</span>
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-goal">What do you want out of the club? <span class="req">*</span></label>
               <textarea id="nm-goal" class="auth-textarea" placeholder="Networking, research experience, career prep, community…" maxlength="400" rows="3"></textarea>
+              <span class="field-hint">Lets leadership match you with mentors, events, and opportunities that fit your goals.</span>
             </div>
             <hr class="form-divider" />
             <div class="field-group">
               <label class="field-label" for="nm-email">Preferred Email <span class="req">*</span></label>
               <input type="email" id="nm-email" class="auth-input" placeholder="Best email to reach you" />
+              <span class="field-hint">Where we'll send club updates and event announcements — can be any address.</span>
             </div>
             <div class="field-group">
-              <label class="field-label" for="nm-field">Field / Employer <span class="opt">(optional)</span></label>
-              <input type="text" id="nm-field" class="auth-input" placeholder="Where you work or what field you're entering" maxlength="100" />
+              <label class="field-label" for="nm-phone">Phone Number <span class="opt">(optional)</span></label>
+              <input type="tel" id="nm-phone" class="auth-input" placeholder="e.g. (805) 555-0123" maxlength="20" />
+              <span class="field-hint">Only visible to members in the directory. Makes it easier to coordinate in small groups.</span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="nm-field">Where do you work or what field are you entering? <span class="req">*</span></label>
+              <input type="text" id="nm-field" class="auth-input" placeholder="e.g. Goldman Sachs, consulting, public policy…" maxlength="100" />
+              <span class="field-hint">This is how we connect members to people already working in relevant industries — one of the core reasons the club exists.</span>
             </div>
             <button type="submit" class="auth-btn">Complete Registration</button>
             <p class="auth-msg" id="nm-msg"></p>
@@ -479,6 +492,10 @@
             <div class="profile-row">
               <span class="profile-label">Email</span>
               <span id="p-email" class="profile-value"></span>
+            </div>
+            <div class="profile-row" id="p-phone-row" style="display:none">
+              <span class="profile-label">Phone</span>
+              <span id="p-phone" class="profile-value"></span>
             </div>
           </div>
           <div class="welcome-actions">
@@ -625,6 +642,8 @@
     function revealMemberNav() {
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'inline-flex';
+      const msgL = document.getElementById('messages-nav-link');
+      if (msgL) msgL.style.display = 'inline-flex';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
       if (sl) sl.textContent = 'Profile';
     }
@@ -663,6 +682,13 @@
       document.getElementById('p-subject').textContent = member.subject;
       document.getElementById('p-field').textContent   = member.field || '—';
       document.getElementById('p-email').textContent   = member.preferredEmail;
+      const phoneRow = document.getElementById('p-phone-row');
+      if (member.phone) {
+        document.getElementById('p-phone').textContent = member.phone;
+        if (phoneRow) phoneRow.style.display = 'flex';
+      } else {
+        if (phoneRow) phoneRow.style.display = 'none';
+      }
     }
 
     // ── Init ──────────────────────────────────────────────────
@@ -871,8 +897,9 @@
       const learn          = document.getElementById('nm-learn').value.trim();
       const goal           = document.getElementById('nm-goal').value.trim();
       const preferredEmail = document.getElementById('nm-email').value.trim();
+      const phone          = document.getElementById('nm-phone').value.trim();
       const field          = document.getElementById('nm-field').value.trim();
-      if (!name || !subject || !learn || !goal || !preferredEmail) {
+      if (!name || !subject || !learn || !goal || !preferredEmail || !field) {
         setMsg('nm-msg', 'Please fill in all required fields.', 'error');
         return;
       }
@@ -910,7 +937,7 @@
       const member = buildMemberProfile({
         ...base,
         email: currentEmail, name, subject, learn, goal,
-        preferredEmail, field,
+        preferredEmail, phone, field,
         password: (currentPassword ? await sha256(currentPassword) : base.password) || '',
         authProvider: 'password',
         isAdmin: base.isAdmin === true || currentEmail === ADMIN_EMAIL,
@@ -935,6 +962,8 @@
       clearSession();
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'none';
+      const msgL = document.getElementById('messages-nav-link');
+      if (msgL) msgL.style.display = 'none';
       const al = document.getElementById('admin-nav-link');
       if (al) al.style.display = 'none';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
