@@ -571,8 +571,8 @@
       try { await fetch(`${DB_URL}/${path}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch {}
     }
 
-    async function getFirebaseMember(email) { return fbGet(`members/${eKey(email)}`); }
-    async function saveFirebaseMember(member) { await fbSet(`members/${eKey(member.email)}`, member); }
+    async function getFirebaseMember(email) { return decMember(await fbGet(`members/${eKey(email)}`)); }
+    async function saveFirebaseMember(member) { await fbSet(`members/${eKey(member.email)}`, await encMember(member)); }
 
     // ── SHA-256 helper (Web Crypto API) ───────────────────────
     async function sha256(str) {
@@ -584,6 +584,55 @@
       if (!stored || !entered) return false;
       const hashed = await sha256(entered);
       return stored === hashed || stored === entered; // hashed first, plaintext fallback
+    }
+
+    // ── AES-GCM field encryption ───────────────────────────────
+    // Encrypts PII (phone, preferredEmail) before writing to Firebase.
+    // Ciphertext format: "enc:{12-byte iv hex}:{base64 ciphertext}"
+    // Backward-compatible: plain values (no "enc:" prefix) are returned as-is.
+    const _KP = 'aec-ucsb-priv-2025';
+    let _ck = null;
+    async function _getCK() {
+      if (_ck) return _ck;
+      const enc = new TextEncoder();
+      const km = await crypto.subtle.importKey('raw', enc.encode(_KP), 'PBKDF2', false, ['deriveKey']);
+      _ck = await crypto.subtle.deriveKey(
+        { name:'PBKDF2', salt:enc.encode('aec-salt-v1'), iterations:100000, hash:'SHA-256' },
+        km, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+      );
+      return _ck;
+    }
+    async function encField(v) {
+      if (!v) return v;
+      try {
+        const key = await _getCK();
+        const iv  = crypto.getRandomValues(new Uint8Array(12));
+        const ct  = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(String(v)));
+        const ivH = Array.from(iv).map(b=>b.toString(16).padStart(2,'0')).join('');
+        return 'enc:'+ivH+':'+btoa(String.fromCharCode(...new Uint8Array(ct)));
+      } catch { return v; }
+    }
+    async function decField(v) {
+      if (!v || !String(v).startsWith('enc:')) return v;
+      try {
+        const key = await _getCK();
+        const p   = String(v).split(':');
+        const iv  = new Uint8Array(p[1].match(/.{2}/g).map(b=>parseInt(b,16)));
+        const ct  = Uint8Array.from(atob(p.slice(2).join(':')), c=>c.charCodeAt(0));
+        return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ct));
+      } catch { return v; }
+    }
+    const ENC_FIELDS = ['preferredEmail','phone'];
+    async function encMember(m) {
+      const o = {...m};
+      for (const f of ENC_FIELDS) if (o[f]) o[f] = await encField(o[f]);
+      return o;
+    }
+    async function decMember(m) {
+      if (!m) return null;
+      const o = {...m};
+      for (const f of ENC_FIELDS) if (o[f]) o[f] = await decField(o[f]);
+      return o;
     }
 
     function logActivity(email, name, type, detail) {
