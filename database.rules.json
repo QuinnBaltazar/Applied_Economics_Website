@@ -6,6 +6,7 @@
     "custom-topics": { ".read": true, ".write": true },
     "pending-topics":{ ".read": false, ".write": true },
     "members":       { ".read": true, ".write": true },
+    "messages":      { ".read": true, ".write": true },
     "dms":           { ".read": true, ".write": true },
     "activity":      { ".read": false, ".write": true },
     "notifications": { ".read": false, ".write": true }
