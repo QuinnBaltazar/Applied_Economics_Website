@@ -170,6 +170,9 @@
     .conv-time { font-size: 0.7rem; color: rgba(255,255,255,0.32); flex-shrink: 0; }
     .conv-preview-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
     .conv-preview { font-size: 0.79rem; color: rgba(255,255,255,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-name.unread { font-weight: 800; color: #fff; }
+    .conv-preview.unread { color: rgba(255,255,255,0.75); }
+    .conv-preview-you { color: rgba(196,164,72,0.7); font-style: normal; }
     .unread-badge {
       background: var(--accent); color: #031a40;
       font-size: 0.66rem; font-weight: 800;
@@ -445,6 +448,12 @@
         const partnerName  = (conv.names && conv.names[eKey(partnerEmail)]) || partnerEmail || 'Member';
         const myUnread     = conv['unread_'+eKey(mySession.email)] || 0;
 
+        const isMine = conv.lastFrom === mySession.email;
+        const previewText = (conv.lastMsg||'').slice(0, 60);
+        const previewHtml = isMine
+          ? '<span class="conv-preview-you">You: </span>' + esc(previewText)
+          : esc(previewText);
+
         const item = document.createElement('div');
         item.className = 'conv-item' + (conv.id === activeConvId ? ' active' : '');
         item.dataset.convId       = conv.id;
@@ -453,11 +462,11 @@
           '<div class="conv-avatar">'+esc(initials(partnerName))+'</div>'+
           '<div class="conv-info">'+
             '<div class="conv-name-row">'+
-              '<span class="conv-name">'+esc(partnerName)+'</span>'+
+              '<span class="conv-name'+(myUnread > 0 ? ' unread' : '')+'">'+esc(partnerName)+'</span>'+
               '<span class="conv-time">'+esc(fmtTime(conv.lastAt))+'</span>'+
             '</div>'+
             '<div class="conv-preview-row">'+
-              '<span class="conv-preview">'+esc((conv.lastMsg||'').slice(0,60))+'</span>'+
+              '<span class="conv-preview'+(myUnread > 0 ? ' unread' : '')+'">'+previewHtml+'</span>'+
               (myUnread > 0 ? '<span class="unread-badge">'+myUnread+'</span>' : '')+
             '</div>'+
           '</div>';
@@ -645,8 +654,9 @@
       // Update meta (lastMsg, lastAt, increment partner unread)
       if (meta) {
         const updatedMeta = Object.assign({}, meta, {
-          lastMsg: body.slice(0, 80),
-          lastAt:  Date.now(),
+          lastMsg:  body.slice(0, 80),
+          lastFrom: mySession.email,
+          lastAt:   Date.now(),
           ['unread_'+eKey(mySession.email)]: 0
         });
         if (partnerKey) updatedMeta['unread_'+partnerKey] = (meta['unread_'+partnerKey]||0) + 1;

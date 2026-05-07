@@ -1036,12 +1036,12 @@
           const m = document.getElementById('vote-message');
           m.textContent = `Voting opens ${fmt(voteWindow.open)}.`;
           m.style.color = 'rgba(255,200,80,0.9)';
-          document.getElementById('vote-btn').disabled = true;
+          document.querySelector('.vote-button').disabled = true;
         } else if (now > voteWindow.close) {
           const m = document.getElementById('vote-message');
           m.textContent = `Voting closed ${fmt(voteWindow.close)}.`;
           m.style.color = 'rgba(255,100,100,0.9)';
-          document.getElementById('vote-btn').disabled = true;
+          document.querySelector('.vote-button').disabled = true;
         }
       }
 
