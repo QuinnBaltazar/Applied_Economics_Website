@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "vote-counts":   { ".read": true, ".write": true },
+    "vote-records":  { ".read": true, ".write": true },
+    "vote-window":   { ".read": true, ".write": false },
+    "custom-topics": { ".read": true, ".write": true },
+    "pending-topics":{ ".read": false, ".write": true },
+    "members":       { ".read": true, ".write": true },
+    "dms":           { ".read": true, ".write": true },
+    "activity":      { ".read": false, ".write": true },
+    "notifications": { ".read": false, ".write": true }
+  }
+}
