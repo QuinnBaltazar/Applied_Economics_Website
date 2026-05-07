@@ -208,6 +208,9 @@
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .thread-header-name { font-weight: 700; font-size: 1rem; }
+    .thread-header-phone { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    .thread-header-phone a { color: var(--accent); text-decoration: none; }
+    .thread-header-phone a:hover { text-decoration: underline; }
     .thread-messages {
       flex: 1; overflow-y: auto;
       padding: 20px; display: flex; flex-direction: column; gap: 2px;
@@ -347,8 +350,10 @@
   </main>
 
   <script>
-    const DB_URL      = 'https://applied-economics-club-default-rtdb.firebaseio.com';
-    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+    const DB_URL               = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+    const ADMIN_EMAIL          = 'quinnbaltazar@ucsb.edu';
+    const EMAILJS_SERVICE_ID   = 'service_q979uh8';
+    const EMAILJS_NOTIFY_TMPL  = 'template_msg_notify';
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     function eKey(e) { return String(e).replace(/[.@#$[\]/]/g,'_'); }
@@ -371,6 +376,40 @@
     async function fbGet(p) { try { const r=await fetch(`${DB_URL}/${p}.json`); return r.ok?r.json():null; } catch { return null; } }
     async function fbSet(p,d) { try { await fetch(`${DB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); } catch {} }
     async function fbPost(p,d) { try { const r=await fetch(`${DB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok?r.json():null; } catch { return null; } }
+
+    // ── AES-GCM decryption (read PII fields) ─────────────────────────────────
+    const _KP = 'aec-ucsb-priv-2025';
+    let _ck = null;
+    async function _getCK() {
+      if (_ck) return _ck;
+      const enc = new TextEncoder();
+      const raw = await crypto.subtle.importKey('raw', enc.encode(_KP), 'PBKDF2', false, ['deriveKey']);
+      _ck = await crypto.subtle.deriveKey(
+        { name:'PBKDF2', salt:enc.encode('aec-salt-v1'), iterations:100000, hash:'SHA-256' },
+        raw, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+      );
+      return _ck;
+    }
+    async function decField(v) {
+      if (!v || !String(v).startsWith('enc:')) return v;
+      try {
+        const [,ivHex,b64] = v.split(':');
+        const iv  = new Uint8Array(ivHex.match(/.{2}/g).map(h=>parseInt(h,16)));
+        const ct  = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+        const pt  = await crypto.subtle.decrypt({name:'AES-GCM',iv}, await _getCK(), ct);
+        return new TextDecoder().decode(pt);
+      } catch { return v; }
+    }
+    async function decMember(m) {
+      if (!m) return m;
+      const r = { ...m };
+      for (const f of ['preferredEmail','phone']) if (r[f]) r[f] = await decField(r[f]);
+      return r;
+    }
+    async function getDecryptedMember(email) {
+      const raw = await fbGet('members/' + eKey(email));
+      return raw ? decMember(raw) : null;
+    }
 
     // ── Session ───────────────────────────────────────────────────────────────
     const SESSION_TTL = 30*24*60*60*1000;
@@ -461,6 +500,19 @@
         await fbSet('dms/'+cid+'/meta/unread_'+eKey(mySession.email), 0);
       }
 
+      // Fetch partner phone (background — don't block thread open)
+      let partnerPhone = '';
+      getDecryptedMember(partnerEmail).then(pm => {
+        if (pm && pm.phone) {
+          partnerPhone = pm.phone;
+          const phoneEl = document.getElementById('thread-partner-phone');
+          if (phoneEl) {
+            phoneEl.innerHTML = 'Phone: <a href="tel:'+esc(pm.phone)+'">'+esc(pm.phone)+'</a>';
+            phoneEl.style.display = 'block';
+          }
+        }
+      });
+
       // Render thread header
       document.getElementById('thread-empty').style.display = 'none';
       const threadActive = document.getElementById('thread-active');
@@ -468,7 +520,10 @@
       document.getElementById('thread-header').innerHTML =
         '<button class="back-btn" id="back-btn">&#8592;</button>'+
         '<div class="thread-header-avatar">'+esc(initials(partnerName))+'</div>'+
-        '<div class="thread-header-name">'+esc(partnerName)+'</div>';
+        '<div>'+
+          '<div class="thread-header-name">'+esc(partnerName)+'</div>'+
+          '<div class="thread-header-phone" id="thread-partner-phone" style="display:none"></div>'+
+        '</div>';
 
       document.getElementById('back-btn').addEventListener('click', () => {
         document.getElementById('dm-wrap').classList.remove('thread-open');
@@ -526,6 +581,43 @@
     }
 
     // ── Send ──────────────────────────────────────────────────────────────────
+    // ── Notifications ─────────────────────────────────────────────────────────
+    async function notifyRecipient(partnerEmail, partnerName, messageBody, oldMeta) {
+      const partner = await getDecryptedMember(partnerEmail);
+      if (!partner) return;
+
+      const toEmail = partner.preferredEmail || partnerEmail;
+      if (toEmail) {
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_NOTIFY_TMPL, {
+            to_email:       toEmail,
+            recipient_name: partnerName,
+            sender_name:    mySession.name || 'A member',
+            message_preview: messageBody.slice(0, 200),
+            messages_url:   'https://quinnbaltazar.github.io/Applied_Economics_Website/messages.html',
+            club_name:      'UCSB Applied Economics Club'
+          });
+        } catch(e) { /* email failed — don't block */ }
+      }
+
+      // SMS only if partner had unread messages from a prior day (don't spam active users)
+      if (partner.phone && oldMeta) {
+        const partnerUnread = oldMeta['unread_' + eKey(partnerEmail)] || 0;
+        if (partnerUnread > 0 && oldMeta.lastAt) {
+          const lastDay = new Date(oldMeta.lastAt).toDateString();
+          const today   = new Date().toDateString();
+          if (lastDay !== today) {
+            await fbPost('notifications/sms_queue', {
+              toEmail:       partnerEmail,
+              senderName:    mySession.name || 'A member',
+              msgPreview:    messageBody.slice(0, 160),
+              queuedAt:      Date.now()
+            });
+          }
+        }
+      }
+    }
+
     async function sendMessage() {
       if (!activeConvId) return;
       const input = document.getElementById('compose-input');
@@ -568,6 +660,12 @@
 
       await refreshThread();
       await refreshInbox();
+
+      // Fire notifications in background — don't await so UI stays snappy
+      if (partnerEmail) {
+        const partnerName = meta && meta.names ? (meta.names[eKey(partnerEmail)] || partnerEmail) : partnerEmail;
+        notifyRecipient(partnerEmail, partnerName, body, meta);
+      }
     }
 
     // ── Member search ─────────────────────────────────────────────────────────
@@ -707,5 +805,7 @@
       })();
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>emailjs.init('8NT7ERI9_COG0opnM');</script>
 </body>
 </html>

@@ -466,14 +466,27 @@
             </div>
             <hr class="form-divider" />
             <div class="field-group">
-              <label class="field-label" for="nm-email">Preferred Email <span class="req">*</span></label>
-              <input type="email" id="nm-email" class="auth-input" placeholder="Best email to reach you" />
-              <span class="field-hint">Where we'll send club updates and event announcements — can be any address.</span>
+              <label class="field-label" for="nm-email">Personal Email <span class="req">*</span></label>
+              <input type="email" id="nm-email" class="auth-input" placeholder="yourname@gmail.com" />
+              <span class="field-hint">Must be a non-UCSB address — this stays active after graduation and is where message notifications are sent.</span>
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-phone">Phone Number <span class="opt">(optional)</span></label>
               <input type="tel" id="nm-phone" class="auth-input" placeholder="e.g. (805) 555-0123" maxlength="20" />
-              <span class="field-hint">Only visible to members in the directory. Makes it easier to coordinate in small groups.</span>
+              <span class="field-hint">If provided, you'll receive a text when you have unread messages waiting more than a day.</span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="nm-gradyear">Graduation Year <span class="req">*</span></label>
+              <select id="nm-gradyear" class="auth-input">
+                <option value="">Select year…</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="Alumni">Alumni</option>
+              </select>
+              <span class="field-hint">Helps us know when your UCSB email expires so we keep your personal email up to date.</span>
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-field">Where do you work or what field are you entering? <span class="req">*</span></label>
@@ -511,11 +524,33 @@
               <span class="profile-label">Phone</span>
               <span id="p-phone" class="profile-value"></span>
             </div>
+            <div class="profile-row" id="p-gradyear-row" style="display:none">
+              <span class="profile-label">Grad Year</span>
+              <span id="p-gradyear" class="profile-value"></span>
+            </div>
           </div>
           <div class="welcome-actions">
             <a href="members.html" class="auth-btn" style="text-decoration:none;">View Members</a>
             <button type="button" id="signout-btn" class="secondary-btn">Sign Out</button>
           </div>
+        </div>
+
+        <!-- STEP: Add Phone -->
+        <div id="step-add-phone" class="hidden">
+          <div class="step-logo">
+            <div class="step-logo-mark">AE</div>
+            <span class="step-logo-text">Quick update</span>
+          </div>
+          <h1>Add your phone number</h1>
+          <p class="subtitle">Members use phone numbers to reach each other directly outside the app. Add yours so others can contact you — or skip for now.</p>
+          <div class="field-group">
+            <label class="field-label" for="add-phone-input">Phone Number</label>
+            <input type="tel" id="add-phone-input" class="auth-input" placeholder="e.g. (805) 555-0123" maxlength="20" />
+            <span class="field-hint">Only visible to other club members.</span>
+          </div>
+          <div id="add-phone-msg" class="auth-msg" style="display:none"></div>
+          <button type="button" id="add-phone-save" class="auth-btn" style="width:100%;margin-top:16px">Save &amp; Continue</button>
+          <button type="button" id="add-phone-skip" class="secondary-btn" style="width:100%;margin-top:10px">Skip for now</button>
         </div>
 
       </section>
@@ -728,9 +763,16 @@
 
     // ── UI helpers ────────────────────────────────────────────
     function showStep(id) {
-      ['step-choice','step-login','step-signup','step-code','step-new-member','step-welcome'].forEach(s => {
+      ['step-choice','step-login','step-signup','step-code','step-new-member','step-welcome','step-add-phone'].forEach(s => {
         document.getElementById(s).classList.toggle('hidden', s !== id);
       });
+    }
+    function showWelcomeOrPhonePrompt(member) {
+      if (!member.phone) {
+        showStep('step-add-phone');
+      } else {
+        showStep('step-welcome');
+      }
     }
     function setMsg(id, text, type = 'info') {
       const el = document.getElementById(id);
@@ -753,6 +795,13 @@
       } else {
         if (phoneRow) phoneRow.style.display = 'none';
       }
+      const gradRow = document.getElementById('p-gradyear-row');
+      if (member.gradYear) {
+        document.getElementById('p-gradyear').textContent = member.gradYear;
+        if (gradRow) gradRow.style.display = 'flex';
+      } else {
+        if (gradRow) gradRow.style.display = 'none';
+      }
     }
 
     // ── Init ──────────────────────────────────────────────────
@@ -767,7 +816,7 @@
           if (l) l.style.display = 'inline-flex';
         }
         fillWelcome(session, false);
-        showStep('step-welcome');
+        showWelcomeOrPhonePrompt(session);
         // Sync from Firebase in background to pick up any admin changes (e.g. newly promoted admin)
         getFirebaseMember(session.email).then(fb => {
           if (fb) {
@@ -779,6 +828,9 @@
               const l = document.getElementById('admin-nav-link');
               if (l) l.style.display = 'inline-flex';
             }
+            // If Firebase confirms phone is still missing, keep prompt; if found, advance to welcome
+            if (!merged.phone && !session.phone) showStep('step-add-phone');
+            else if (merged.phone) showStep('step-welcome');
           }
         });
       }
@@ -845,7 +897,7 @@
           logActivity(existing.email, existing.name, currentAuthMode === 'login' ? 'signin' : 'signup', currentAuthMode === 'login' ? 'Logged in' : 'Verified existing account');
           fillWelcome(existing, false);
           setMsg('code-msg', '', 'info');
-          showStep('step-welcome');
+          showWelcomeOrPhonePrompt(existing);
           return;
         }
       }
@@ -963,12 +1015,17 @@
       const preferredEmail = document.getElementById('nm-email').value.trim();
       const phone          = document.getElementById('nm-phone').value.trim();
       const field          = document.getElementById('nm-field').value.trim();
-      if (!name || !subject || !learn || !goal || !preferredEmail || !field) {
+      const gradYear       = document.getElementById('nm-gradyear').value;
+      if (!name || !subject || !learn || !goal || !preferredEmail || !field || !gradYear) {
         setMsg('nm-msg', 'Please fill in all required fields.', 'error');
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(preferredEmail)) {
-        setMsg('nm-msg', 'Please enter a valid preferred email address.', 'error');
+        setMsg('nm-msg', 'Please enter a valid personal email address.', 'error');
+        return;
+      }
+      if (preferredEmail.toLowerCase().endsWith('@ucsb.edu')) {
+        setMsg('nm-msg', 'Please use a non-UCSB email — your UCSB address expires after graduation.', 'error');
         return;
       }
       const btn = this.querySelector('button[type="submit"]');
@@ -992,7 +1049,7 @@
         logActivity(member.email, member.name, 'signin', 'Signed in');
         fillWelcome(member, false);
         btn.disabled = false; btn.textContent = 'Complete Registration';
-        showStep('step-welcome');
+        showWelcomeOrPhonePrompt(member);
         return;
       }
 
@@ -1001,7 +1058,7 @@
       const member = buildMemberProfile({
         ...base,
         email: currentEmail, name, subject, learn, goal,
-        preferredEmail, phone, field,
+        preferredEmail, phone, field, gradYear,
         password: (currentPassword ? await sha256(currentPassword) : base.password) || '',
         authProvider: 'password',
         isAdmin: base.isAdmin === true || currentEmail === ADMIN_EMAIL,
@@ -1018,6 +1075,27 @@
       logActivity(member.email, member.name, 'join', 'Joined the club');
       fillWelcome(member, true);
       btn.disabled = false; btn.textContent = 'Complete Registration';
+      showStep('step-welcome');
+    });
+
+    // ── Add phone prompt ─────────────────────────────────────────
+    document.getElementById('add-phone-save').addEventListener('click', async function() {
+      const phone = document.getElementById('add-phone-input').value.trim();
+      if (!phone) { setMsg('add-phone-msg', 'Please enter a phone number.', 'error'); return; }
+      this.disabled = true; this.textContent = 'Saving…';
+      const session = getSession();
+      const fresh = await getFirebaseMember(session.email) || session;
+      fresh.phone = phone;
+      await saveFirebaseMember(fresh);
+      setSession(fresh);
+      fillWelcome(fresh, false);
+      showStep('step-welcome');
+      this.disabled = false; this.textContent = 'Save & Continue';
+    });
+
+    document.getElementById('add-phone-skip').addEventListener('click', function() {
+      const session = getSession();
+      fillWelcome(session, false);
       showStep('step-welcome');
     });
 
