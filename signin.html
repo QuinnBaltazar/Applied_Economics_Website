@@ -535,7 +535,7 @@
           </div>
         </div>
 
-        <!-- STEP: Add Phone -->
+        <!-- STEP: Add Phone (legacy — kept for fallback) -->
         <div id="step-add-phone" class="hidden">
           <div class="step-logo">
             <div class="step-logo-mark">AE</div>
@@ -551,6 +551,20 @@
           <div id="add-phone-msg" class="auth-msg" style="display:none"></div>
           <button type="button" id="add-phone-save" class="auth-btn" style="width:100%;margin-top:16px">Save &amp; Continue</button>
           <button type="button" id="add-phone-skip" class="secondary-btn" style="width:100%;margin-top:10px">Skip for now</button>
+        </div>
+
+        <!-- STEP: Complete Profile -->
+        <div id="step-complete-profile" class="hidden">
+          <div class="step-logo">
+            <div class="step-logo-mark">AE</div>
+            <span class="step-logo-text">Profile Update</span>
+          </div>
+          <h1>Complete your profile</h1>
+          <p class="subtitle">A few details are missing from your profile. Fill them in so members can reach you and we can keep your info current.</p>
+          <div id="complete-profile-fields" style="display:flex;flex-direction:column;gap:20px;margin-top:4px;"></div>
+          <p class="auth-msg" id="complete-profile-msg" style="margin-top:8px;min-height:1.2em;"></p>
+          <button type="button" id="complete-profile-save" class="auth-btn" style="width:100%;margin-top:16px">Save &amp; Continue</button>
+          <button type="button" id="complete-profile-skip" class="secondary-btn" style="width:100%;margin-top:10px">Skip for now</button>
         </div>
 
       </section>
@@ -763,16 +777,56 @@
 
     // ── UI helpers ────────────────────────────────────────────
     function showStep(id) {
-      ['step-choice','step-login','step-signup','step-code','step-new-member','step-welcome','step-add-phone'].forEach(s => {
+      ['step-choice','step-login','step-signup','step-code','step-new-member','step-welcome','step-add-phone','step-complete-profile'].forEach(s => {
         document.getElementById(s).classList.toggle('hidden', s !== id);
       });
     }
-    function showWelcomeOrPhonePrompt(member) {
-      if (!member.phone) {
-        showStep('step-add-phone');
-      } else {
-        showStep('step-welcome');
+    function getMissingFields(member) {
+      const missing = [];
+      if (!member.gradYear) missing.push('gradYear');
+      if (!member.preferredEmail) missing.push('preferredEmail');
+      if (!member.phone) missing.push('phone');
+      return missing;
+    }
+    function showCompleteProfileStep(member) {
+      const missing = getMissingFields(member);
+      if (!missing.length) { showStep('step-welcome'); return; }
+      const container = document.getElementById('complete-profile-fields');
+      container.innerHTML = '';
+      if (missing.includes('gradYear')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-gradyear">Graduation Year <span class="req">*</span></label>' +
+            '<select id="cp-gradyear" class="auth-input">' +
+              '<option value="">Select year…</option>' +
+              '<option value="2025">2025</option><option value="2026">2026</option>' +
+              '<option value="2027">2027</option><option value="2028">2028</option>' +
+              '<option value="2029">2029</option><option value="Alumni">Alumni</option>' +
+            '</select>' +
+            '<span class="field-hint">Helps us know when your UCSB email expires.</span>' +
+          '</div>');
       }
+      if (missing.includes('preferredEmail')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-email">Personal Email <span class="req">*</span></label>' +
+            '<input type="email" id="cp-email" class="auth-input" placeholder="yourname@gmail.com" />' +
+            '<span class="field-hint">Non-UCSB address — stays active after graduation, used for message notifications.</span>' +
+          '</div>');
+      }
+      if (missing.includes('phone')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-phone">Phone Number <span class="opt">(optional)</span></label>' +
+            '<input type="tel" id="cp-phone" class="auth-input" placeholder="e.g. (805) 555-0123" maxlength="20" />' +
+            '<span class="field-hint">For SMS alerts when you have unread messages waiting more than a day.</span>' +
+          '</div>');
+      }
+      document.getElementById('complete-profile-msg').textContent = '';
+      showStep('step-complete-profile');
+    }
+    function showWelcomeOrPhonePrompt(member) {
+      showCompleteProfileStep(member);
     }
     function setMsg(id, text, type = 'info') {
       const el = document.getElementById(id);
@@ -828,9 +882,7 @@
               const l = document.getElementById('admin-nav-link');
               if (l) l.style.display = 'inline-flex';
             }
-            // If Firebase confirms phone is still missing, keep prompt; if found, advance to welcome
-            if (!merged.phone && !session.phone) showStep('step-add-phone');
-            else if (merged.phone) showStep('step-welcome');
+            showCompleteProfileStep(merged);
           }
         });
       }
@@ -975,7 +1027,7 @@
       logActivity(signedIn.email, signedIn.name, 'signin', 'Logged in with password');
       fillWelcome(signedIn, false);
       setMsg('login-msg', '', 'success');
-      showStep('step-welcome');
+      showCompleteProfileStep(signedIn);
     });
 
     document.getElementById('signup-form').addEventListener('submit', async function(e) {
@@ -1094,6 +1146,45 @@
     });
 
     document.getElementById('add-phone-skip').addEventListener('click', function() {
+      const session = getSession();
+      fillWelcome(session, false);
+      showStep('step-welcome');
+    });
+
+    document.getElementById('complete-profile-save').addEventListener('click', async function() {
+      const msgEl = document.getElementById('complete-profile-msg');
+      const gradYearEl  = document.getElementById('cp-gradyear');
+      const emailEl     = document.getElementById('cp-email');
+      const phoneEl     = document.getElementById('cp-phone');
+
+      if (gradYearEl && !gradYearEl.value) {
+        msgEl.textContent = 'Please select a graduation year.';
+        msgEl.className = 'auth-msg error';
+        return;
+      }
+      if (emailEl) {
+        const v = emailEl.value.trim();
+        if (!v) { msgEl.textContent = 'Please enter your personal email.'; msgEl.className = 'auth-msg error'; return; }
+        if (v.toLowerCase().endsWith('@ucsb.edu')) { msgEl.textContent = 'Please use a non-UCSB email address.'; msgEl.className = 'auth-msg error'; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { msgEl.textContent = 'Please enter a valid email address.'; msgEl.className = 'auth-msg error'; return; }
+      }
+
+      this.disabled = true; this.textContent = 'Saving…';
+      const session = getSession();
+      const fresh = await getFirebaseMember(session.email) || { ...session };
+
+      if (gradYearEl && gradYearEl.value) fresh.gradYear = gradYearEl.value;
+      if (emailEl && emailEl.value.trim()) fresh.preferredEmail = emailEl.value.trim();
+      if (phoneEl && phoneEl.value.trim()) fresh.phone = phoneEl.value.trim();
+
+      await saveFirebaseMember(fresh);
+      setSession(fresh);
+      fillWelcome(fresh, false);
+      showStep('step-welcome');
+      this.disabled = false; this.textContent = 'Save & Continue';
+    });
+
+    document.getElementById('complete-profile-skip').addEventListener('click', function() {
       const session = getSession();
       fillWelcome(session, false);
       showStep('step-welcome');
