@@ -5,67 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="XZs5HaGRLHPj2s2LpWYRjrWlNXHGY90E5pNqWyNwIZk" />
   <title>UCSB Applied Economics Club</title>
-  <style>
-    :root {
-      --bg:       #090F1A;
-      --surface:  #0E1829;
-      --navy:     #162438;
-      --gold:     #C4A448;
-      --gold-lt:  #D4B55E;
-      --gold-dim: rgba(196,164,72,0.10);
-      --steel:    #2B4A6F;
-      --text:     #FFFFFF;
-      --muted:    rgba(255,255,255,0.62);
-      --border:   rgba(255,255,255,0.07);
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { min-height: 100vh; color: var(--text); line-height: 1.6; background: var(--bg); scroll-behavior: smooth; }
-    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; overflow-x: hidden; }
 
-    /* ── NAV ── */
-    .topbar {
-      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
-      background: rgba(9, 15, 26, 0.78);
-      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
-      animation: navDown 0.55s cubic-bezier(0.4,0,0.2,1) both;
-    }
-    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .topbar.scrolled {
-      background: rgba(9,15,26,0.97);
-      box-shadow: 0 2px 40px rgba(0,0,0,0.45);
-      border-color: rgba(196,164,72,0.14);
-    }
-    .brand {
-      font-size: 0.78rem; font-weight: 800; color: #fff;
-      letter-spacing: 0.22em; text-transform: uppercase;
-      text-decoration: none; white-space: nowrap; flex-shrink: 0;
-      transition: color 0.2s;
-    }
-    .brand:hover { color: var(--gold); }
-    .main-nav { display: flex; align-items: center; gap: 2px; }
-    .main-nav a {
-      position: relative; display: inline-flex; align-items: center;
-      padding: 8px 13px; color: rgba(255,255,255,0.65);
-      text-decoration: none; font-size: 0.875rem; font-weight: 500;
-      letter-spacing: 0.03em; border-radius: 8px;
-      transition: color 0.2s, background 0.2s;
-    }
-    .main-nav a::after {
-      content: ''; position: absolute; bottom: 5px;
-      left: 13px; right: 13px; height: 2px;
-      background: var(--gold); border-radius: 2px;
-      transform: scaleX(0);
-      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
-      transform-origin: center;
-    }
-    .main-nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
-    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,0.08); }
+  <!-- SEO -->
+  <meta name="description" content="UCSB Applied Economics Club — a UC Santa Barbara student org where members vote on weekly topics, learn from industry speakers, and stay networked after graduation." />
+  <meta name="theme-color" content="#090F1A" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ucsbaec.com/" />
+  <meta property="og:title" content="UCSB Applied Economics Club" />
+  <meta property="og:description" content="Where economic theory meets real-world practice. Member-driven topics, industry speakers, and a lasting alumni network." />
+  <meta property="og:image" content="https://www.ucsbaec.com/assets/og-image.svg" />
+  <meta property="og:site_name" content="UCSB Applied Economics Club" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="UCSB Applied Economics Club" />
+  <meta name="twitter:description" content="Where economic theory meets real-world practice." />
+  <meta name="twitter:image" content="https://www.ucsbaec.com/assets/og-image.svg" />
+
+  <!-- Icon -->
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/app.js" defer></script>
+
+  <style>
+    /* Page-specific styles. Common reset, vars, topbar, buttons, reveal,
+       and mobile-nav rules now live in assets/styles.css. */
 
     /* ── HERO ── */
     .hero {
@@ -151,33 +119,6 @@
     }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-    .btn-primary {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 14px 30px; border-radius: 999px;
-      background: var(--gold); color: #090F1A;
-      font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em;
-      text-decoration: none;
-      box-shadow: 0 8px 28px rgba(196,164,72,0.28);
-      transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
-    }
-    .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 14px 36px rgba(196,164,72,0.36); }
-
-    .btn-outline {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 14px 30px; border-radius: 999px;
-      border: 1px solid rgba(196,164,72,0.38); color: var(--gold);
-      font-weight: 600; font-size: 0.95rem; text-decoration: none;
-      transition: border-color 0.2s, background 0.2s, transform 0.2s;
-    }
-    .btn-outline:hover { border-color: var(--gold); background: rgba(196,164,72,0.07); transform: translateY(-2px); }
-
-    /* ── THIN GOLD DIVIDER ── */
-    .gold-divider {
-      height: 1px;
-      background: linear-gradient(to right, transparent, rgba(196,164,72,0.22), transparent);
-      margin: 0 24px 40px;
-    }
-
     /* ── MISSION ── */
     .mission-section {
       margin: 0 24px 32px;
@@ -229,6 +170,58 @@
     .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 9px; color: #fff; }
     .feature-card p { font-size: 0.92rem; color: var(--muted); line-height: 1.72; }
 
+    /* ── MEMBER TOOLS ── */
+    .tools-section { margin: 8px 24px 52px; }
+    .tools-grid {
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .tool-card {
+      position: relative;
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 22px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      text-decoration: none; color: inherit;
+      overflow: hidden;
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    }
+    .tool-card::after {
+      content: '↗';
+      position: absolute; top: 18px; right: 20px;
+      color: var(--gold); opacity: 0;
+      font-size: 1.05rem; font-weight: 600;
+      transform: translate(-4px, 4px);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .tool-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(196,164,72,0.32);
+      box-shadow: 0 22px 56px rgba(0,0,0,0.28);
+    }
+    .tool-card:hover::after { opacity: 1; transform: translate(0,0); }
+    .tool-icon {
+      flex-shrink: 0;
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(196,164,72,0.22), rgba(196,164,72,0.06));
+      border: 1px solid rgba(196,164,72,0.28);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-weight: 800; font-size: 1.05rem;
+      letter-spacing: 0.01em;
+    }
+    .tool-meta { min-width: 0; }
+    .tool-name {
+      font-size: 1rem; font-weight: 700; color: #fff;
+      margin-bottom: 4px; letter-spacing: -0.01em;
+    }
+    .tool-host {
+      font-size: 0.7rem; color: var(--gold); font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .tool-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
     /* ── FOOTER ── */
     .footer {
       margin: 0 24px 44px; text-align: center;
@@ -237,55 +230,17 @@
     }
     .footer strong { color: var(--gold); font-weight: 600; }
 
-    /* ── REVEAL ── */
-    .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s ease, transform 0.75s ease; }
-    .reveal.visible { opacity: 1; transform: none; }
-
     @media (max-width: 640px) {
       .hero { min-height: 82vh; padding: 40px 20px 80px; }
       .hero-logo-svg { width: 190px; height: 190px; }
       .hero-headline { font-size: 2rem; }
       .mission-section { margin: 0 16px 28px; padding: 28px 22px; }
       .features-section { margin: 0 16px 44px; }
+      .tools-section { margin: 0 16px 44px; }
     }
-
-    /* ── MOBILE NAV ── */
-    .nav-toggle {
-      display: none; flex-direction: column; justify-content: center; align-items: center;
-      gap: 5px; width: 40px; height: 40px; background: none; border: none;
-      cursor: pointer; padding: 8px; border-radius: 8px; transition: background .2s; flex-shrink: 0;
-    }
-    .nav-toggle:hover { background: rgba(255,255,255,.06); }
-    .nav-toggle span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: transform .25s, opacity .25s; transform-origin: center; }
-    .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-    .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .brand-abbr { display: none; }
-    @media (max-width: 640px) {
-      .nav-toggle { display: flex; }
-      .brand-full { display: none; }
-      .brand-abbr { display: inline; }
-      .main-nav {
-        display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0;
-        background: rgba(9,15,26,.97); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-        border-bottom: 1px solid rgba(196,164,72,.14); padding: 12px 16px 20px; gap: 4px;
-        opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden;
-        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.22s;
-      }
-      .main-nav.open {
-        opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible;
-        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1);
-      }
-      .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; }
-      .main-nav.open a { animation: navLinkIn 0.18s cubic-bezier(0.4,0,0.2,1) both; }
-      .main-nav.open a:nth-child(1){animation-delay:.04s}.main-nav.open a:nth-child(2){animation-delay:.08s}.main-nav.open a:nth-child(3){animation-delay:.12s}.main-nav.open a:nth-child(4){animation-delay:.16s}.main-nav.open a:nth-child(5){animation-delay:.20s}.main-nav.open a:nth-child(6){animation-delay:.24s}
-    }
-    @keyframes navLinkIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
-    @media (hover:none) {
-      .btn-primary:active { transform:scale(0.96); filter:brightness(1.04); box-shadow:none; }
-      .btn-outline:active { background:rgba(196,164,72,0.1); transform:scale(0.96); }
-      .feature-card:active { transform:translateY(-2px); border-color:rgba(196,164,72,0.28); }
-      .nav-toggle:active { background:rgba(255,255,255,.12) !important; }
+    @media (hover: none) {
+      .feature-card:active { transform: translateY(-2px); border-color: rgba(196,164,72,0.28); }
+      .tool-card:active    { transform: translateY(-2px); border-color: rgba(196,164,72,0.28); }
     }
   </style>
 </head>
@@ -300,10 +255,10 @@
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
-      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
-      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
+      <a href="members.html" data-auth="member">Members</a>
+      <a href="messages.html" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
-      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+      <a href="admin.html" data-auth="admin">Admin</a>
     </nav>
   </header>
   <main class="page">
@@ -442,72 +397,26 @@
       </div>
     </section>
 
+    <!-- ── MEMBER TOOLS ── -->
+    <section class="tools-section reveal">
+      <span class="features-header">Member Tools</span>
+      <div class="tools-grid">
+        <a class="tool-card" href="https://sifter.finance" target="_blank" rel="noopener noreferrer">
+          <div class="tool-icon" aria-hidden="true">S</div>
+          <div class="tool-meta">
+            <div class="tool-host">sifter.finance</div>
+            <div class="tool-name">Sifter</div>
+            <p class="tool-desc">Market research and screening tools recommended for members exploring trading, equities, and crypto markets.</p>
+          </div>
+        </a>
+      </div>
+    </section>
+
     <footer class="footer">
       <strong>UCSB Applied Economics Club</strong> &nbsp;·&nbsp; Built for student-led economics education
     </footer>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var revealElements = document.querySelectorAll('.reveal');
-      var observer = new IntersectionObserver(function(entries, obs) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            obs.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.12 });
-      revealElements.forEach(function(el) { observer.observe(el); });
-      highlightCurrentNav();
-      updateAdminLinkVisibility();
-    });
-
-    window.addEventListener('scroll', function() {
-      document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
-    }, { passive: true });
-
-    function highlightCurrentNav() {
-      var page = window.location.pathname.split('/').pop() || 'index.html';
-      document.querySelectorAll('.main-nav a').forEach(function(a) {
-        a.classList.toggle('active', a.getAttribute('href') === page);
-      });
-    }
-
-    function updateAdminLinkVisibility() {
-      try {
-        var raw = JSON.parse(localStorage.getItem('aec-session') || 'null');
-        var session = raw && raw.loginAt && Date.now() - raw.loginAt > 30*24*60*60*1000 ? (localStorage.removeItem('aec-session'), null) : raw;
-        var isAdmin = session && (session.email === 'quinnbaltazar@ucsb.edu' || session.isAdmin === true);
-        var l = document.getElementById('admin-nav-link');
-        if (l) l.style.display = isAdmin ? 'inline-flex' : 'none';
-        var ml = document.getElementById('members-nav-link');
-        if (ml) ml.style.display = session ? 'inline-flex' : 'none';
-        var msgL = document.getElementById('messages-nav-link');
-        if (msgL) msgL.style.display = session ? 'inline-flex' : 'none';
-        var sl = document.querySelector('.main-nav a[href="signin.html"]');
-        if (sl) sl.textContent = session ? 'Profile' : 'Sign In';
-      } catch (e) {}
-    }
-
-    // Mobile nav toggle
-    (function() {
-      var btn = document.getElementById('nav-toggle');
-      var nav = document.getElementById('main-nav');
-      if (!btn || !nav) return;
-      btn.addEventListener('click', function() {
-        var open = nav.classList.toggle('open');
-        btn.classList.toggle('open', open);
-        btn.setAttribute('aria-expanded', String(open));
-      });
-      nav.querySelectorAll('a').forEach(function(a) {
-        a.addEventListener('click', function() {
-          nav.classList.remove('open');
-          btn.classList.remove('open');
-          btn.setAttribute('aria-expanded', 'false');
-        });
-      });
-    })();
-  </script>
+  <!-- Common page behavior (nav, reveal, scroll, auth) lives in assets/app.js -->
 </body>
 </html>

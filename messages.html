@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Messages | UCSB Applied Economics Club</title>
+  <meta name="description" content="Direct messages between UCSB Applied Economics Club members." />
+  <meta name="theme-color" content="#090F1A" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/app.js" defer></script>
   <style>
     :root {
       --bg: #090F1A;
@@ -294,10 +300,10 @@
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
-      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
-      <a href="messages.html" id="messages-nav-link" style="display:none">Messages <span class="nav-unread" id="nav-unread-badge" style="display:none"></span></a>
+      <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
+      <a href="messages.html" id="messages-nav-link" data-auth="member">Messages <span class="nav-unread" id="nav-unread-badge" style="display:none"></span></a>
       <a href="board.html">Board</a>
-      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+      <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>
 
@@ -589,42 +595,43 @@
       if (atBottom || msgs.length <= 3) feed.scrollTop = feed.scrollHeight;
     }
 
-    // ── Send ──────────────────────────────────────────────────────────────────
     // ── Notifications ─────────────────────────────────────────────────────────
+    // Email fires on the first message in a thread (partnerUnread was 0).
+    // A timestamp is saved so the Cloud Function knows to follow up with SMS
+    // if the recipient still hasn't responded after 24 hours.
     async function notifyRecipient(partnerEmail, partnerName, messageBody, oldMeta) {
       const partner = await getDecryptedMember(partnerEmail);
       if (!partner) return;
 
-      const toEmail = partner.preferredEmail || partnerEmail;
-      if (toEmail) {
-        try {
-          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_NOTIFY_TMPL, {
-            to_email:       toEmail,
-            recipient_name: partnerName,
-            sender_name:    mySession.name || 'A member',
-            message_preview: messageBody.slice(0, 200),
-            messages_url:   'https://quinnbaltazar.github.io/Applied_Economics_Website/messages.html',
-            club_name:      'UCSB Applied Economics Club'
-          });
-        } catch(e) { /* email failed — don't block */ }
-      }
+      const partnerUnread = oldMeta ? (oldMeta['unread_' + eKey(partnerEmail)] || 0) : 0;
 
-      // SMS only if partner had unread messages from a prior day (don't spam active users)
-      if (partner.phone && oldMeta) {
-        const partnerUnread = oldMeta['unread_' + eKey(partnerEmail)] || 0;
-        if (partnerUnread > 0 && oldMeta.lastAt) {
-          const lastDay = new Date(oldMeta.lastAt).toDateString();
-          const today   = new Date().toDateString();
-          if (lastDay !== today) {
-            await fbPost('notifications/sms_queue', {
-              toEmail:       partnerEmail,
-              senderName:    mySession.name || 'A member',
-              msgPreview:    messageBody.slice(0, 160),
-              queuedAt:      Date.now()
+      // Only email when recipient had 0 unread (new thread or they read previous messages)
+      if (partnerUnread === 0) {
+        const toEmail = partner.preferredEmail || partnerEmail;
+        if (toEmail) {
+          try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_NOTIFY_TMPL, {
+              to_email:        toEmail,
+              recipient_name:  partnerName,
+              sender_name:     mySession.name || 'A member',
+              message_preview: messageBody.slice(0, 200),
+              messages_url:    'https://quinnbaltazar.github.io/Applied_Economics_Website/messages.html',
+              club_name:       'UCSB Applied Economics Club'
             });
-          }
+            // Record email sent — Cloud Function uses this to decide when to SMS
+            if (activeConvId) {
+              await fbSet(
+                'dms/' + activeConvId + '/meta/emailNotifiedAt_' + eKey(partnerEmail),
+                Date.now()
+              );
+            }
+          } catch(e) { /* email failed — don't block */ }
         }
       }
+
+      // SMS is handled by the hourly Cloud Function (sendSmsReminders).
+      // It sends an SMS if the recipient still has unread messages after 24h
+      // and an email notification was already sent. No client-side SMS here.
     }
 
     async function sendMessage() {

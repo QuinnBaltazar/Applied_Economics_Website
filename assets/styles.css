@@ -1,0 +1,248 @@
+/* ==========================================================================
+   UCSB Applied Economics Club — shared design system
+   Loaded by every page BEFORE any inline <style> block, so page-specific
+   rules can still override these defaults.
+   ========================================================================== */
+
+:root {
+  --bg:       #090F1A;
+  --surface:  #0E1829;
+  --surface-soft: #12213A;
+  --navy:     #162438;
+  --gold:     #C4A448;
+  --gold-lt:  #D4B55E;
+  --gold-dim: rgba(196,164,72,0.10);
+  --steel:    #2B4A6F;
+  --text:     #FFFFFF;
+  --muted:    rgba(255,255,255,0.62);
+  --border:   rgba(255,255,255,0.07);
+  --shadow:   0 24px 60px rgba(0,0,0,0.26);
+
+  /* Aliases used by members/vote/admin/messages so existing inline styles keep working */
+  --accent:      #C4A448;
+  --accent-soft: #D4B55E;
+  --panel:       rgba(255,255,255,0.04);
+
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 0 0;
+  overflow-x: hidden;
+}
+
+/* ── TOP NAV ───────────────────────────────────────────── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  width: 100%; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(20px, 4vw, 56px);
+  height: 64px;
+  background: rgba(9, 15, 26, 0.78);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.35s, box-shadow 0.35s, border-color 0.35s;
+  animation: navDown 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes navDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.topbar.scrolled {
+  background: rgba(9, 15, 26, 0.97);
+  box-shadow: 0 2px 40px rgba(0, 0, 0, 0.45);
+  border-color: rgba(196, 164, 72, 0.14);
+}
+
+.brand {
+  font-size: 0.78rem;
+  font-weight: 800; color: #fff;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  text-decoration: none; white-space: nowrap; flex-shrink: 0;
+  transition: color 0.2s;
+}
+.brand:hover { color: var(--gold); }
+
+.main-nav { display: flex; align-items: center; gap: 2px; }
+.main-nav a {
+  position: relative;
+  display: inline-flex; align-items: center;
+  padding: 8px 13px;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 0.875rem; font-weight: 500;
+  letter-spacing: 0.03em; border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+.main-nav a::after {
+  content: '';
+  position: absolute; bottom: 5px;
+  left: 13px; right: 13px;
+  height: 2px; background: var(--gold); border-radius: 2px;
+  transform: scaleX(0); transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.main-nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+.main-nav a:hover::after,
+.main-nav a.active::after { transform: scaleX(1); }
+.main-nav a.active {
+  color: #fff; font-weight: 700;
+  background: rgba(196, 164, 72, 0.08);
+}
+
+/* ── MOBILE NAV ────────────────────────────────────────── */
+.nav-toggle {
+  display: none;
+  flex-direction: column; justify-content: center; align-items: center;
+  gap: 5px; width: 40px; height: 40px;
+  background: none; border: none; cursor: pointer;
+  padding: 8px; border-radius: 8px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.nav-toggle:hover { background: rgba(255, 255, 255, 0.06); }
+.nav-toggle span {
+  display: block; width: 22px; height: 2px;
+  background: #fff; border-radius: 2px;
+  transition: transform 0.25s, opacity 0.25s;
+  transform-origin: center;
+}
+.nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.brand-abbr { display: none; }
+
+@media (max-width: 640px) {
+  .nav-toggle { display: flex; }
+  .brand-full { display: none; }
+  .brand-abbr { display: inline; }
+  .main-nav {
+    display: flex; flex-direction: column;
+    position: absolute; top: 64px; left: 0; right: 0;
+    background: rgba(9, 15, 26, 0.97);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border-bottom: 1px solid rgba(196, 164, 72, 0.14);
+    padding: 12px 16px 20px;
+    gap: 4px;
+    opacity: 0; transform: translateY(-6px);
+    pointer-events: none; visibility: hidden;
+    transition:
+      opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.22s;
+  }
+  .main-nav.open {
+    opacity: 1; transform: translateY(0);
+    pointer-events: auto; visibility: visible;
+    transition:
+      opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; }
+  .main-nav.open a { animation: navLinkIn 0.18s cubic-bezier(0.4, 0, 0.2, 1) both; }
+  .main-nav.open a:nth-child(1) { animation-delay: .04s; }
+  .main-nav.open a:nth-child(2) { animation-delay: .08s; }
+  .main-nav.open a:nth-child(3) { animation-delay: .12s; }
+  .main-nav.open a:nth-child(4) { animation-delay: .16s; }
+  .main-nav.open a:nth-child(5) { animation-delay: .20s; }
+  .main-nav.open a:nth-child(6) { animation-delay: .24s; }
+  .main-nav.open a:nth-child(7) { animation-delay: .28s; }
+}
+@keyframes navLinkIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── AUTH-AWARE NAV (no flash) ─────────────────────────── */
+/*
+ * Auth-gated links are hidden by default. As soon as the auth state is
+ * determined (synchronously in <head>), a class is added to <body>:
+ *   body.is-authed  → reveal members + messages + profile-renamed signin
+ *   body.is-admin   → reveal admin
+ * If the JS never runs (e.g. JS disabled) the links stay hidden, which is
+ * the safe default.
+ */
+[data-auth="member"], [data-auth="admin"] { display: none !important; }
+body.is-authed [data-auth="member"] { display: inline-flex !important; }
+body.is-admin  [data-auth="admin"]  { display: inline-flex !important; }
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 30px; border-radius: 999px;
+  background: var(--gold); color: #090F1A;
+  font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em;
+  text-decoration: none;
+  box-shadow: 0 8px 28px rgba(196, 164, 72, 0.28);
+  transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+  box-shadow: 0 14px 36px rgba(196, 164, 72, 0.36);
+}
+.btn-outline {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 30px; border-radius: 999px;
+  border: 1px solid rgba(196, 164, 72, 0.38);
+  color: var(--gold);
+  font-weight: 600; font-size: 0.95rem; text-decoration: none;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.btn-outline:hover {
+  border-color: var(--gold);
+  background: rgba(196, 164, 72, 0.07);
+  transform: translateY(-2px);
+}
+@media (hover: none) {
+  .btn-primary:active { transform: scale(0.96); filter: brightness(1.04); box-shadow: none; }
+  .btn-outline:active { background: rgba(196, 164, 72, 0.1); transform: scale(0.96); }
+  .nav-toggle:active  { background: rgba(255, 255, 255, 0.12) !important; }
+}
+
+/* ── REVEAL-ON-SCROLL ──────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── GOLD DIVIDER ──────────────────────────────────────── */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(196, 164, 72, 0.22),
+    transparent
+  );
+  margin: 0 24px 40px;
+}
+
+/* ── REDUCED MOTION ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

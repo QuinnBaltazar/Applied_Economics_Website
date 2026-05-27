@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign In | UCSB Applied Economics Club</title>
   <meta name="description" content="Member portal for the UCSB Applied Economics Club — a registered student organization at UC Santa Barbara. Sign in or create a member profile to access the directory, voting, and club messaging." />
+  <meta name="theme-color" content="#090F1A" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sign In | UCSB Applied Economics Club" />
+  <meta property="og:description" content="Member portal — sign in or create an account." />
+  <meta property="og:image" content="https://www.ucsbaec.com/assets/og-image.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/app.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -319,10 +328,10 @@
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
-      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
-      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
+      <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
+      <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
-      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+      <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>
 
@@ -737,8 +746,14 @@
       const data = sanitizeMemberForSession(member);
       if (!data.loginAt) data.loginAt = Date.now();
       localStorage.setItem('aec-session', JSON.stringify(data));
+      // Reveal auth-gated nav links immediately (no reload required)
+      document.body.classList.add('is-authed');
+      if (data.email === ADMIN_EMAIL || data.isAdmin === true) document.body.classList.add('is-admin');
     }
-    function clearSession() { localStorage.removeItem('aec-session'); }
+    function clearSession() {
+      localStorage.removeItem('aec-session');
+      document.body.classList.remove('is-authed', 'is-admin');
+    }
     function isAdminSession(s) { return s && (s.email === ADMIN_EMAIL || s.isAdmin === true); }
 
     // ── Nav ───────────────────────────────────────────────────

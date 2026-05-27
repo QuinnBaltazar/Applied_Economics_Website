@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin | UCSB Applied Economics Club</title>
+  <meta name="description" content="Admin console for the UCSB Applied Economics Club." />
+  <meta name="theme-color" content="#090F1A" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/app.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     :root {
@@ -326,8 +332,8 @@
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
-      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
-      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
+      <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
+      <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
       <a href="admin.html">Admin</a>
     </nav>
@@ -525,6 +531,29 @@
     const DB_URL     = 'https://applied-economics-club-default-rtdb.firebaseio.com';
     const FB_READY   = DB_URL !== 'YOUR_FIREBASE_DB_URL';
     const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+
+    // ── AES-GCM decryption (read PII fields) ─────────────────
+    let _ck = null;
+    async function _getCK() {
+      if (_ck) return _ck;
+      const enc = new TextEncoder();
+      const raw = await crypto.subtle.importKey('raw', enc.encode('aec-ucsb-priv-2025'), 'PBKDF2', false, ['deriveKey']);
+      _ck = await crypto.subtle.deriveKey(
+        { name:'PBKDF2', salt:enc.encode('aec-salt-v1'), iterations:100000, hash:'SHA-256' },
+        raw, { name:'AES-GCM', length:256 }, false, ['decrypt']
+      );
+      return _ck;
+    }
+    async function decField(v) {
+      if (!v || !String(v).startsWith('enc:')) return v || '';
+      try {
+        const [,ivHex,b64] = v.split(':');
+        const iv = new Uint8Array(ivHex.match(/.{2}/g).map(h=>parseInt(h,16)));
+        const ct = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+        const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv}, await _getCK(), ct);
+        return new TextDecoder().decode(pt);
+      } catch { return ''; }
+    }
     const BASE_TOPICS = [
       'Venture Capital','Wealth Management','Trading',
       'Current Market Bull and Bear Cases','Investment Banking'
@@ -632,6 +661,7 @@
       if (!session || session.email !== email) return;
       session.isAdmin = flag;
       localStorage.setItem('aec-session', JSON.stringify(session));
+      document.body.classList.toggle('is-admin', !!flag);
     }
 
     // ── Firebase REST ─────────────────────────────────────────
@@ -768,12 +798,18 @@
         const isOwnerAccount = member.email === ADMIN_EMAIL;
         const row = document.createElement('div');
         row.className = 'member-row';
+        const ucsbVerified = (member.email||'').toLowerCase().endsWith('@ucsb.edu');
+        const ucsbBadge    = ucsbVerified
+          ? ' <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(100,220,140,0.15);color:#80e6a0;margin-left:4px;">UCSB ✓</span>'
+          : ' <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(255,160,80,0.15);color:rgba(255,160,80,0.9);margin-left:4px;">non-UCSB</span>';
         row.innerHTML =
           '<div class="member-row-info">' +
             '<div class="member-row-name">' + escapeHtml(member.name) +
-              (isAdminMember ? ' <span class="admin-tag">Admin</span>' : '') + '</div>' +
+              (isAdminMember ? ' <span class="admin-tag">Admin</span>' : '') +
+              ucsbBadge + '</div>' +
             '<div class="member-row-meta">' + escapeHtml(member.email) +
               (member.subject ? ' &nbsp;&middot;&nbsp; ' + escapeHtml(member.subject) : '') +
+              (member.gradYear ? ' &nbsp;&middot;&nbsp; Class of ' + escapeHtml(String(member.gradYear)) : '') +
               (member.joinedAt ? ' &nbsp;&middot;&nbsp; Joined ' + new Date(member.joinedAt).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '') +
             '</div>' +
           '</div>' +
@@ -1134,26 +1170,45 @@
 
     // ── CSV Export ────────────────────────────────────────────
     document.getElementById('btn-export-csv').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-export-csv');
+      btn.disabled = true; btn.textContent = 'Decrypting…';
       const raw = await fbGet('members');
-      if (!raw) { setMsg('No members to export.', true); return; }
+      if (!raw) { setMsg('No members to export.', true); btn.disabled = false; btn.textContent = 'Export CSV'; return; }
+
       const emailMap = new Map();
       Object.values(raw).filter(m => m && m.email && m.name).forEach(m => {
         const prev = emailMap.get(m.email);
         if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
       });
       const members = Array.from(emailMap.values()).sort((a,b) => (a.name||'').localeCompare(b.name||''));
-      const cols = ['Name','Email','Area of Interest','Want to Learn','Field','Joined','Admin'];
-      const rows = members.map(m => [
-        m.name||'', m.email||'', m.subject||'', m.learn||'', m.field||'',
-        m.joinedAt ? new Date(m.joinedAt).toLocaleDateString('en-US') : '',
-        m.isAdmin ? 'Yes' : ''
-      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+
+      // Decrypt PII fields for each member
+      const rows = await Promise.all(members.map(async m => {
+        const personalEmail = await decField(m.preferredEmail);
+        const ucsbVerified  = (m.email||'').toLowerCase().endsWith('@ucsb.edu') ? 'Yes' : 'No';
+        return [
+          m.name||'',
+          m.email||'',
+          ucsbVerified,
+          personalEmail,
+          m.phone ? 'Yes' : 'No',
+          m.gradYear||'',
+          m.subject||'',
+          m.learn||'',
+          m.field||'',
+          m.joinedAt ? new Date(m.joinedAt).toLocaleDateString('en-US') : '',
+          m.isAdmin ? 'Yes' : 'No'
+        ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+      }));
+
+      const cols = ['Name','UCSB Email','UCSB Email Verified','Personal Email','Phone on File','Grad Year','Area of Interest','Want to Learn','Field','Joined','Admin'];
       const csv = [cols.join(','), ...rows].join('\r\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `aec-members-${new Date().toISOString().slice(0,10)}.csv`;
       a.click(); URL.revokeObjectURL(url);
+      btn.disabled = false; btn.textContent = 'Export CSV';
     });
 
     document.getElementById('btn-snapshot').addEventListener('click', saveSnapshot);

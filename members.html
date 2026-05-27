@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Members | UCSB Applied Economics Club</title>
+  <meta name="description" content="The UCSB Applied Economics Club member directory — verified profiles, current goals, and shared updates among members and alumni." />
+  <meta name="theme-color" content="#090F1A" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/app.js" defer></script>
   <style>
     :root {
       --bg: #090F1A;
@@ -228,10 +234,10 @@
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
-      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
-      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
+      <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
+      <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
-      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+      <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>
   <main class="page">
@@ -404,7 +410,11 @@
 
     const SESSION_TTL = 30*24*60*60*1000;
     function getSession() { try{ const s=JSON.parse(localStorage.getItem('aec-session')); if(!s)return null; if(s.loginAt&&Date.now()-s.loginAt>SESSION_TTL){localStorage.removeItem('aec-session');return null;} return s; }catch{return null;} }
-    function setSession(m) { localStorage.setItem('aec-session',JSON.stringify(m)); }
+    function setSession(m) {
+      localStorage.setItem('aec-session', JSON.stringify(m));
+      document.body.classList.add('is-authed');
+      if (m && (m.email === ADMIN_EMAIL || m.isAdmin === true)) document.body.classList.add('is-admin');
+    }
     function isAdminSess(s) { return s&&(s.email===ADMIN_EMAIL||s.isAdmin===true); }
 
     window.addEventListener('scroll',()=>document.getElementById('topbar').classList.toggle('scrolled',window.scrollY>8),{passive:true});

@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Board | UCSB Applied Economics Club</title>
+  <meta name="description" content="Meet the UCSB Applied Economics Club board — the students running the club and its programming." />
+  <meta name="theme-color" content="#090F1A" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Board | UCSB Applied Economics Club" />
+  <meta property="og:description" content="Meet the people running UCSB AEC." />
+  <meta property="og:image" content="https://www.ucsbaec.com/assets/og-image.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="assets/app.js" defer></script>
   <style>
     :root {
       --bg:       #090F1A;
@@ -234,10 +244,10 @@
       <a href="vote.html">Vote</a>
       <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
-      <a href="members.html" id="members-nav-link" style="display:none">Members</a>
-      <a href="messages.html" id="messages-nav-link" style="display:none">Messages</a>
+      <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
+      <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
-      <a href="admin.html" id="admin-nav-link" style="display:none">Admin</a>
+      <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>
   <main class="page">

@@ -1,8 +1,9 @@
-const { onValueCreated } = require('firebase-functions/v2/database');
-const { setGlobalOptions }  = require('firebase-functions/v2');
-const admin  = require('firebase-admin');
-const twilio = require('twilio');
-const { subtle } = require('crypto').webcrypto;
+const { onValueCreated }   = require('firebase-functions/v2/database');
+const { onSchedule }       = require('firebase-functions/v2/scheduler');
+const { setGlobalOptions } = require('firebase-functions/v2');
+const admin                = require('firebase-admin');
+const twilio               = require('twilio');
+const { subtle }           = require('crypto').webcrypto;
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1' });
@@ -42,6 +43,7 @@ function eKey(email) {
   return String(email).replace(/[.@#$[\]/]/g, '_');
 }
 
+// ── Triggered SMS: fires immediately when queued by client (legacy path kept) ─
 exports.sendSmsNotification = onValueCreated(
   'notifications/sms_queue/{entryId}',
   async (event) => {
@@ -52,7 +54,6 @@ exports.sendSmsNotification = onValueCreated(
     try {
       if (!entry || !entry.toEmail) return;
 
-      // Fetch and decrypt member phone
       const memberSnap = await admin.database().ref('members/' + eKey(entry.toEmail)).get();
       const member = memberSnap.val();
       if (!member || !member.phone) return;
@@ -77,6 +78,71 @@ exports.sendSmsNotification = onValueCreated(
       console.error('SMS send failed:', err);
     } finally {
       await ref.remove();
+    }
+  }
+);
+
+// ── Scheduled reminder: every hour, SMS anyone with 24h+ unread messages ──────
+exports.sendSmsReminders = onSchedule(
+  { schedule: 'every 1 hours', region: 'us-central1' },
+  async () => {
+    const db  = admin.database();
+    const now = Date.now();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken  = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_FROM_NUMBER;
+    const client     = twilio(accountSid, authToken);
+
+    const dmsSnap = await db.ref('dms').get();
+    const dms = dmsSnap.val();
+    if (!dms) return;
+
+    for (const [convId, conv] of Object.entries(dms)) {
+      if (!conv || !conv.meta) continue;
+      const meta = conv.meta;
+      if (!Array.isArray(meta.participants) || !meta.lastAt) continue;
+
+      const messageAge = now - meta.lastAt;
+      if (messageAge < ONE_DAY) continue;
+
+      for (const email of meta.participants) {
+        const key    = eKey(email);
+        const unread = meta['unread_' + key] || 0;
+        if (unread === 0) continue;
+
+        // Skip if we already sent an SMS reminder in the last 24h
+        const lastSmsAt = meta['smsReminderAt_' + key] || 0;
+        if (lastSmsAt && now - lastSmsAt < ONE_DAY) continue;
+
+        // Only send SMS after an email notification was already sent
+        const emailSentAt = meta['emailNotifiedAt_' + key] || 0;
+        if (!emailSentAt) continue;
+
+        try {
+          const memberSnap = await db.ref('members/' + key).get();
+          const member = memberSnap.val();
+          if (!member || !member.phone) continue;
+
+          const phone = await decryptField(member.phone);
+          if (!phone) continue;
+
+          const senderKey  = meta.lastFrom ? eKey(meta.lastFrom) : null;
+          const senderName = senderKey && meta.names ? (meta.names[senderKey] || 'A member') : 'A member';
+
+          await client.messages.create({
+            to:   toE164(phone),
+            from: fromNumber,
+            body: `AEC reminder: You have ${unread} unread message${unread > 1 ? 's' : ''} from ${senderName}. Reply at https://quinnbaltazar.github.io/Applied_Economics_Website/messages.html`
+          });
+
+          await db.ref(`dms/${convId}/meta/smsReminderAt_${key}`).set(now);
+          console.log(`SMS reminder sent to ${email} for conv ${convId}`);
+        } catch (err) {
+          console.error(`SMS reminder failed for ${email}:`, err);
+        }
+      }
     }
   }
 );
