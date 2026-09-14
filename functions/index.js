@@ -72,7 +72,7 @@ exports.sendSmsNotification = onValueCreated(
       await client.messages.create({
         to:   toE164(phone),
         from: fromNumber,
-        body: `AEC message from ${senderName}: "${preview}" — reply at https://quinnbaltazar.github.io/Applied_Economics_Website/messages.html`
+        body: `AEC message from ${senderName}: "${preview}" — reply at https://www.ucsbaec.com/messages.html`
       });
     } catch (err) {
       console.error('SMS send failed:', err);
@@ -134,7 +134,7 @@ exports.sendSmsReminders = onSchedule(
           await client.messages.create({
             to:   toE164(phone),
             from: fromNumber,
-            body: `AEC reminder: You have ${unread} unread message${unread > 1 ? 's' : ''} from ${senderName}. Reply at https://quinnbaltazar.github.io/Applied_Economics_Website/messages.html`
+            body: `AEC reminder: You have ${unread} unread message${unread > 1 ? 's' : ''} from ${senderName}. Reply at https://www.ucsbaec.com/messages.html`
           });
 
           await db.ref(`dms/${convId}/meta/smsReminderAt_${key}`).set(now);

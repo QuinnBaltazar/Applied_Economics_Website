@@ -9,6 +9,7 @@
     "messages":      { ".read": true, ".write": true },
     "dms":           { ".read": true, ".write": true },
     "activity":      { ".read": false, ".write": true },
-    "notifications": { ".read": false, ".write": true }
+    "notifications": { ".read": false, ".write": true },
+    "track-progress":{ ".read": true,  ".write": true }
   }
 }
