@@ -324,6 +324,31 @@
     }
     @keyframes navLinkIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
     @media (hover:none) { .nav-toggle:active { background:rgba(255,255,255,.12) !important; } }
+
+    /* ── Accessibility & input-mode polish ─────────────────────────────── */
+    /* Keyboard users get a visible ring; mouse users don't. Previously
+       there was no focus indicator anywhere on the page. */
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible,
+    input:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+
+    /* Respect the OS "reduce motion" setting. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* Comfortable tap targets on touch devices. */
+    @media (max-width: 768px) {
+      button, .btn, a.btn, [role="button"] { min-height: 44px; }
+    }
   </style>
 </head>
 <body>
