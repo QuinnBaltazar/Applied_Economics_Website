@@ -437,7 +437,11 @@
           </p>
 
           <div style="display:flex;flex-direction:column;gap:12px;max-width:680px;margin-bottom:16px">
-            <input type="text" id="deck-topic" maxlength="120" placeholder="Topic — e.g. the approved topic for this week's meeting"
+            <select id="deck-topic-pick"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(196,164,72,0.3);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem">
+              <option value="">Pull from the topic board…</option>
+            </select>
+            <input type="text" id="deck-topic" maxlength="120" placeholder="…or type any topic"
               style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem" />
             <textarea id="deck-guidance" rows="2" maxlength="1000" placeholder="Optional guidance — audience level, angle, anything to emphasise…"
               style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem;font-family:inherit;resize:vertical"></textarea>
@@ -782,8 +786,12 @@
             <div class="topic-row-meta">${escapeHtml(t.desc||'')} &nbsp;·&nbsp; By ${escapeHtml(t.createdBy||'anonymous')} &nbsp;·&nbsp; ${escapeHtml(timeStr)}${srcLinks}</div>
           </div>
           <button class="reset-pwd-btn approve-topic-btn" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);" data-key="${escapeHtml(t.key)}">Approve</button>
+          <button class="reset-pwd-btn topic-deck-btn" style="margin-left:6px;border-color:rgba(196,164,72,0.45);color:#D4B55E;">Deck</button>
           <button class="delete-topic-btn" data-key="${escapeHtml(t.key)}" style="margin-left:6px;">Reject</button>
         `;
+        row.querySelector('.topic-deck-btn').addEventListener('click', function() {
+          if (window.aecMakeDeck) window.aecMakeDeck(t.name, t.desc || '', this);
+        });
         row.querySelector('.approve-topic-btn').addEventListener('click', async function() {
           const key = this.dataset.key;
           // Move to custom-topics
@@ -818,8 +826,12 @@
             <div class="topic-row-meta">${escapeHtml(t.desc||'')} &nbsp;·&nbsp; Submitted by ${escapeHtml(t.createdBy||'anonymous')}</div>
           </div>
           <span class="topic-row-votes">${t.votes||0} vote${(t.votes||0)===1?'':'s'}</span>
-          <button class="delete-topic-btn" data-key="${escapeHtml(t.key)}">Delete</button>
+          <button class="reset-pwd-btn topic-deck-btn" style="border-color:rgba(196,164,72,0.45);color:#D4B55E;">Deck</button>
+          <button class="delete-topic-btn" data-key="${escapeHtml(t.key)}" style="margin-left:6px;">Delete</button>
         `;
+        row.querySelector('.topic-deck-btn').addEventListener('click', function() {
+          if (window.aecMakeDeck) window.aecMakeDeck(t.name, t.desc || '', this);
+        });
         row.querySelector('.delete-topic-btn').addEventListener('click', async function() {
           if (!confirm(`Delete "${t.name}"?`)) return;
           await fbDelete(`custom-topics/${t.key}`);
@@ -1541,6 +1553,56 @@
           listEl.appendChild(row);
         });
       }
+
+      // Picker: approved board topics + the base vote topics, desc carried as guidance.
+      (async function fillTopicPicker() {
+        const pick = document.getElementById('deck-topic-pick');
+        if (!pick) return;
+        const [customRaw, countsRaw] = await Promise.all([fbGet('custom-topics'), fbGet('vote-counts')]);
+        const seen = new Set();
+        const add = (name, desc) => {
+          const n = String(name || '').trim();
+          if (!n || seen.has(n.toLowerCase())) return;
+          seen.add(n.toLowerCase());
+          const o = document.createElement('option');
+          o.value = n; o.textContent = n; o.dataset.desc = desc || '';
+          pick.appendChild(o);
+        };
+        Object.values(customRaw || {}).forEach(t => t && add(t.name, t.desc));
+        Object.keys(countsRaw || {}).forEach(n => add(n, ''));
+        pick.addEventListener('change', () => {
+          const o = pick.selectedOptions[0];
+          document.getElementById('deck-topic').value = pick.value;
+          const g = document.getElementById('deck-guidance');
+          if (o && o.dataset.desc && !g.value.trim()) g.value = o.dataset.desc;
+        });
+      })();
+
+      // One-click deck from a topic row (Topics tab). Exposed for the
+      // pending/approved renderers, which live outside this closure.
+      window.aecMakeDeck = async function (name, desc, btn) {
+        const key = getBroadcastKey('Passphrase required to generate a deck for "' + name + '":');
+        if (!key) return;
+        const label = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Building…'; }
+        setMsg('Building a deck for "' + name + '" — 30-60 seconds…');
+        try {
+          const r = await fetch(FN_BASE + '/generateDeck', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            body: JSON.stringify({ topic: name, guidance: desc ? 'Board topic description: ' + desc : '' })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 403) { _broadcastKey = null; setMsg('Passphrase rejected.'); }
+          else if (!r.ok) setMsg(d.error || ('Deck generation failed (' + r.status + ').'));
+          else {
+            await loadDecks();
+            switchTab('panel-decks');
+            setMsg('Deck ready: "' + d.title + '" (' + d.slides + ' slides). Present or refine it below.');
+          }
+        } catch (e) { setMsg('Could not reach the deck generator.'); }
+        finally { if (btn) { btn.disabled = false; btn.textContent = label; } }
+      };
 
       document.getElementById('deck-generate').addEventListener('click', async () => {
         const topic = document.getElementById('deck-topic').value.trim();
