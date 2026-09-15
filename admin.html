@@ -447,7 +447,9 @@
         <h2>AI Presentation Decks</h2>
         <div class="section-body">
           <p style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin:0 0 18px;line-height:1.5">
-            Generates a meeting deck on any topic using current, sourced information.
+            Generates a strong first-draft deck to refine, not a finished lecture. Current-events
+            topics are grounded in live headlines; conceptual topics teach established frameworks.
+            Always skim it and use Refine before presenting.
             Decks open in the browser, arrow keys to present, F for fullscreen.
           </p>
 
@@ -759,6 +761,9 @@
 
     // ── Cloud Function endpoints ──────────────────────────────
     const FN_BASE = 'https://us-central1-applied-economics-club.cloudfunctions.net';
+    // Resilient loader: if app.js is stale-cached and aiChartLoader isn't
+    // defined yet, fall back to text so the status line never breaks.
+    const aiLoad = (label) => (window.aiChartLoader ? window.aiChartLoader(label) : (label + '\u2026'));
 
     // Admin actions are authorised by the signed-in admin's Firebase ID
     // token - verified server-side, unforgeable, no passphrase, no prompts.
@@ -1604,7 +1609,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const st = document.getElementById('scan-status');
-        scanBtn.disabled = true; st.innerHTML = aiChartLoader('Scanning current news, 20-40 seconds');
+        scanBtn.disabled = true; st.innerHTML = aiLoad('Scanning current news, 20-40 seconds');
         try {
           const r = await fetch(FN_BASE + '/scanTopicsNow', {
             method: 'POST',
@@ -1771,7 +1776,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('deck-generate');
-        btn.disabled = true; st.innerHTML = aiChartLoader('Researching and building, 30-60 seconds');
+        btn.disabled = true; st.innerHTML = aiLoad('Researching and building, 30-60 seconds');
         try {
           const r = await fetch(FN_BASE + '/generateDeck', {
             method: 'POST',
@@ -1804,7 +1809,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('refine-send');
-        btn.disabled = true; st.innerHTML = aiChartLoader('Revising, 20-40 seconds');
+        btn.disabled = true; st.innerHTML = aiLoad('Revising, 20-40 seconds');
         try {
           const r = await fetch(FN_BASE + '/refineDeck', {
             method: 'POST',
@@ -1889,7 +1894,7 @@
         if (!details) { st.textContent = 'Add the facts first, when, where, what.'; return; }
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
-        flyerGen.disabled = true; st.innerHTML = aiChartLoader('Writing copy, 15-30 seconds');
+        flyerGen.disabled = true; st.innerHTML = aiLoad('Writing copy, 15-30 seconds');
         try {
           const r = await fetch(FN_BASE + '/generateFlyer', {
             method: 'POST',
@@ -1925,7 +1930,7 @@
         if (!instruction) { st.textContent = 'Describe the change first.'; return; }
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
-        fRefSend.disabled = true; st.innerHTML = aiChartLoader('Revising, 15-30 seconds');
+        fRefSend.disabled = true; st.innerHTML = aiLoad('Revising, 15-30 seconds');
         try {
           const r = await fetch(FN_BASE + '/refineFlyer', {
             method: 'POST',

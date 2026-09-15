@@ -738,13 +738,26 @@ ${ctx}
 Build a 8-11 slide deck as JSON. Slide types available:
 ${DECK_SCHEMA}
 
-Requirements:
+RIGOR (this is a finance club; members will notice hand-waving):
+- Teach REAL, established, nameable frameworks. If the topic has documented
+  theory, name it and attribute it: e.g. Wyckoff accumulation/markup/distribution/
+  markdown phases; sector rotation across the business cycle; the four economic
+  cycle stages; mean reversion; momentum. Explain how the actual concept works.
+- Do NOT invent authoritative-sounding specifics. "Data center capex drives the
+  early markup phase" is a fabricated causal claim, avoid that kind of thing.
+- When you give an example, label it plainly ("For example, hypothetically...")
+  so it reads as illustration, not a sourced fact.
+- NEVER invent market data, prices, percentages, dates, or firm-specific claims.
+  If a real figure is not in the headlines above and not stable common knowledge,
+  frame it qualitatively instead.
+- If you are not confident something is established and correct, leave it out.
+  A shorter, correct deck beats a longer, plausible-sounding one.
+
+STRUCTURE:
 - Slide 1 must be type "title".
+- Include at least one slide that names and explains the core framework.
 - Mix types; never more than two "bullets" slides in a row.
 - Max 5 points per slide, each under 16 words. No sub-bullets.
-- Numbers policy: only use figures that appear in the headlines above or that are
-  stable common knowledge (e.g. "the Fed has a dual mandate"). NEVER invent market
-  data, prices, percentages or dates. Prefer qualitative framing over fake precision.
 - End with discussion questions (type "bullets", heading "Discussion").
 
 Reply with ONLY JSON: {"title":"...","subtitle":"...","slides":[...]}`;
