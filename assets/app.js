@@ -45,8 +45,13 @@
     });
     // Signed in: there is a Profile entry already, so hide the Sign In link
     // rather than relabel it. Signed out: leave it as Sign In.
+    var authed = !!readSession();
     var signInLink = document.querySelector('.main-nav a[href="signin.html"]');
-    if (signInLink) signInLink.style.display = readSession() ? 'none' : '';
+    if (signInLink) signInLink.style.display = authed ? 'none' : '';
+    // Join CTAs are for prospective members; hide once someone is signed in.
+    document.querySelectorAll('.join-cta').forEach(function (el) {
+      el.style.display = authed ? 'none' : '';
+    });
   }
 
   // --- 3. Reveal-on-scroll ------------------------------------------------
