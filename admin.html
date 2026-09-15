@@ -832,6 +832,21 @@
       });
     }
 
+    // Fields collected at sign-up. Phone is optional and excluded from the
+    // completeness check, matching getMissingFields() in signin.html.
+    const REQUIRED_PROFILE_FIELDS = ['name','gradYear','preferredEmail','subject','learn','goal','field'];
+    function missingProfileFields(m) {
+      return REQUIRED_PROFILE_FIELDS.filter(f => {
+        const v = m[f];
+        return v === undefined || v === null || String(v).trim() === '';
+      });
+    }
+    function pill(text, bg, fg, title) {
+      return ' <span title="' + escapeHtml(title || '') + '" style="font-size:0.68rem;font-weight:700;' +
+        'letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;' +
+        'background:' + bg + ';color:' + fg + ';margin-left:4px;">' + escapeHtml(text) + '</span>';
+    }
+
     async function renderAdminMembers() {
       const container = document.getElementById('admin-members-list');
       container.innerHTML = '<p class="empty-state">Loading members...</p>';
@@ -851,7 +866,19 @@
       });
 
       if (!members.length) { container.innerHTML = '<p class="empty-state">No registered members yet.</p>'; return; }
-      container.innerHTML = '';
+
+      const incomplete = members.filter(m => missingProfileFields(m).length).length;
+      const optedOut   = members.filter(m => m.emailReminders === false).length;
+      container.innerHTML =
+        '<div style="display:flex;gap:18px;flex-wrap:wrap;padding:12px 14px;margin-bottom:14px;' +
+             'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;' +
+             'font-size:0.84rem;color:rgba(255,255,255,0.65)">' +
+          '<span><strong style="color:#fff">' + members.length + '</strong> members</span>' +
+          '<span><strong style="color:' + (incomplete ? 'rgba(255,175,95,0.95)' : '#fff') + '">' +
+            incomplete + '</strong> incomplete profile' + (incomplete === 1 ? '' : 's') + '</span>' +
+          '<span><strong style="color:#fff">' + (members.length - optedOut) + '</strong> receiving emails</span>' +
+          (optedOut ? '<span><strong style="color:#fff">' + optedOut + '</strong> opted out</span>' : '') +
+        '</div>';
 
       members.forEach(member => {
         const isAdminMember = member.email === ADMIN_EMAIL || member.isAdmin === true;
@@ -862,15 +889,27 @@
         const ucsbBadge    = ucsbVerified
           ? ' <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(100,220,140,0.15);color:#80e6a0;margin-left:4px;">UCSB ✓</span>'
           : ' <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(255,160,80,0.15);color:rgba(255,160,80,0.9);margin-left:4px;">non-UCSB</span>';
+        const missing = missingProfileFields(member);
+        const profileBadge = missing.length
+          ? pill(missing.length + ' missing', 'rgba(255,160,80,0.15)', 'rgba(255,175,95,0.95)',
+                 'Incomplete profile: ' + missing.join(', ') + '. Prompted on next sign-in.')
+          : pill('complete', 'rgba(100,220,140,0.13)', 'rgba(128,230,160,0.85)', 'All profile fields filled in');
+
+        const remindersOn = member.emailReminders !== false;
+        const reminderBadge = remindersOn
+          ? pill('email on', 'rgba(120,170,255,0.14)', 'rgba(150,190,255,0.92)', 'Receives unread-message reminders')
+          : pill('email off', 'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.4)', 'Opted out of reminders');
+
         row.innerHTML =
           '<div class="member-row-info">' +
             '<div class="member-row-name">' + escapeHtml(member.name) +
               (isAdminMember ? ' <span class="admin-tag">Admin</span>' : '') +
-              ucsbBadge + '</div>' +
+              ucsbBadge + profileBadge + reminderBadge + '</div>' +
             '<div class="member-row-meta">' + escapeHtml(member.email) +
               (member.subject ? ' &nbsp;&middot;&nbsp; ' + escapeHtml(member.subject) : '') +
               (member.gradYear ? ' &nbsp;&middot;&nbsp; Class of ' + escapeHtml(String(member.gradYear)) : '') +
               (member.joinedAt ? ' &nbsp;&middot;&nbsp; Joined ' + new Date(member.joinedAt).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '') +
+              (missing.length ? '<br><span style="color:rgba(255,175,95,0.8)">Missing: ' + escapeHtml(missing.join(', ')) + '</span>' : '') +
             '</div>' +
           '</div>' +
           '<div class="member-row-actions"></div>';
