@@ -409,6 +409,7 @@ exports.sendPasswordResetNotice = onRequest(
    ════════════════════════════════════════════════════════════════════════ */
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+const BRAVE_API_KEY  = defineSecret('BRAVE_API_KEY');   // optional; research works without it (Wikipedia + Commons + RSS)
 // gemini-2.5-flash was retired for new API users (404: "no longer available
 // to new users"); 3.6-flash is its named replacement. The lite models are the
 // fallback chain: separate (larger) free quotas - 15 RPM / 500 RPD vs 5/20 -
@@ -722,12 +723,17 @@ const DECK_SCHEMA = `[
  {"type":"stat","heading":"...","stats":[{"value":"...","label":"..."}]},
  {"type":"chart","heading":"...","chartType":"line|bar","points":[{"label":"Q1","value":12.4},{"label":"Q2","value":15.1}],"note":"optional: source or 'illustrative'"},
  {"type":"cycle","heading":"...","stages":["Accumulation","Markup","Distribution","Markdown"],"note":"optional"},
+ {"type":"image","heading":"...","imageRef":1,"caption":"one-line caption"},
  {"type":"quote","text":"...","attribution":"..."}
 ]`;
 
-function deckPrompt(topic, guidance, articles) {
-  const ctx = articles && articles.length
-    ? `\nRecent related headlines (numbered; cite with "refs" on any slide that uses one):\n${numberedHeadlines(articles)}\n`
+function deckPrompt(topic, guidance, research) {
+  research = research || {};
+  const ctx = research.context
+    ? `\nRESEARCH (numbered sources — cite with "refs":[n] on any slide that uses a fact from one):\n${research.context}\n`
+    : '';
+  const imgs = research.imageList
+    ? `\nAVAILABLE IMAGES (real, free, licensed — reference by number with "imageRef", never invent a URL):\n${research.imageList}\n`
     : '';
   return `${CLUB_BRIEF}
 
@@ -735,7 +741,7 @@ You are preparing a presentation for this club's weekly meeting (~30 undergrads,
 
 Topic: ${topic}
 ${guidance ? `Presenter guidance to follow: ${guidance}` : ''}
-${ctx}
+${ctx}${imgs}
 
 Build a 8-11 slide deck as JSON. Slide types available:
 ${DECK_SCHEMA}
@@ -763,7 +769,10 @@ VISUALS (use them, a finance deck should not be all text):
 - Use a "cycle" slide to show a conceptual sequence of stages (market cycle,
   Wyckoff phases, sector rotation, a process). This is schematic, so it is the
   right way to show a concept without implying fake precision.
-- Aim for at least one visual slide (chart, cycle, or stat) in the deck.
+- Use an "image" slide to show a real, relevant picture from AVAILABLE IMAGES
+  above. Set "imageRef" to the image's number. Only use an image that genuinely
+  fits the point; do NOT force one. Never invent an image or a URL.
+- Aim for at least two visual slides (chart, cycle, stat, or image) in the deck.
 
 STRUCTURE:
 - Slide 1 must be type "title".
@@ -779,7 +788,7 @@ function sanitizeDeck(deck, topic, sources) {
   if (!deck || !Array.isArray(deck.slides) || !deck.slides.length) {
     throw new Error('model returned no slides');
   }
-  const slides = deck.slides.slice(0, 14).filter(s => s && s.type);
+  const slides = deck.slides.slice(0, 14).filter(s => s && s.type && !s._drop);
   if (sources.length) {
     slides.push({ type: 'sources', links: sources.slice(0, 8) });
   }
@@ -792,7 +801,7 @@ function sanitizeDeck(deck, topic, sources) {
 }
 
 exports.generateDeck = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,   // add BRAVE_API_KEY here only if you enable Brave
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
@@ -804,26 +813,34 @@ exports.generateDeck = onRequest(
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
     try {
-      // Pull current headlines and keep the ones sharing a word with the topic
-      // (plus a few general ones) as citable context.
-      const all = await fetchHeadlines(10);
-      const words = topic.toLowerCase().split(/\W+/).filter(w => w.length > 3);
-      const related = all.filter(h =>
-        words.some(w => (h.title + ' ' + h.desc).toLowerCase().includes(w)));
-      const articles = [...related, ...all.filter(h => !related.includes(h))].slice(0, 8);
+      // Research the topic: Wikipedia + Brave web search + RSS news, ranked and
+      // trimmed, plus real free licensed images the model can place in slides.
+      const research = await buildResearch(topic, { news: true });
+      const cites = research.cites || [];
+      const imgs = research.images || [];
 
-      const { text } = await callGemini(deckPrompt(topic, guidance, articles), false);
+      const { text } = await callGemini(deckPrompt(topic, guidance, research), false);
       const parsed = extractJson(text);
-      // Sources slide: only articles the model actually cited via refs.
+
+      // Map cited refs -> real sources; map imageRef -> a real fetched image.
       const cited = new Set();
       for (const sl of (parsed.slides || [])) {
         for (const n of (Array.isArray(sl.refs) ? sl.refs : [])) {
-          const h = articles[Number(n) - 1];
-          if (h) cited.add(h);
+          const c = cites[Number(n) - 1];
+          if (c) cited.add(c);
         }
         delete sl.refs;
+        if (sl.type === 'image') {
+          const im = imgs[Number(sl.imageRef) - 1];
+          if (im && im.url) {
+            sl.url = im.url;
+            sl.credit = im.source + (im.license ? ' \u00b7 ' + im.license : '');
+            if (im.url) cited.add({ title: (im.caption || 'Image') + ' \u2014 ' + im.source, url: im.url });
+          } else { sl._drop = true; }  // model referenced an image that does not exist
+          delete sl.imageRef;
+        }
       }
-      const sources = [...cited].map(h => ({ title: `${h.source}: ${h.title}`.slice(0, 120), url: h.url }));
+      const sources = [...cited].map(c => ({ title: String(c.title).slice(0, 120), url: c.url }));
       const deck = sanitizeDeck(parsed, topic, sources);
       const ref = await admin.database().ref('decks').push({
         ...deck,
@@ -955,6 +972,138 @@ What members get:
 - A member community: directory, messaging, and presentations built for every meeting
 Audience: ambitious undergrads who want practical finance/econ skills and a network, from freshmen to seniors. No experience required.
 Voice: confident, concrete, student-to-student. Name real things (tracks, voting, speakers) instead of vague benefits. Never use cliches like "join our community", "fun and exciting", or stacked exclamation marks. Never use em dashes; use commas or periods instead.`;
+
+// ══ Research pipeline: Wikipedia (keyless) + Brave (optional key) + RSS ══════
+// Feeds the free model real, sourced context and real licensed images. Every
+// source degrades gracefully: a failure just contributes nothing.
+
+function relevanceScore(text, topic) {
+  const terms = topic.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+  const t = String(text).toLowerCase();
+  let n = 0; for (const w of terms) if (t.includes(w)) n++;
+  return n;
+}
+
+// Top Wikipedia articles: intro text + a real original image each.
+async function wikiResearch(topic) {
+  const out = { chunks: [], images: [], sources: [] };
+  try {
+    const url = 'https://en.wikipedia.org/w/api.php?action=query&generator=search' +
+      '&gsrsearch=' + encodeURIComponent(topic) + '&gsrlimit=3' +
+      '&prop=extracts|pageimages|info&inprop=url&exintro=1&explaintext=1&exchars=900' +
+      '&piprop=original&format=json&origin=*';
+    const res = await fetch(url, { headers: { 'user-agent': 'AEC club site (ucsbaec.com)' } });
+    if (!res.ok) return out;
+    const data = await res.json();
+    const pages = (data.query && data.query.pages) ? Object.values(data.query.pages) : [];
+    pages.sort((a, b) => (a.index || 99) - (b.index || 99));
+    for (const pg of pages.slice(0, 3)) {
+      if (pg.extract) {
+        out.chunks.push({ source: 'Wikipedia: ' + pg.title, text: pg.extract.slice(0, 900), url: pg.fullurl || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(pg.title)) });
+        out.sources.push({ title: 'Wikipedia: ' + pg.title, url: pg.fullurl || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(pg.title)) });
+      }
+      if (pg.original && pg.original.source && /\.(jpg|jpeg|png|svg)$/i.test(pg.original.source)) {
+        out.images.push({ url: pg.original.source, caption: pg.title, source: 'Wikipedia' });
+      }
+    }
+  } catch (e) { console.warn('wiki research failed:', e.message); }
+  return out;
+}
+
+// Brave web search (only if a key is configured).
+async function braveSearch(topic) {
+  const out = { chunks: [], sources: [] };
+  let key = null;
+  try { key = BRAVE_API_KEY.value() || process.env.BRAVE_API_KEY || null; } catch (e) { key = process.env.BRAVE_API_KEY || null; }
+  if (!key) return out;   // no key configured -> research runs free on Wikipedia + Commons + RSS
+  try {
+    const res = await fetch('https://api.search.brave.com/res/v1/web/search?q=' +
+      encodeURIComponent(topic) + '&count=6&freshness=py', {
+      headers: { 'Accept': 'application/json', 'X-Subscription-Token': key }
+    });
+    if (!res.ok) return out;
+    const data = await res.json();
+    const results = (data.web && data.web.results) || [];
+    for (const r of results.slice(0, 6)) {
+      const txt = [r.title, r.description].filter(Boolean).join(' , ');
+      if (txt) {
+        out.chunks.push({ source: r.profile && r.profile.name ? r.profile.name : 'Web', text: txt.slice(0, 500), url: r.url });
+        if (r.url) out.sources.push({ title: (r.title || r.url).slice(0, 100), url: r.url });
+      }
+    }
+  } catch (e) { console.warn('brave search failed:', e.message); }
+  return out;
+}
+
+// Wikimedia Commons: a huge library of freely-licensed images. Returns real,
+// attributable pictures relevant to the topic (photos, diagrams, examples).
+async function commonsImages(topic) {
+  const out = [];
+  try {
+    const url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search' +
+      '&gsrsearch=' + encodeURIComponent(topic + ' filetype:bitmap') +
+      '&gsrnamespace=6&gsrlimit=8&prop=imageinfo&iiprop=url|extmetadata|size' +
+      '&iiurlwidth=1200&format=json&origin=*';
+    const res = await fetch(url, { headers: { 'user-agent': 'AEC club site (ucsbaec.com)' } });
+    if (!res.ok) return out;
+    const data = await res.json();
+    const pages = (data.query && data.query.pages) ? Object.values(data.query.pages) : [];
+    for (const pg of pages) {
+      const info = pg.imageinfo && pg.imageinfo[0];
+      if (!info) continue;
+      const src = info.thumburl || info.url;
+      if (!src || !/\.(jpg|jpeg|png|svg)$/i.test(src)) continue;
+      if ((info.width && info.width < 300) || (info.height && info.height < 200)) continue;
+      const meta = info.extmetadata || {};
+      const artist = meta.Artist && meta.Artist.value ? String(meta.Artist.value).replace(/<[^>]+>/g, '').trim().slice(0, 60) : '';
+      const license = meta.LicenseShortName && meta.LicenseShortName.value ? meta.LicenseShortName.value : 'Wikimedia Commons';
+      out.push({
+        url: src,
+        caption: (pg.title || '').replace(/^File:/, '').replace(/\.[a-z]+$/i, '').replace(/_/g, ' ').slice(0, 80),
+        source: 'Wikimedia Commons' + (artist ? ' / ' + artist : ''),
+        license
+      });
+    }
+  } catch (e) { console.warn('commons images failed:', e.message); }
+  return out;
+}
+
+// Combine sources, rank by relevance, trim to a budget. Returns a context
+// string, an indexed image list, and a source list.
+async function buildResearch(topic, opts) {
+  opts = opts || {};
+  const [wiki, brave] = await Promise.all([wikiResearch(topic), braveSearch(topic)]);
+  const news = opts.news ? (await fetchHeadlines(8)).map(h => ({
+    source: h.source, text: (h.title + (h.desc ? ' , ' + h.desc : '')).slice(0, 300), url: h.url,
+    _src: { title: h.source + ': ' + h.title, url: h.url }
+  })) : [];
+
+  let chunks = [...wiki.chunks, ...brave.chunks, ...news];
+  // rank by relevance, keep the strongest, cap total size
+  chunks = chunks.map(c => ({ ...c, _r: relevanceScore(c.text, topic) }))
+    .sort((a, b) => b._r - a._r);
+  const kept = []; let budget = 5000;
+  for (const c of chunks) {
+    if (budget <= 0) break;
+    kept.push(c); budget -= c.text.length;
+  }
+  const context = kept.map((c, i) => `[${i + 1}] (${c.source}) ${c.text}`).join('\n');
+  const cites = kept.map(c => ({ title: String(c.source).slice(0, 120), url: c.url })).filter(c => c.url);
+
+  let images = [...wiki.images];
+  const commons = await commonsImages(topic);
+  const seen = new Set(images.map(x => x.url));
+  for (const im of commons) { if (!seen.has(im.url)) { images.push(im); seen.add(im.url); } }
+  images = images.slice(0, 6);
+  const imageList = images.length
+    ? images.map((im, i) => `Image ${i + 1}: ${im.caption} — ${im.source}${im.license ? ' [' + im.license + ']' : ''}`).join('\n')
+    : '';
+
+  const sources = [...wiki.sources, ...brave.sources,
+    ...news.map(n => n._src)].filter(Boolean).slice(0, 10);
+
+  return { context, cites, imageList, images, sources, has: kept.length > 0 };
+}
 
 // ── Flyers ──────────────────────────────────────────────────────────────────
 // Gemini writes the copy; flyer.html renders it in club branding. All Gemini

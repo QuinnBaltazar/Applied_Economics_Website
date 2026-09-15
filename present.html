@@ -98,6 +98,13 @@
       h1::after, h2::after { width:clamp(90px,22%,220px); animation:none; }
     }
     @media (max-width:700px){ .cols { grid-template-columns:1fr; } }
+    .imgwrap { margin:2vh auto 0; max-width:82%; display:flex; justify-content:center;
+      animation:imgIn .7s cubic-bezier(.2,.7,.2,1) both; }
+    .imgwrap img { max-width:100%; max-height:52vh; object-fit:contain; border-radius:14px;
+      box-shadow:0 24px 70px rgba(0,0,0,.5); border:1px solid rgba(212,181,94,.25); background:#0d0f14; }
+    .slide .cap { margin-top:1.3vh; text-align:center; color:rgba(255,255,255,.82);
+      font-size:clamp(15px,1.7vw,20px); }
+    @keyframes imgIn { from{opacity:0; transform:scale(.97)} to{opacity:1; transform:none} }
   </style>
 </head>
 <body>
@@ -154,6 +161,7 @@
         }).join('')}</div>`;
       if (t === 'chart') return chartSlide(s);
       if (t === 'cycle') return cycleSlide(s);
+      if (t === 'image') return imageSlide(s);
       return `<h2>${esc(s.heading || '')}</h2>`;   // unknown type: degrade gracefully
     }
 
@@ -231,6 +239,23 @@
           ${dots}
         </svg>
         ${s.note ? `<p class="attr">${esc(s.note)}</p>` : ''}`;
+    }
+
+    // Real, free, licensed image fetched during research (Wikipedia / Wikimedia
+    // Commons). The server supplies the URL + credit; we only display it, and
+    // hide the frame if it fails to load so a slide never shows a broken image.
+    function imageSlide(s) {
+      const u = String(s.url || '');
+      const safe = /^https?:\/\//i.test(u) ? u : '';
+      if (!safe) return `<h2>${esc(s.heading || '')}</h2>`;
+      return `
+        <h2>${esc(s.heading || '')}</h2>
+        <div class="imgwrap">
+          <img src="${esc(safe)}" alt="${esc(s.caption || '')}"
+               onerror="var w=this.closest('.imgwrap'); if(w) w.style.display='none';"/>
+        </div>
+        ${s.caption ? `<p class="cap">${esc(s.caption)}</p>` : ''}
+        ${s.credit ? `<p class="attr">${esc(s.credit)}</p>` : ''}`;
     }
 
     function countUp(el) {
