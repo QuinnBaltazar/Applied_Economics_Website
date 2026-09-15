@@ -246,3 +246,76 @@ body.is-admin  [data-auth="admin"]  { display: inline-flex !important; }
   }
   .reveal { opacity: 1; transform: none; }
 }
+
+
+/* ══ Polish pass: menu panel, a11y, micro-interactions, skeletons ══════════
+   nav#main-nav uses an id so these beat the older per-page .main-nav rules
+   that were overriding the shared panel (transparent floating menu bug).
+   640px matches where every page shows the hamburger. */
+@media (max-width: 640px) {
+  nav#main-nav {
+    position: absolute; top: 64px; left: 0; right: 0;
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 14px 16px 18px;
+    background: rgba(9, 15, 26, 0.98);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(196, 164, 72, 0.25);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+    opacity: 0; transform: translateY(-8px); pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  nav#main-nav.open { opacity: 1; transform: none; pointer-events: auto; }
+  nav#main-nav a { padding: 13px 16px; border-radius: 10px; font-size: 1.02rem; }
+}
+body.nav-open { overflow: hidden; }
+
+/* Keyboard users get a visible ring on every page, not just track. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px;
+}
+
+/* Press feedback + gentle card lift. Transform/opacity only: stays 60fps. */
+button, .auth-btn { transition: transform .12s ease, background .2s, border-color .2s, color .2s; }
+button:not(:disabled):active, .auth-btn:active { transform: scale(0.975); }
+.topic-row, .member-row, .track-card {
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.topic-row:hover, .member-row:hover, .track-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(196, 164, 72, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* Skeleton loaders: gold shimmer placeholders while Firebase loads. */
+.skel {
+  position: relative; overflow: hidden;
+  background: rgba(255, 255, 255, 0.05); border-radius: 8px; min-height: 13px;
+}
+.skel::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(196, 164, 72, 0.10), transparent);
+  animation: skelSweep 1.3s infinite;
+}
+@keyframes skelSweep { to { transform: translateX(100%); } }
+.skel-row {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px;
+}
+
+.empty-state {
+  color: rgba(255, 255, 255, 0.5); font-size: 0.9rem; padding: 22px 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.14); border-radius: 12px; text-align: center;
+}
+
+@keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+body { animation: pageIn .22s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; }

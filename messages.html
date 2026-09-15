@@ -152,7 +152,7 @@
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .suggest-name { font-size: 0.9rem; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .suggest-subject { font-size: 0.74rem; color: rgba(255,255,255,0.38); flex-shrink: 0; }
+    .suggest-subject { font-size: 0.74rem; color:rgba(255,255,255,0.5); flex-shrink: 0; }
     .conv-list { flex: 1; overflow-y: auto; }
     .conv-list::-webkit-scrollbar { width: 4px; }
     .conv-list::-webkit-scrollbar-track { background: transparent; }
@@ -173,9 +173,9 @@
     .conv-info { flex: 1; min-width: 0; }
     .conv-name-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
     .conv-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .conv-time { font-size: 0.7rem; color: rgba(255,255,255,0.32); flex-shrink: 0; }
+    .conv-time { font-size: 0.7rem; color:rgba(255,255,255,0.48); flex-shrink: 0; }
     .conv-preview-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
-    .conv-preview { font-size: 0.79rem; color: rgba(255,255,255,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-preview { font-size: 0.79rem; color:rgba(255,255,255,0.52); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .conv-name.unread { font-weight: 800; color: #fff; }
     .conv-preview.unread { color: rgba(255,255,255,0.75); }
     .conv-preview-you { color: rgba(196,164,72,0.7); font-style: normal; }
@@ -184,7 +184,7 @@
       font-size: 0.66rem; font-weight: 800;
       border-radius: 999px; padding: 2px 7px; flex-shrink: 0;
     }
-    .conv-empty { padding: 36px 20px; text-align: center; color: rgba(255,255,255,0.32); font-size: 0.87rem; line-height: 1.7; }
+    .conv-empty { padding: 36px 20px; text-align: center; color:rgba(255,255,255,0.48); font-size: 0.87rem; line-height: 1.7; }
 
     /* ── THREAD PANEL ── */
     .thread-panel {
@@ -295,11 +295,11 @@
     <nav class="main-nav" id="main-nav">
       <a href="index.html">Home</a>
       <a href="vote.html">Vote</a>
-      <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
       <a href="messages.html" id="messages-nav-link" data-auth="member">Messages <span class="nav-unread" id="nav-unread-badge" style="display:none"></span></a>
       <a href="board.html">Board</a>
+      <a href="signin.html">Sign In</a>
       <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>
@@ -330,7 +330,10 @@
               <div class="member-suggestions" id="member-suggestions"></div>
             </div>
             <div class="conv-list" id="conv-list">
-              <div class="conv-empty">Loading&hellip;</div>
+              <div aria-hidden="true" style="padding:6px">
+                <div class="skel-row"><div class="skel" style="width:45%;height:14px"></div><div class="skel" style="width:80%"></div></div>
+                <div class="skel-row"><div class="skel" style="width:45%;height:14px"></div><div class="skel" style="width:80%"></div></div>
+              </div>
             </div>
           </div>
 

@@ -103,3 +103,24 @@
     setupScrollShadow();
   });
 })();
+
+  // --- 6. Menu close behaviors: Escape, outside tap, scroll lock -----------
+  (function () {
+    var nav = document.getElementById('main-nav');
+    var btn = document.getElementById('nav-toggle');
+    if (!nav || !btn) return;
+    function close() {
+      nav.classList.remove('open'); btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && nav.classList.contains('open')) { close(); btn.focus(); }
+    });
+    document.addEventListener('click', function (e) {
+      if (nav.classList.contains('open') &&
+          !e.target.closest('#main-nav') && !e.target.closest('#nav-toggle')) close();
+    });
+    new MutationObserver(function () {
+      document.body.classList.toggle('nav-open', nav.classList.contains('open'));
+    }).observe(nav, { attributes: true, attributeFilter: ['class'] });
+  })();

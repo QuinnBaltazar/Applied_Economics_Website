@@ -88,7 +88,7 @@
 
     .track-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
     .track-badge { display: inline-flex; padding: 5px 13px; border-radius: 999px; background: rgba(196,164,72,0.1); color: var(--gold); font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-    .track-module-count { font-size: .75rem; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: .04em; }
+    .track-module-count { font-size: .75rem; font-weight: 600; color:rgba(255,255,255,0.48); letter-spacing: .04em; }
 
     .track-name { font-size: 1.22rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
     .track-tagline { color: rgba(255,255,255,0.5); font-size: .875rem; margin-bottom: 18px; line-height: 1.5; }
@@ -99,7 +99,7 @@
 
     .track-progress-wrap { padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
     .track-progress-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .track-progress-text { font-size: .78rem; color: rgba(255,255,255,0.4); }
+    .track-progress-text { font-size: .78rem; color:rgba(255,255,255,0.52); }
     .track-credits-text { font-size: .78rem; color: var(--gold); font-weight: 600; }
     .progress-bar-track { height: 4px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
     .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius: 4px; transition: width .7s cubic-bezier(.4,0,.2,1); width: 0%; }
@@ -130,12 +130,12 @@
     .progress-row-name { font-size: .875rem; font-weight: 600; color: rgba(255,255,255,0.8); width: 170px; flex-shrink: 0; }
     .progress-row-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.07); border-radius: 6px; overflow: hidden; }
     .progress-row-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius: 6px; transition: width .9s cubic-bezier(.4,0,.2,1); }
-    .progress-row-frac { font-size: .78rem; color: rgba(255,255,255,0.38); width: 36px; text-align: right; flex-shrink: 0; }
+    .progress-row-frac { font-size: .78rem; color:rgba(255,255,255,0.5); width: 36px; text-align: right; flex-shrink: 0; }
 
     .credits-summary { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
     .credits-total { font-size: 1rem; color: rgba(255,255,255,0.6); }
     .credits-total strong { color: var(--gold); font-size: 1.6rem; font-weight: 800; margin-right: 6px; vertical-align: middle; }
-    .credits-note { font-size: .82rem; color: rgba(255,255,255,0.35); }
+    .credits-note { font-size: .82rem; color:rgba(255,255,255,0.48); }
 
     /* ── CTA ── */
     .cta-section { margin: 36px 24px 52px; padding: 36px 40px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -156,14 +156,14 @@
     .lb-desc { font-size: .88rem; color: rgba(255,255,255,0.45); margin-bottom: 26px; }
     .lb-list { display: flex; flex-direction: column; gap: 10px; }
     .lb-row { display: flex; align-items: center; gap: 14px; }
-    .lb-rank { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; flex-shrink: 0; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35); }
+    .lb-rank { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; flex-shrink: 0; background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.48); }
     .lb-rank.gold { background: rgba(196,164,72,0.18); color: var(--gold); }
     .lb-rank.silver { background: rgba(200,200,220,0.13); color: rgba(200,200,220,0.8); }
     .lb-rank.bronze { background: rgba(180,120,60,0.15); color: rgba(200,150,80,0.9); }
     .lb-name { font-size: .88rem; font-weight: 600; color: rgba(255,255,255,0.82); width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .lb-bar-wrap { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 5px; overflow: hidden; }
     .lb-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius: 5px; transition: width .8s cubic-bezier(.4,0,.2,1); }
-    .lb-credits { font-size: .78rem; color: rgba(255,255,255,0.38); width: 72px; text-align: right; flex-shrink: 0; white-space: nowrap; }
+    .lb-credits { font-size: .78rem; color:rgba(255,255,255,0.5); width: 72px; text-align: right; flex-shrink: 0; white-space: nowrap; }
 
     /* ── REVEAL ── */
     .reveal { opacity: 0; transform: translateY(22px); transition: opacity .75s ease, transform .75s ease; }
@@ -214,11 +214,11 @@
     <nav class="main-nav" id="main-nav">
       <a href="index.html">Home</a>
       <a href="vote.html">Vote</a>
-      <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
       <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
+      <a href="signin.html">Sign In</a>
       <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>

@@ -99,7 +99,7 @@
     .member-name { font-size: 1.2rem; font-weight: 700; color: #fff; }
     .member-subject { font-size: 0.85rem; color: rgba(255,255,255,0.55); font-weight: 500; }
     .member-learn { font-size: 0.92rem; color: rgba(255,255,255,0.8); line-height: 1.65; margin-top: 6px; flex: 1; }
-    .member-meta { font-size: 0.78rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
+    .member-meta { font-size: 0.78rem; color:rgba(255,255,255,0.5); margin-top: 2px; }
     .edit-member-btn { margin-top: 14px; align-self: flex-start; background: transparent; border: 1px solid rgba(196,164,72,0.3); color: var(--accent); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
     .edit-member-btn:hover { background: rgba(196,164,72,0.08); border-color: rgba(196,164,72,0.6); }
     .msg-member-btn { margin-top: 14px; align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 1px solid rgba(100,180,255,0.28); color: rgba(100,180,255,0.85); border-radius: 999px; padding: 6px 16px; font-size: 0.8rem; font-weight: 600; font-family: inherit; text-decoration: none; transition: background 0.2s, border-color 0.2s; cursor: pointer; }
@@ -108,7 +108,7 @@
     /* ── EDIT FORM ── */
     .member-edit-form { display: flex; flex-direction: column; gap: 11px; }
     .member-field-group { display: flex; flex-direction: column; gap: 4px; }
-    .member-field-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.42); }
+    .member-field-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color:rgba(255,255,255,0.52); }
     .member-input, .member-textarea { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; color: #fff; padding: 9px 12px; font-size: 0.92rem; font-family: inherit; outline: none; resize: none; transition: border-color 0.2s; width: 100%; }
     .member-input:focus, .member-textarea:focus { border-color: var(--accent); }
     .member-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
@@ -121,29 +121,29 @@
     .messages-section h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .messages-card { background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 24px 28px; box-shadow: 0 18px 50px rgba(0,0,0,0.14); }
     .message-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
-    .message-feed:empty::after { content: 'No messages yet — say hello!'; color: rgba(255,255,255,0.35); font-size: 0.9rem; padding: 16px 0; display: block; text-align: center; }
+    .message-feed:empty::after { content: 'No messages yet — say hello!'; color:rgba(255,255,255,0.48); font-size: 0.9rem; padding: 16px 0; display: block; text-align: center; }
     .message-item { display: flex; gap: 12px; padding: 13px 15px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
     .message-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(196,164,72,0.18); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
     .message-body { flex: 1; min-width: 0; }
     .message-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
     .message-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
-    .message-time { font-size: 0.73rem; color: rgba(255,255,255,0.32); }
+    .message-time { font-size: 0.73rem; color:rgba(255,255,255,0.48); }
     .message-text { font-size: 0.92rem; color: rgba(255,255,255,0.82); line-height: 1.6; word-break: break-word; }
     .message-compose { display: flex; gap: 10px; align-items: flex-end; margin-top: 4px; }
     .message-input { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; color: #fff; padding: 11px 15px; font: inherit; font-size: 0.95rem; resize: none; outline: none; transition: border-color 0.2s; min-height: 46px; }
-    .message-input::placeholder { color: rgba(255,255,255,0.35); }
+    .message-input::placeholder { color:rgba(255,255,255,0.48); }
     .message-input:focus { border-color: var(--accent); }
     .message-send-btn { padding: 11px 22px; border-radius: 999px; border: none; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.92rem; font-family: inherit; cursor: pointer; transition: transform 0.2s, filter 0.2s; white-space: nowrap; flex-shrink: 0; }
     .message-send-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
     .message-send-btn:disabled { opacity: 0.6; transform: none; }
     .msg-delete-btn { background: transparent; border: none; color: rgba(255,80,80,0.4); cursor: pointer; font-size: 0.78rem; padding: 4px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; flex-shrink: 0; margin-top: 2px; line-height: 1; }
     .msg-delete-btn:hover { color: rgba(255,80,80,0.9); background: rgba(255,80,80,0.08); }
-    .message-status { font-size: 0.83rem; color: rgba(255,255,255,0.4); margin-top: 8px; min-height: 1.1em; }
+    .message-status { font-size: 0.83rem; color:rgba(255,255,255,0.52); margin-top: 8px; min-height: 1.1em; }
     @media (max-width: 760px) { .messages-section { margin: 0 16px 40px; } .messages-card { padding: 18px 16px; } }
 
     /* ── PASSWORD CHANGE ── */
     .change-pwd-btn { margin-top: 6px; align-self: flex-start; background: transparent; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.5); border-radius: 999px; padding: 5px 14px; font-size: 0.76rem; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
-    .change-pwd-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.85); }
+    .change-pwd-btn:hover { background: rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.48); color: rgba(255,255,255,0.85); }
     .pwd-form { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); }
     .pwd-form-actions { display: flex; gap: 8px; }
     .pwd-save-btn { padding: 7px 16px; border-radius: 999px; border: none; background: var(--accent); color: #031a40; font-weight: 700; font-size: 0.85rem; font-family: inherit; cursor: pointer; }
@@ -153,7 +153,7 @@
     /* ── SEARCH BAR ── */
     .search-wrap { margin: 0 24px 0; }
     .member-search { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; color: #fff; padding: 12px 18px; font: inherit; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
-    .member-search::placeholder { color: rgba(255,255,255,0.32); }
+    .member-search::placeholder { color:rgba(255,255,255,0.48); }
     .member-search:focus { border-color: var(--accent); }
     @media (max-width: 760px) { .search-wrap { margin: 0 16px; } }
 
@@ -167,7 +167,7 @@
     }
     .page { position: relative; z-index: 1; }
 
-    .state-msg { text-align: center; padding: 60px 24px; color: rgba(255,255,255,0.4); font-size: 0.97rem; grid-column: 1/-1; }
+    .state-msg { text-align: center; padding: 60px 24px; color:rgba(255,255,255,0.52); font-size: 0.97rem; grid-column: 1/-1; }
     .footer {
       margin: 0 24px 44px; text-align: center;
       color: rgba(255,255,255,0.25); font-size: .88rem;
@@ -232,11 +232,11 @@
     <nav class="main-nav" id="main-nav">
       <a href="index.html">Home</a>
       <a href="vote.html">Vote</a>
-      <a href="signin.html">Sign In</a>
       <a href="topics.html">Tracks</a>
       <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
       <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
       <a href="board.html">Board</a>
+      <a href="signin.html">Sign In</a>
       <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
     </nav>
   </header>
@@ -275,7 +275,12 @@
       </div>
 
       <div class="members-grid" id="members-grid">
-        <div class="state-msg">Loading members&hellip;</div>
+        <div aria-hidden="true">
+          <div class="skel-row"><div class="skel" style="width:38%;height:16px"></div><div class="skel" style="width:72%"></div><div class="skel" style="width:55%"></div></div>
+          <div class="skel-row"><div class="skel" style="width:38%;height:16px"></div><div class="skel" style="width:72%"></div><div class="skel" style="width:55%"></div></div>
+          <div class="skel-row"><div class="skel" style="width:38%;height:16px"></div><div class="skel" style="width:72%"></div><div class="skel" style="width:55%"></div></div>
+        </div>
+        <span class="sr-only" role="status">Loading members</span>
       </div>
 
       <!-- Club messages -->
@@ -318,7 +323,7 @@
       const feed = document.getElementById('message-feed');
       feed.innerHTML = '';
       if (!messages.length) {
-        feed.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:0.9rem;text-align:center;padding:20px 0;">No messages yet — say hello!</div>';
+        feed.innerHTML = '<div style="color:rgba(255,255,255,0.48);font-size:0.9rem;text-align:center;padding:20px 0;">No messages yet — say hello!</div>';
         return;
       }
       messages.forEach(msg => {
