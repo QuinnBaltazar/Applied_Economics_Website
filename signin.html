@@ -537,6 +537,19 @@
               <span class="profile-label">Grad Year</span>
               <span id="p-gradyear" class="profile-value"></span>
             </div>
+            <div class="profile-row" style="align-items:flex-start">
+              <span class="profile-label">Email reminders</span>
+              <span class="profile-value" style="text-align:right">
+                <label style="display:inline-flex;align-items:center;gap:9px;cursor:pointer;justify-content:flex-end">
+                  <input type="checkbox" id="p-reminders" style="width:16px;height:16px;cursor:pointer;accent-color:#C4A448" />
+                  <span id="p-reminders-label" style="font-size:0.86rem"></span>
+                </label>
+                <span style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:5px;max-width:230px">
+                  Emails you if a message goes unread for an hour.
+                </span>
+                <span id="p-reminders-msg" style="display:block;font-size:0.72rem;margin-top:4px"></span>
+              </span>
+            </div>
           </div>
           <div class="welcome-actions">
             <a href="members.html" class="auth-btn" style="text-decoration:none;">View Members</a>
@@ -912,6 +925,56 @@
       } else {
         if (gradRow) gradRow.style.display = 'none';
       }
+
+      // Reminders are on unless explicitly turned off, matching the
+      // Cloud Function, which only treats a literal false as opted out.
+      const remindersEl = document.getElementById('p-reminders');
+      if (remindersEl) {
+        const on = member.emailReminders !== false;
+        remindersEl.checked = on;
+        setRemindersLabel(on);
+        document.getElementById('p-reminders-msg').textContent = '';
+      }
+    }
+
+    function setRemindersLabel(on) {
+      const el = document.getElementById('p-reminders-label');
+      if (el) {
+        el.textContent = on ? 'On' : 'Off';
+        el.style.color = on ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)';
+      }
+    }
+
+    // Persist the toggle. Reverts the checkbox if the write fails, so the UI
+    // never claims a preference that was not actually saved.
+    async function saveRemindersPref(on) {
+      const msg = document.getElementById('p-reminders-msg');
+      const box = document.getElementById('p-reminders');
+      const session = getSession();
+      if (!session) return;
+
+      box.disabled = true;
+      msg.textContent = 'Saving…';
+      msg.style.color = 'rgba(255,255,255,0.45)';
+
+      try {
+        const fresh = await getFirebaseMember(session.email);
+        if (!fresh) throw new Error('member record not found');
+        fresh.emailReminders = on;
+        await saveFirebaseMember(fresh);
+        setSession(fresh);
+        setRemindersLabel(on);
+        msg.textContent = on ? 'Reminders on.' : 'Reminders off.';
+        msg.style.color = 'rgba(128,220,150,0.9)';
+        setTimeout(() => { msg.textContent = ''; }, 2500);
+      } catch (err) {
+        box.checked = !on;
+        setRemindersLabel(!on);
+        msg.textContent = 'Could not save — try again.';
+        msg.style.color = 'rgba(255,120,120,0.9)';
+      } finally {
+        box.disabled = false;
+      }
     }
 
     // ── Init ──────────────────────────────────────────────────
@@ -1271,6 +1334,11 @@
     });
 
     // Sign out
+    (function () {
+      const box = document.getElementById('p-reminders');
+      if (box) box.addEventListener('change', function () { saveRemindersPref(this.checked); });
+    })();
+
     document.getElementById('signout-btn').addEventListener('click', function() {
       clearSession();
       const ml = document.getElementById('members-nav-link');
