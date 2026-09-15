@@ -839,7 +839,7 @@
         row.querySelector('.approve-topic-btn').addEventListener('click', async function() {
           const key = this.dataset.key;
           // Move to custom-topics
-          await fetch(`${DB_URL}/custom-topics.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:t.name, desc:t.desc||'', votes:0, createdBy:t.createdBy||'anonymous' }) });
+          await fetch(`${DB_URL}/custom-topics.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:t.name, desc:t.desc||'', votes:0, createdBy: t.ai ? '' : (t.createdBy||'anonymous') }) });
           await fbDelete(`pending-topics/${key}`);
           await refresh();
           setMsg(`"${t.name}" approved and added to the vote page.`);

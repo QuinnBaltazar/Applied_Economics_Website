@@ -935,7 +935,7 @@
           </div>
           ${isOwner ? `<button type="button" class="edit-btn" id="edit-btn-${t.key}">Edit</button>` : ''}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;gap:8px;">
-            <span class="topic-email-tag">${escapeHtml(t.createdBy || '')}</span>
+            <span class="topic-email-tag">${escapeHtml(t.createdBy === 'AI scanner' ? '' : (t.createdBy || ''))}</span>
             <span class="vote-count">${fmt(t.votes)}</span>
           </div>
         `;
