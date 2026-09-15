@@ -606,12 +606,36 @@
       'Current Market Bull and Bear Cases','Investment Banking'
     ];
 
-    // Password-reset notification emails are not wired up.
-    // The previous implementation used EmailJS with a template ID that was
-    // never created, so it always returned false and no email was ever sent.
-    // Removed rather than left as dead code. To restore it, add a Cloud
-    // Function alongside sendBroadcast that posts to Brevo.
-    async function sendPasswordResetEmail() { return false; }
+    // ── Cloud Function endpoints ──────────────────────────────
+    const FN_BASE = 'https://us-central1-applied-economics-club.cloudfunctions.net';
+
+    // The broadcast passphrase is held in memory for the tab only — never in
+    // localStorage, so closing the tab forgets it.
+    let _broadcastKey = null;
+    function getBroadcastKey(reason) {
+      if (_broadcastKey) return _broadcastKey;
+      const entered = window.prompt(reason || 'Enter the broadcast passphrase:');
+      if (entered) _broadcastKey = entered;
+      return _broadcastKey;
+    }
+
+    // Emails the member to say an admin cleared their password.
+    async function sendPasswordResetEmail(email, name) {
+      const key = getBroadcastKey('Passphrase required to email ' + name + ' about the reset:');
+      if (!key) return false;
+      try {
+        const r = await fetch(FN_BASE + '/sendPasswordResetNotice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+          body: JSON.stringify({ email })
+        });
+        if (r.status === 403) { _broadcastKey = null; return false; }
+        return r.ok;
+      } catch (e) {
+        console.error('reset notice failed:', e);
+        return false;
+      }
+    }
 
     window.addEventListener('scroll', function() {
       document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
@@ -860,7 +884,7 @@
             const updated = Object.assign({}, member, { password: null });
             await fbSet('members/' + eKey(member.email), updated);
             const emailSent = await sendPasswordResetEmail(member.email, member.name);
-            setMsg('Password cleared for ' + member.name + '.' + (emailSent ? ' Reset email sent.' : ' Tell them directly — no notification email is sent.'));
+            setMsg('Password cleared for ' + member.name + '.' + (emailSent ? ' Notification email sent.' : ' Could not send the notification — tell them directly.'));
           });
           actions.appendChild(resetPwdBtn);
 
@@ -1396,8 +1420,7 @@
     // The passphrase is verified server-side. admin.html's own admin check is
     // client-side only, so it cannot protect the endpoint on its own.
     (function initBroadcast() {
-      const BROADCAST_URL =
-        'https://us-central1-applied-economics-club.cloudfunctions.net/sendBroadcast';
+      const BROADCAST_URL = FN_BASE + '/sendBroadcast';
 
       const subjectEl = document.getElementById('bc-subject');
       const bodyEl    = document.getElementById('bc-body');
@@ -1457,7 +1480,7 @@
           });
           const data = await res.json().catch(() => ({}));
 
-          if (res.status === 403)      say('Passphrase rejected.', 'error');
+          if (res.status === 403)      { _broadcastKey = null; say('Passphrase rejected.', 'error'); }
           else if (res.status === 429) say(data.error || 'Sent too recently — wait a minute.', 'error');
           else if (!res.ok)            say(data.error || `Failed (${res.status}).`, 'error');
           else {
@@ -1466,6 +1489,7 @@
             if (data.skipped) t += ` ${data.skipped} skipped (no usable address).`;
             say(t, data.failed ? 'error' : 'ok');
             if (!data.failed) { subjectEl.value = ''; bodyEl.value = ''; countEl.textContent = '0'; }
+            _broadcastKey = key;   // reuse for password-reset notices this tab
             keyEl.value = '';
           }
         } catch (err) {

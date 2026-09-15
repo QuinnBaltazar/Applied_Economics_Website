@@ -347,3 +347,78 @@ exports.sendBroadcast = onRequest(
     res.json({ sent, failed, skipped, errors });
   }
 );
+
+
+// ── Admin: tell a member their password was cleared ─────────────────────────
+// POST { email }  with header  x-broadcast-key: <passphrase>
+// Same passphrase as sendBroadcast; see the note on BROADCAST_KEY above.
+exports.sendPasswordResetNotice = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [BREVO_API_KEY, BROADCAST_KEY],
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com']
+  },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+
+    const provided = String(req.get('x-broadcast-key') || '');
+    const expected = BROADCAST_KEY.value();
+    if (!provided || provided.length !== expected.length || provided !== expected) {
+      console.warn('reset notice rejected: bad key from', req.ip);
+      res.status(403).json({ error: 'Not authorised' });
+      return;
+    }
+
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      res.status(400).json({ error: 'A member email is required' });
+      return;
+    }
+
+    const snap = await admin.database().ref('members/' + eKey(email)).get();
+    const member = snap.val();
+    if (!member) { res.status(404).json({ error: 'No member with that address' }); return; }
+
+    const personal = await decryptField(member.preferredEmail);
+    const recipients = recipientsFor(member, email, personal);
+    if (!recipients.length) { res.status(400).json({ error: 'No usable address on file' }); return; }
+
+    const name = esc(member.name || 'there');
+    try {
+      const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': BREVO_API_KEY.value(),
+          'content-type': 'application/json',
+          'accept': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+          to: recipients,
+          subject: 'Your AEC password has been reset',
+          htmlContent:
+            `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;` +
+              `max-width:480px;margin:0 auto;padding:24px;color:#111">` +
+              `<h2 style="margin:0 0 12px;font-size:19px">Your password was reset</h2>` +
+              `<p style="margin:0 0 18px;line-height:1.55;color:#444">` +
+                `Hi ${name}, an admin cleared the password on your Applied Economics Club ` +
+                `account. Sign in with your UCSB email to verify it and choose a new one.` +
+              `</p>` +
+              `<a href="${SITE_URL}/signin.html" style="display:inline-block;background:#C4A448;` +
+                `color:#111;padding:11px 20px;border-radius:7px;text-decoration:none;` +
+                `font-weight:600">Set a new password</a>` +
+              `<p style="margin:26px 0 0;font-size:12px;color:#888">` +
+                `If you did not expect this, reply to this email and let us know.` +
+              `</p>` +
+            `</div>`
+        })
+      });
+      if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
+      console.log(`reset notice sent to ${eKey(email)}`);
+      res.json({ sent: true, recipients: recipients.length });
+    } catch (err) {
+      console.error('reset notice failed:', err.message);
+      res.status(502).json({ error: 'Send failed', detail: err.message });
+    }
+  }
+);
