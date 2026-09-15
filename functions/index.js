@@ -629,13 +629,14 @@ async function runTopicScan() {
   const db = admin.database();
 
   // Everything already on or proposed for the board, so we never re-propose.
-  const [counts, custom, pending] = await Promise.all([
-    db.ref('vote-counts').get(), db.ref('custom-topics').get(), db.ref('pending-topics').get()
+  const [counts, custom, pending, decks] = await Promise.all([
+    db.ref('vote-counts').get(), db.ref('custom-topics').get(), db.ref('pending-topics').get(), db.ref('decks').get()
   ]);
   const existing = [
     ...Object.keys(counts.val() || {}),
     ...Object.values(custom.val() || {}).map(t => t && t.name),
-    ...Object.values(pending.val() || {}).map(t => t && t.name)
+    ...Object.values(pending.val() || {}).map(t => t && t.name),
+    ...Object.values(decks.val() || {}).map(d => d && d.title)   // just-presented sessions
   ].filter(Boolean);
 
   const headlines = await fetchHeadlines(10);
@@ -733,7 +734,7 @@ Every slide except "title" may also carry:
  "src": "short citation for facts on this slide, e.g. 'Kuttner (2001); FRED'"
  "notes": "speaker notes (see NOTES below)"`;
 
-function deckPrompt(topic, guidance, research) {
+function deckPrompt(topic, guidance, research, brief) {
   research = research || {};
   const ctx = research.context
     ? `\nRESEARCH (numbered sources — cite with "refs":[n] on any slide that uses a fact from one):\n${research.context}\n`
@@ -741,7 +742,7 @@ function deckPrompt(topic, guidance, research) {
   const imgs = research.imageList
     ? `\nAVAILABLE IMAGES (real, free, licensed — reference by number with "imageRef", never invent a URL):\n${research.imageList}\n`
     : '';
-  return `${CLUB_BRIEF}
+  return `${brief || CLUB_BRIEF}
 
 You are preparing a presentation for this club's weekly meeting (~30 undergrads, mixed experience).
 
@@ -852,7 +853,7 @@ exports.generateDeck = onRequest(
       const cites = research.cites || [];
       const imgs = research.images || [];
 
-      const { text } = await callGemini(deckPrompt(topic, guidance, research), false);
+      const { text } = await callGemini(deckPrompt(topic, guidance, research, await clubBrain()), false);
       const parsed = extractJson(text);
 
       // Map cited refs -> real sources; map imageRef -> a real fetched image.
@@ -981,19 +982,41 @@ exports.deleteDeck = onRequest(
 // Injected into every flyer and deck prompt so the model writes from real
 // identity instead of guessing. Edit freely - this is the one place the
 // club describes itself to the AI.
-async function clubBriefLive() {
-  // Approved placements make the strongest recruiting copy there is, so the
-  // model gets them as facts it may cite. Curated by the board, never invented.
+// ══ Club brain ══════════════════════════════════════════════════════════════
+// One shared context assembled from live club state and injected into every
+// AI surface (decks, flyers, tutor, topic scanner). Cached 5 minutes per
+// instance so it costs almost nothing.
+let _brainCache = { text: null, at: 0 };
+async function clubBrain() {
+  if (_brainCache.text && Date.now() - _brainCache.at < 5 * 60 * 1000) return _brainCache.text;
+  const parts = [CLUB_BRIEF];
+  const db = admin.database();
+  // Verified placements: strongest recruiting copy there is. Board-curated.
   try {
-    const raw = (await admin.database().ref('placements').get()).val() || {};
+    const raw = (await db.ref('placements').get()).val() || {};
     const firms = [...new Set(Object.values(raw)
       .filter(x => x && x.name && x.type !== 'org').map(x => x.name.trim()))];
-    if (firms.length) {
-      return CLUB_BRIEF + `\nVerified member placements you may cite: ${firms.join(', ')}.`;
-    }
-  } catch (e) { /* brief without placements */ }
-  return CLUB_BRIEF;
+    if (firms.length) parts.push(`Verified member placements you may cite: ${firms.join(', ')}.`);
+  } catch (e) { /* skip */ }
+  // What members are voting on right now (top of the leaderboard).
+  try {
+    const counts = (await db.ref('vote-counts').get()).val() || {};
+    const top = Object.entries(counts).filter(([, v]) => Number(v) > 0)
+      .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k} (${v})`);
+    if (top.length) parts.push(`Topics members are voting on right now: ${top.join('; ')}.`);
+  } catch (e) { /* skip */ }
+  // What the club covered recently (deck titles), newest first.
+  try {
+    const decks = (await db.ref('decks').get()).val() || {};
+    const recent = Object.values(decks)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 4).map(d => d.title).filter(Boolean);
+    if (recent.length) parts.push(`Recent session decks (do not repeat these topics): ${recent.join('; ')}.`);
+  } catch (e) { /* skip */ }
+  _brainCache = { text: parts.join('\n'), at: Date.now() };
+  return _brainCache.text;
 }
+const clubBriefLive = clubBrain;   // existing call sites keep working
 
 const CLUB_BRIEF = `ABOUT THE CLUB (use this to inform everything you write):
 UCSB Applied Economics Club (ucsbaec.com). Undergraduate club at UC Santa Barbara, open to all majors.
@@ -1541,7 +1564,9 @@ exports.tutorChat = onRequest(
 
     const convo = history.map(h => `${h.role === 'tutor' ? 'TUTOR' : 'STUDENT'}: ${h.text}`).join('\n');
     const prompt =
-`You are the study tutor for the UCSB Applied Economics Club's career-track modules. A member is working through${track ? ` the ${track} track` : ' a module'}.
+`${await clubBrain()}
+
+You are the study tutor for this club's career-track modules. A member is working through${track ? ` the ${track} track` : ' a module'}. If they ask about the club itself (events, voting, tracks, placements), answer from the club context above.
 
 CURRENT LESSON CONTENT (their screen right now):
 ${lesson || '(not provided - answer generally but say you cannot see their lesson)'}
