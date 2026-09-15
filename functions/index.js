@@ -878,3 +878,125 @@ exports.deleteDeck = onRequest(
     res.json({ deleted: id });
   }
 );
+
+// ── Flyers ──────────────────────────────────────────────────────────────────
+// Gemini writes the copy; flyer.html renders it in club branding. All Gemini
+// image models are 0/0 on the free tier, so the design is template-driven -
+// which is also why it stays on-brand. Facts (dates, rooms, links) come from
+// the admin and must be used verbatim; the model only writes around them.
+exports.generateFlyer = onRequest(
+  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+
+    const purpose = String((req.body && req.body.purpose) || 'Recruiting').trim().slice(0, 60);
+    const details = String((req.body && req.body.details) || '').trim().slice(0, 1200);
+    const template = ['bold', 'story'].includes(req.body && req.body.template) ? req.body.template : 'bold';
+    if (!details) { res.status(400).json({ error: 'details are required - when/where/what should the flyer say?' }); return; }
+    if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
+
+    const prompt =
+`Write copy for a ${purpose} flyer for the UCSB Applied Economics Club (undergrad econ/finance club: weekly topic votes, industry speakers, career tracks in IB/trading/equity research/VC/consulting, member community).
+
+Facts from the organiser - use every date, time, room and link EXACTLY as written, and invent no others:
+${details}
+
+Reply with ONLY JSON:
+{
+ "headline": "max 6 words, punchy, no exclamation spam",
+ "subhead": "one line, max 12 words",
+ "hook": "one sentence that makes a student stop walking, max 22 words",
+ "bullets": ["3-4 concrete reasons to come, each max 8 words"],
+ "cta": "action line with the key when/where from the facts, max 14 words",
+ "footer": "one short line, e.g. all majors welcome"
+}`;
+
+    try {
+      const { text } = await callGemini(prompt, false);
+      const c = extractJson(text);
+      if (!c || !c.headline) throw new Error('no usable copy returned');
+      const flyer = {
+        purpose,
+        template,
+        headline: String(c.headline).slice(0, 60),
+        subhead: String(c.subhead || '').slice(0, 90),
+        hook: String(c.hook || '').slice(0, 180),
+        bullets: (Array.isArray(c.bullets) ? c.bullets : []).slice(0, 4).map(b => String(b).slice(0, 60)),
+        cta: String(c.cta || '').slice(0, 110),
+        footer: String(c.footer || 'ucsbaec.com').slice(0, 80),
+        details,
+        version: 1, createdAt: Date.now(), updatedAt: Date.now()
+      };
+      const ref = await admin.database().ref('flyers').push(flyer);
+      console.log(`flyer generated: ${ref.key} "${flyer.headline}"`);
+      res.json({ id: ref.key, headline: flyer.headline });
+    } catch (e) {
+      console.error('flyer generation failed:', e.message);
+      res.status(502).json({ error: friendlyAiError(e) });
+    }
+  }
+);
+
+exports.refineFlyer = onRequest(
+  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+    const id = String((req.body && req.body.id) || '').trim();
+    const instruction = String((req.body && req.body.instruction) || '').trim().slice(0, 600);
+    if (!id || !instruction) { res.status(400).json({ error: 'id and instruction are required' }); return; }
+
+    const ref = admin.database().ref('flyers/' + id);
+    const flyer = (await ref.get()).val();
+    if (!flyer) { res.status(404).json({ error: 'No flyer with that id' }); return; }
+    if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
+
+    const prompt =
+`Current flyer copy for the UCSB Applied Economics Club (JSON):
+${JSON.stringify({ headline: flyer.headline, subhead: flyer.subhead, hook: flyer.hook, bullets: flyer.bullets || [], cta: flyer.cta, footer: flyer.footer })}
+
+Organiser facts (dates/times/rooms/links must be used exactly, never invented):
+${flyer.details || '(none)'}
+
+Revise per this instruction, changing only what it asks: "${instruction}"
+Keep the same JSON shape and the same length limits.
+Reply with ONLY the full revised JSON.`;
+
+    try {
+      const { text } = await callGemini(prompt, false);
+      const c = extractJson(text);
+      if (!c || !c.headline) throw new Error('no usable copy returned');
+      await ref.update({
+        headline: String(c.headline).slice(0, 60),
+        subhead: String(c.subhead || '').slice(0, 90),
+        hook: String(c.hook || '').slice(0, 180),
+        bullets: (Array.isArray(c.bullets) ? c.bullets : []).slice(0, 4).map(b => String(b).slice(0, 60)),
+        cta: String(c.cta || '').slice(0, 110),
+        footer: String(c.footer || '').slice(0, 80),
+        version: (flyer.version || 1) + 1, updatedAt: Date.now(), lastInstruction: instruction
+      });
+      res.json({ id, version: (flyer.version || 1) + 1 });
+    } catch (e) {
+      console.error('flyer refine failed:', e.message);
+      res.status(502).json({ error: friendlyAiError(e) });
+    }
+  }
+);
+
+exports.deleteFlyer = onRequest(
+  { region: 'us-central1', secrets: [BROADCAST_KEY],
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+    const id = String((req.body && req.body.id) || '').trim();
+    if (!id) { res.status(400).json({ error: 'id is required' }); return; }
+    const ref = admin.database().ref('flyers/' + id);
+    if (!(await ref.get()).exists()) { res.status(404).json({ error: 'No flyer with that id' }); return; }
+    await ref.remove();
+    res.json({ deleted: id });
+  }
+);

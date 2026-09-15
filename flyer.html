@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Flyer — UCSB AEC</title>
+  <style>
+    :root {
+      --bg:#090F1A; --navy:#162438; --gold:#C4A448; --gold-lt:#D4B55E;
+      --gold-dim:rgba(196,164,72,0.12); --text:#fff; --muted:rgba(255,255,255,0.72);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#20293a; min-height:100vh; display:flex; align-items:center;
+      justify-content:center; padding:28px;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+      color:var(--text);
+    }
+    .toolbar {
+      position:fixed; top:14px; right:16px; display:flex; gap:10px; z-index:10;
+    }
+    .toolbar button, .toolbar a {
+      background:rgba(9,15,26,0.9); color:#fff; border:1px solid rgba(196,164,72,0.5);
+      border-radius:999px; padding:9px 18px; font:600 13px/1 inherit; cursor:pointer;
+      text-decoration:none;
+    }
+    .toolbar button:hover, .toolbar a:hover { background:var(--gold); color:#111; }
+
+    /* ── Poster: US Letter ── */
+    .flyer.bold {
+      width:816px; height:1056px;            /* 8.5x11in @ 96dpi */
+      background:
+        radial-gradient(900px 500px at 85% -10%, rgba(196,164,72,0.14), transparent 60%),
+        radial-gradient(700px 500px at -10% 110%, rgba(43,74,111,0.5), transparent 55%),
+        var(--bg);
+      border:1px solid rgba(255,255,255,0.08);
+      display:flex; flex-direction:column; padding:64px 60px;
+      position:relative; overflow:hidden;
+    }
+    .crest {
+      width:88px; height:88px; border-radius:50%;
+      border:2px solid var(--gold); display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:30px; letter-spacing:1px; color:var(--gold-lt);
+      background:rgba(9,15,26,0.6);
+    }
+    .club { margin-top:20px; color:var(--gold); font-weight:700; letter-spacing:.18em;
+            text-transform:uppercase; font-size:15px; }
+    .headline { margin-top:14px; font-size:64px; line-height:1.04; letter-spacing:-0.02em; font-weight:800; }
+    .subhead { margin-top:14px; font-size:23px; color:var(--muted); }
+    .hook { margin-top:30px; font-size:19px; line-height:1.5; color:rgba(255,255,255,0.85);
+            border-left:4px solid var(--gold); padding-left:18px; max-width:56ch; }
+    .bullets { margin-top:34px; list-style:none; display:flex; flex-direction:column; gap:15px; }
+    .bullets li { position:relative; padding-left:30px; font-size:20px; font-weight:600; }
+    .bullets li::before {
+      content:""; position:absolute; left:0; top:.5em; width:15px; height:4px;
+      background:var(--gold); border-radius:2px;
+    }
+    .spacer { flex:1; }
+    .cta {
+      background:var(--gold-dim); border:1px solid rgba(196,164,72,0.4);
+      border-radius:16px; padding:20px 24px; font-size:21px; font-weight:700; line-height:1.35;
+    }
+    .bottom { margin-top:22px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+    .footer-line { color:var(--muted); font-size:15px; }
+    .site { color:var(--gold-lt); font-weight:800; font-size:19px; letter-spacing:.03em; }
+    .qr { width:104px; height:104px; border-radius:12px; background:#fff; padding:7px; }
+
+    /* ── Story: 1080x1920, scaled to fit ── */
+    .flyer.story {
+      width:1080px; height:1920px; transform-origin:center;
+      background:
+        radial-gradient(1000px 700px at 90% -5%, rgba(196,164,72,0.16), transparent 60%),
+        radial-gradient(900px 700px at -10% 105%, rgba(43,74,111,0.55), transparent 55%),
+        var(--bg);
+      display:flex; flex-direction:column; padding:110px 88px; overflow:hidden;
+    }
+    .story .crest { width:130px; height:130px; font-size:44px; }
+    .story .club { font-size:24px; margin-top:30px; }
+    .story .headline { font-size:104px; margin-top:22px; }
+    .story .subhead { font-size:36px; margin-top:22px; }
+    .story .hook { font-size:32px; margin-top:44px; max-width:100%; }
+    .story .bullets { margin-top:54px; gap:26px; }
+    .story .bullets li { font-size:34px; padding-left:44px; }
+    .story .bullets li::before { width:22px; height:6px; top:.55em; }
+    .story .cta { font-size:36px; padding:34px 38px; border-radius:24px; }
+    .story .bottom { margin-top:40px; }
+    .story .footer-line { font-size:26px; }
+    .story .site { font-size:32px; }
+    .story .qr { width:170px; height:170px; border-radius:18px; }
+
+    @media print {
+      body { background:#fff; padding:0; }
+      .toolbar { display:none; }
+      .flyer.bold { border:0; }
+      @page { size:letter; margin:0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="btn-print">Print / Save PDF</button>
+    <a id="btn-other" href="#">Switch format</a>
+  </div>
+  <div id="stage"><div style="color:rgba(255,255,255,0.6)">Loading flyer…</div></div>
+  <script>
+    const DB = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+    const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+    function render(f, template) {
+      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=' +
+                    encodeURIComponent('https://www.ucsbaec.com');
+      return `
+      <div class="flyer ${template}" id="flyer">
+        <div class="crest">AE</div>
+        <div class="club">UCSB Applied Economics Club</div>
+        <h1 class="headline">${esc(f.headline)}</h1>
+        ${f.subhead ? `<div class="subhead">${esc(f.subhead)}</div>` : ''}
+        ${f.hook ? `<p class="hook">${esc(f.hook)}</p>` : ''}
+        <ul class="bullets">${(f.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join('')}</ul>
+        <div class="spacer"></div>
+        ${f.cta ? `<div class="cta">${esc(f.cta)}</div>` : ''}
+        <div class="bottom">
+          <div>
+            ${f.footer ? `<div class="footer-line">${esc(f.footer)}</div>` : ''}
+            <div class="site">ucsbaec.com</div>
+          </div>
+          <img class="qr" src="${qrUrl}" alt="QR code to ucsbaec.com"
+               onerror="this.style.display='none'" />
+        </div>
+      </div>`;
+    }
+
+    function fitStory() {
+      const el = document.getElementById('flyer');
+      if (!el || !el.classList.contains('story')) { if (el) el.style.transform = ''; return; }
+      const scale = Math.min((innerWidth - 56) / 1080, (innerHeight - 56) / 1920, 1);
+      el.style.transform = `scale(${scale})`;
+      el.style.margin = `${(1920 * scale - 1920) / 2}px ${(1080 * scale - 1080) / 2}px`;
+    }
+
+    async function boot() {
+      const qs = new URLSearchParams(location.search);
+      const id = qs.get('id');
+      const stage = document.getElementById('stage');
+      if (!id) { stage.innerHTML = '<div style="color:rgba(255,255,255,0.6)">No flyer id.</div>'; return; }
+      let f = null;
+      try { f = await (await fetch(`${DB}/flyers/${encodeURIComponent(id)}.json`)).json(); } catch (e) {}
+      if (!f || !f.headline) { stage.innerHTML = '<div style="color:rgba(255,255,255,0.6)">Flyer not found.</div>'; return; }
+
+      const template = ['bold','story'].includes(qs.get('template')) ? qs.get('template')
+                     : (f.template === 'story' ? 'story' : 'bold');
+      document.title = f.headline + ' — UCSB AEC flyer';
+      stage.innerHTML = render(f, template);
+
+      const other = template === 'bold' ? 'story' : 'bold';
+      const link = document.getElementById('btn-other');
+      link.textContent = other === 'story' ? 'Instagram story format' : 'Print poster format';
+      link.href = `flyer.html?id=${encodeURIComponent(id)}&template=${other}`;
+      document.getElementById('btn-print').addEventListener('click', () => print());
+      fitStory();
+      addEventListener('resize', fitStory);
+    }
+    boot();
+  </script>
+</body>
+</html>

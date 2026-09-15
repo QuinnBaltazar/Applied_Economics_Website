@@ -377,6 +377,7 @@
           <button class="admin-tab" data-target="panel-activity">Activity</button>
           <button class="admin-tab" data-target="panel-messages">Messages <span class="tab-badge" id="tab-badge-messages" style="display:none"></span></button>
           <button class="admin-tab" data-target="panel-decks">Decks</button>
+          <button class="admin-tab" data-target="panel-flyers">Flyers</button>
           <button class="admin-tab" data-target="panel-broadcast">Email All</button>
           <button class="admin-tab" data-target="panel-settings">Settings</button>
         </div>
@@ -480,6 +481,47 @@
             </div>
           </div>
           <iframe id="deck-preview-frame" title="Deck preview" style="flex:1;border:0;width:100%;background:#090F1A"></iframe>
+        </div>
+      </div>
+
+      <div class="admin-section" data-panel="panel-flyers">
+        <h2>Recruiting Flyers</h2>
+        <div class="section-body">
+          <p style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin:0 0 18px;line-height:1.5">
+            AI writes the copy from your details; the design stays on-brand automatically.
+            Poster prints to PDF at US Letter; story format is sized for Instagram.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:680px;margin-bottom:16px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <select id="flyer-purpose" style="flex:1;min-width:170px;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem">
+                <option>Recruiting</option><option>First meeting</option><option>Guest speaker</option>
+                <option>Info session</option><option>Event</option>
+              </select>
+              <select id="flyer-template" style="flex:1;min-width:170px;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem">
+                <option value="bold">Poster (print / PDF)</option>
+                <option value="story">Instagram story</option>
+              </select>
+            </div>
+            <textarea id="flyer-details" rows="3" maxlength="1200"
+              placeholder="The facts, exactly as they should appear - e.g. First meeting Thursday Oct 2, 6:00 PM, North Hall 1110. Free pizza. All majors."
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem;font-family:inherit;resize:vertical"></textarea>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button type="button" id="flyer-generate" class="reset-pwd-btn" style="font-size:0.88rem;padding:10px 20px;border-color:rgba(196,164,72,0.45);color:#D4B55E;">Generate flyer</button>
+              <span id="flyer-status" style="font-size:0.85rem;color:rgba(255,255,255,0.5);"></span>
+            </div>
+          </div>
+          <div id="flyer-list"><p class="empty-state">Loading flyers…</p></div>
+          <div id="flyer-refine" style="display:none;margin-top:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:18px;max-width:680px">
+            <div style="font-weight:700;margin-bottom:4px">Refine: <span id="flyer-refine-title"></span></div>
+            <textarea id="flyer-refine-instruction" rows="2" maxlength="600"
+              placeholder="e.g. Punchier headline, mention free pizza in the CTA, drop the last bullet…"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.9rem;font-family:inherit;resize:vertical"></textarea>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+              <button type="button" id="flyer-refine-send" class="reset-pwd-btn" style="font-size:0.86rem;padding:9px 18px;">Apply changes</button>
+              <button type="button" id="flyer-refine-cancel" class="reset-pwd-btn" style="font-size:0.86rem;padding:9px 18px;opacity:0.6;">Close</button>
+              <span id="flyer-refine-status" style="font-size:0.83rem;color:rgba(255,255,255,0.5);"></span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1522,13 +1564,16 @@
       if (!listEl) return;
       let refining = null;
 
-      function openDeckPreview(id, title) {
+      function openPreviewUrl(url, title) {
         const modal = document.getElementById('deck-preview-modal');
         document.getElementById('deck-preview-title').textContent = title;
-        document.getElementById('deck-preview-open').href = 'present.html?id=' + encodeURIComponent(id);
-        document.getElementById('deck-preview-frame').src = 'present.html?id=' + encodeURIComponent(id);
+        document.getElementById('deck-preview-open').href = url;
+        document.getElementById('deck-preview-frame').src = url;
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
+      }
+      function openDeckPreview(id, title) {
+        openPreviewUrl('present.html?id=' + encodeURIComponent(id), title);
       }
       function closeDeckPreview() {
         const modal = document.getElementById('deck-preview-modal');
@@ -1713,6 +1758,124 @@
         } catch (e) { st.textContent = 'Could not reach the refiner.'; }
         finally { btn.disabled = false; }
       });
+
+
+      // ── Flyers ────────────────────────────────────────────────────────────
+      const flyerList = document.getElementById('flyer-list');
+      let refiningFlyer = null;
+
+      async function loadFlyers() {
+        if (!flyerList) return;
+        const raw = await fbGet('flyers');
+        const flyers = raw ? Object.entries(raw).map(([k, v]) => ({ id: k, ...v }))
+                               .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)) : [];
+        if (!flyers.length) { flyerList.innerHTML = '<p class="empty-state">No flyers yet — generate one above.</p>'; return; }
+        flyerList.innerHTML = '';
+        flyers.forEach(f => {
+          const row = document.createElement('div');
+          row.className = 'topic-row';
+          const when = f.updatedAt ? new Date(f.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+          const url = 'flyer.html?id=' + encodeURIComponent(f.id);
+          row.innerHTML =
+            '<div class="topic-row-info">' +
+              '<div class="topic-row-name">' + escapeHtml(f.headline || '(untitled)') + '</div>' +
+              '<div class="topic-row-meta">' + escapeHtml(f.purpose || '') +
+                ' &nbsp;·&nbsp; ' + (f.template === 'story' ? 'Story' : 'Poster') +
+                ' &nbsp;·&nbsp; v' + (f.version || 1) + ' &nbsp;·&nbsp; ' + escapeHtml(when) + '</div>' +
+            '</div>' +
+            '<button class="reset-pwd-btn flyer-preview-btn">Preview</button>' +
+            '<a class="reset-pwd-btn" style="text-decoration:none;margin-left:6px;border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);" ' +
+              'href="' + url + '" target="_blank" rel="noopener">Open</a>' +
+            '<button class="reset-pwd-btn flyer-refine-btn" style="margin-left:6px;">Refine</button>' +
+            '<button class="delete-topic-btn flyer-del-btn" style="margin-left:6px;">Delete</button>';
+
+          row.querySelector('.flyer-preview-btn').addEventListener('click', () =>
+            openPreviewUrl(url, f.headline || 'Flyer'));
+          row.querySelector('.flyer-refine-btn').addEventListener('click', () => {
+            refiningFlyer = f;
+            document.getElementById('flyer-refine-title').textContent = f.headline || f.purpose;
+            document.getElementById('flyer-refine-status').textContent = '';
+            document.getElementById('flyer-refine').style.display = 'block';
+            document.getElementById('flyer-refine-instruction').focus();
+          });
+          row.querySelector('.flyer-del-btn').addEventListener('click', async function () {
+            if (!confirm('Delete flyer "' + (f.headline || f.purpose) + '"?')) return;
+            const key = getBroadcastKey('Passphrase required to delete the flyer:');
+            if (!key) return;
+            const r = await fetch(FN_BASE + '/deleteFlyer', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+              body: JSON.stringify({ id: f.id })
+            }).catch(() => null);
+            if (r && r.status === 403) { _broadcastKey = null; alert('Passphrase rejected.'); return; }
+            if (r && r.ok) await loadFlyers(); else alert('Delete failed.');
+          });
+          flyerList.appendChild(row);
+        });
+      }
+
+      const flyerGen = document.getElementById('flyer-generate');
+      if (flyerGen) flyerGen.addEventListener('click', async () => {
+        const details = document.getElementById('flyer-details').value.trim();
+        const st = document.getElementById('flyer-status');
+        if (!details) { st.textContent = 'Add the facts first — when, where, what.'; return; }
+        const key = getBroadcastKey('Passphrase required to generate a flyer:');
+        if (!key) return;
+        flyerGen.disabled = true; st.textContent = 'Writing copy — 15-30 seconds…';
+        try {
+          const r = await fetch(FN_BASE + '/generateFlyer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            body: JSON.stringify({
+              purpose: document.getElementById('flyer-purpose').value,
+              template: document.getElementById('flyer-template').value,
+              details
+            })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
+          else {
+            st.textContent = 'Done — "' + d.headline + '". Preview it below.';
+            document.getElementById('flyer-details').value = '';
+            await loadFlyers();
+          }
+        } catch (e) { st.textContent = 'Could not reach the flyer generator.'; }
+        finally { flyerGen.disabled = false; }
+      });
+
+      const fRefCancel = document.getElementById('flyer-refine-cancel');
+      if (fRefCancel) fRefCancel.addEventListener('click', () => {
+        document.getElementById('flyer-refine').style.display = 'none'; refiningFlyer = null;
+      });
+      const fRefSend = document.getElementById('flyer-refine-send');
+      if (fRefSend) fRefSend.addEventListener('click', async () => {
+        if (!refiningFlyer) return;
+        const instruction = document.getElementById('flyer-refine-instruction').value.trim();
+        const st = document.getElementById('flyer-refine-status');
+        if (!instruction) { st.textContent = 'Describe the change first.'; return; }
+        const key = getBroadcastKey('Passphrase required to refine the flyer:');
+        if (!key) return;
+        fRefSend.disabled = true; st.textContent = 'Revising — 15-30 seconds…';
+        try {
+          const r = await fetch(FN_BASE + '/refineFlyer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            body: JSON.stringify({ id: refiningFlyer.id, instruction })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
+          else {
+            st.textContent = 'Updated to v' + d.version + '.';
+            document.getElementById('flyer-refine-instruction').value = '';
+            await loadFlyers();
+          }
+        } catch (e) { st.textContent = 'Could not reach the refiner.'; }
+        finally { fRefSend.disabled = false; }
+      });
+
+      loadFlyers();
 
       loadDecks();
     })();

@@ -59,6 +59,7 @@
       "$uid": { ".read": "auth != null && auth.uid == $uid", ".write": "auth != null && auth.uid == $uid" }
     },
     "decks":         { ".read": "auth != null", ".write": false },
+    "flyers":        { ".read": true, ".write": false },
     "ai-usage":      { ".read": false, ".write": false }
   }
 }

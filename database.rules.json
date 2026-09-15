@@ -12,6 +12,7 @@
     "notifications": { ".read": false, ".write": true },
     "track-progress":{ ".read": true,  ".write": true },
     "decks":         { ".read": true,  ".write": false },
+    "flyers":        { ".read": true,  ".write": false },
     "ai-usage":      { ".read": false, ".write": false },
     "vote-history":  { ".read": true,  ".write": true },
     "submissions":   { ".read": true,  ".write": true }
