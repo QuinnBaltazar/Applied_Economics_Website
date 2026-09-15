@@ -432,6 +432,65 @@ const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 // to new users"); the error message names this as the replacement.
 const GEMINI_MODEL = 'gemini-3.6-flash';
 
+// Free tier gives Gemini 3.x models ZERO google_search grounding quota
+// (AI Studio -> Rate Limit -> Tools: "Gemini 3 / Search grounding 0"), so a
+// grounded call 429s immediately. Current events come from finance RSS feeds
+// instead: we fetch real headlines and the model may only cite from them,
+// which also means it cannot fabricate a source. If the project ever moves
+// to a paid tier, grounding can be re-enabled here.
+const USE_SEARCH_GROUNDING = false;
+
+const NEWS_FEEDS = [
+  { name: 'CNBC',        url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+  { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+  { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' }
+];
+
+function stripXml(t) {
+  return String(t || '')
+    .replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Pull recent items from the finance feeds. Tiny regex parse, no deps.
+async function fetchHeadlines(maxPerFeed = 10) {
+  const items = [];
+  for (const feed of NEWS_FEEDS) {
+    try {
+      const res = await fetch(feed.url, {
+        headers: { 'user-agent': 'Mozilla/5.0 (AEC club site; contact ucsbaec.com)' }
+      });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      for (const m of xml.matchAll(/<item[\s>][\s\S]*?<\/item>/g)) {
+        const block = m[0];
+        const grab = tag => {
+          const mm = block.match(new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)</' + tag + '>', 'i'));
+          return mm ? stripXml(mm[1]) : '';
+        };
+        const title = grab('title'), link = grab('link');
+        if (!title || !/^https?:\/\//i.test(link)) continue;
+        items.push({
+          source: feed.name, title: title.slice(0, 160),
+          url: link, desc: grab('description').slice(0, 240)
+        });
+        if (items.filter(i => i.source === feed.name).length >= maxPerFeed) break;
+      }
+    } catch (e) {
+      console.warn('feed failed:', feed.name, e.message);
+    }
+  }
+  return items;
+}
+
+function numberedHeadlines(items) {
+  return items.map((h, i) =>
+    `[${i + 1}] (${h.source}) ${h.title}${h.desc ? ' — ' + h.desc : ''}`).join('\n');
+}
+
 // Hard daily cap across ALL AI calls. The free tier allows far more; this is
 // a circuit breaker so a bug or abuse can't hammer the API.
 const AI_DAILY_CAP = 40;
@@ -452,7 +511,7 @@ async function callGemini(prompt, useSearch) {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.4, maxOutputTokens: 8192 }
   };
-  if (useSearch) body.tools = [{ google_search: {} }];
+  if (useSearch && USE_SEARCH_GROUNDING) body.tools = [{ google_search: {} }];
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY.value()}`,
@@ -512,38 +571,51 @@ async function runTopicScan() {
     ...Object.values(pending.val() || {}).map(t => t && t.name)
   ].filter(Boolean);
 
+  const headlines = await fetchHeadlines(10);
+  if (headlines.length < 5) {
+    throw new Error(`only ${headlines.length} headlines fetched - refusing to scan without real sources`);
+  }
+
   const prompt =
 `You help a university Applied Economics Club pick weekly discussion topics that members vote on.
 
-Search for what is currently happening in markets, economics, and finance (today's date matters — recent news only). Propose exactly 5 discussion topics.
+Below are today's real finance/markets headlines, numbered. Propose exactly 5 discussion topics grounded in them.
+
+HEADLINES:
+${numberedHeadlines(headlines)}
 
 Rules:
-- Each topic must be tied to a real, current event or development you found via search.
-- Each needs: "name" (max 60 chars, punchy, board-ready), "desc" (2 sentences: what happened and why it's worth discussing), and "why" (1 sentence on relevance to students).
+- Every topic must be based on one or more of the numbered headlines. Include their numbers in "refs".
+- Each topic needs: "name" (max 60 chars, punchy, board-ready), "desc" (2 sentences: what happened and why it matters), "refs" (array of headline numbers used).
 - Do NOT propose anything similar to these existing topics: ${existing.join('; ') || '(none)'}
-- Skip anything you cannot ground in a real source. Fewer than 5 well-sourced topics beats 5 with a made-up one.
+- Do not invent facts beyond the headlines. If fewer than 5 topics are well-supported, return fewer.
 
-Reply with ONLY a JSON array: [{"name":"...","desc":"...","why":"..."}]`;
+Reply with ONLY a JSON array: [{"name":"...","desc":"...","refs":[1,2]}]`;
 
-  const { text, sources } = await callGemini(prompt, true);
+  const { text } = await callGemini(prompt, false);
   const topics = extractJson(text);
   if (!Array.isArray(topics)) throw new Error('expected a JSON array of topics');
 
   let added = 0;
   for (const t of topics.slice(0, 5)) {
     if (!t || !t.name || !t.desc) continue;
+    // Sources are the exact fetched articles the model cited - it cannot
+    // fabricate a URL because it never outputs one.
+    const refs = (Array.isArray(t.refs) ? t.refs : [])
+      .map(n => headlines[Number(n) - 1]).filter(Boolean);
+    if (!refs.length) continue;   // unsourced topic: dropped
     await db.ref('pending-topics').push({
       name: String(t.name).slice(0, 80),
-      desc: (String(t.desc) + (t.why ? ' ' + String(t.why) : '')).slice(0, 500),
+      desc: String(t.desc).slice(0, 500),
       createdBy: 'AI scanner',
       ai: true,
-      sources: sources.slice(0, 6),
+      sources: refs.slice(0, 4).map(h => ({ title: `${h.source}: ${h.title}`.slice(0, 120), url: h.url })),
       createdAt: Date.now()
     });
     added++;
   }
-  console.log(`topic scan: proposed ${added} (sources: ${sources.length})`);
-  return { proposed: added, sources: sources.length };
+  console.log(`topic scan: proposed ${added} from ${headlines.length} headlines`);
+  return { proposed: added, headlines: headlines.length };
 }
 
 // Daily at 07:00 Pacific — proposals are waiting when an admin checks in.
@@ -584,11 +656,15 @@ const DECK_SCHEMA = `[
  {"type":"quote","text":"...","attribution":"..."}
 ]`;
 
-function deckPrompt(topic, guidance) {
-  return `You are preparing a presentation for a university Applied Economics Club meeting (~30 undergrads, mixed experience). Search for current, factual information first.
+function deckPrompt(topic, guidance, articles) {
+  const ctx = articles && articles.length
+    ? `\nRecent related headlines (numbered; cite with "refs" on any slide that uses one):\n${numberedHeadlines(articles)}\n`
+    : '';
+  return `You are preparing a presentation for a university Applied Economics Club meeting (~30 undergrads, mixed experience).
 
 Topic: ${topic}
 ${guidance ? `Presenter guidance to follow: ${guidance}` : ''}
+${ctx}
 
 Build a 8-11 slide deck as JSON. Slide types available:
 ${DECK_SCHEMA}
@@ -597,9 +673,10 @@ Requirements:
 - Slide 1 must be type "title".
 - Mix types; never more than two "bullets" slides in a row.
 - Max 5 points per slide, each under 16 words. No sub-bullets.
-- Use a "stat" slide for real numbers you found (market moves, rates, valuations).
+- Numbers policy: only use figures that appear in the headlines above or that are
+  stable common knowledge (e.g. "the Fed has a dual mandate"). NEVER invent market
+  data, prices, percentages or dates. Prefer qualitative framing over fake precision.
 - End with discussion questions (type "bullets", heading "Discussion").
-- Only include facts you can ground in search results. No invented numbers.
 
 Reply with ONLY JSON: {"title":"...","subtitle":"...","slides":[...]}`;
 }
@@ -633,8 +710,27 @@ exports.generateDeck = onRequest(
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
     try {
-      const { text, sources } = await callGemini(deckPrompt(topic, guidance), true);
-      const deck = sanitizeDeck(extractJson(text), topic, sources);
+      // Pull current headlines and keep the ones sharing a word with the topic
+      // (plus a few general ones) as citable context.
+      const all = await fetchHeadlines(10);
+      const words = topic.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+      const related = all.filter(h =>
+        words.some(w => (h.title + ' ' + h.desc).toLowerCase().includes(w)));
+      const articles = [...related, ...all.filter(h => !related.includes(h))].slice(0, 8);
+
+      const { text } = await callGemini(deckPrompt(topic, guidance, articles), false);
+      const parsed = extractJson(text);
+      // Sources slide: only articles the model actually cited via refs.
+      const cited = new Set();
+      for (const sl of (parsed.slides || [])) {
+        for (const n of (Array.isArray(sl.refs) ? sl.refs : [])) {
+          const h = articles[Number(n) - 1];
+          if (h) cited.add(h);
+        }
+        delete sl.refs;
+      }
+      const sources = [...cited].map(h => ({ title: `${h.source}: ${h.title}`.slice(0, 120), url: h.url }));
+      const deck = sanitizeDeck(parsed, topic, sources);
       const ref = await admin.database().ref('decks').push({
         ...deck,
         version: 1,
@@ -679,12 +775,13 @@ Rules:
 - Keep the same JSON schema. Slide types: title, bullets, split, stat, quote, sources.
 - Change only what the instruction asks for; keep everything else intact.
 - Keep any "sources" slide unless told to remove it.
-- If the instruction needs current facts, search for them; never invent numbers.
+- NEVER invent market data, prices, percentages or dates; if the instruction asks
+  for numbers you do not reliably know, use qualitative framing instead.
 
 Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":[...]}`;
 
     try {
-      const { text } = await callGemini(prompt, true);
+      const { text } = await callGemini(prompt, false);
       const revised = extractJson(text);
       if (!revised || !Array.isArray(revised.slides) || !revised.slides.length) {
         throw new Error('revision returned no slides');
