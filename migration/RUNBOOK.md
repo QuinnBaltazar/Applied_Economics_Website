@@ -97,3 +97,27 @@ for (const p of ["members","dms","messages","track-progress"]) {
 ```
 
 Today they return 200.
+
+
+---
+
+## Unread-message emails
+
+`functions/index.js` runs `sendUnreadEmailReminders` hourly. If a DM has gone
+unread for 24 hours it emails the recipient, at most once per conversation per
+day, and never about their own message. Members opt out by setting
+`emailReminders: false` on their member record.
+
+Twilio/SMS was removed. The per-message cost was negligible, but US A2P 10DLC
+registration is ~$10-15/month regardless of volume, plus number rental — a fixed
+cost for a channel email already covers.
+
+Setup:
+
+1. Create a free Brevo account and verify a sender address.
+2. Settings -> SMTP & API -> create an API key.
+3. `firebase functions:secrets:set BREVO_API_KEY`
+4. Set `SENDER_EMAIL` in `functions/index.js` to the verified address.
+5. `firebase deploy --only functions`
+
+Brevo's free tier is 300 emails/day, well beyond club volume.
