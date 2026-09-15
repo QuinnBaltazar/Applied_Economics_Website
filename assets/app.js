@@ -43,8 +43,10 @@
     document.querySelectorAll('.main-nav a').forEach(function (a) {
       a.classList.toggle('active', a.getAttribute('href') === page);
     });
+    // Signed in: there is a Profile entry already, so hide the Sign In link
+    // rather than relabel it. Signed out: leave it as Sign In.
     var signInLink = document.querySelector('.main-nav a[href="signin.html"]');
-    if (signInLink && readSession()) signInLink.textContent = 'Profile';
+    if (signInLink) signInLink.style.display = readSession() ? 'none' : '';
   }
 
   // --- 3. Reveal-on-scroll ------------------------------------------------

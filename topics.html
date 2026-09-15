@@ -678,7 +678,7 @@
         var msgL = document.getElementById('messages-nav-link');
         if (msgL) msgL.style.display = session ? 'inline-flex' : 'none';
         var sl = document.querySelector('.main-nav a[href="signin.html"]');
-        if (sl) sl.textContent = session ? 'Profile' : 'Sign In';
+        if (sl) sl.style.display = session ? 'none' : '';
       } catch(e) {}
     }
 

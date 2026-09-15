@@ -849,7 +849,7 @@
         localStorage.setItem('aec-vote-counts', JSON.stringify(c)); return;
       }
       const c = await fbGet('vote-counts') || {};
-      await fbPatch('vote-counts', { [topic]: (c[topic]||0) + weight });
+      await fbPatch('vote-counts', { [topic]: Math.max(0, (c[topic]||0) + weight) });
     }
     function updateResults(counts) {
       document.getElementById('count-vc').textContent       = fmt(counts['Venture Capital']);
@@ -909,6 +909,13 @@
         return r ? r.topic : null;
       }
       return localStorage.getItem('aec-vote-anon');
+    }
+    // Full prior record (topic + the exact weight that was applied), so a
+    // vote change can subtract precisely what was added.
+    async function getUserVoteRecord(session) {
+      if (session && FB_READY) return await fbGet(`vote-records/${eKey(session.email)}`);
+      const t = localStorage.getItem('aec-vote-anon');
+      return t ? { topic: t, voteWeight: 1 } : null;
     }
     async function saveUserVote(session, topic) {
       if (session && FB_READY) await fbSet(`vote-records/${eKey(session.email)}`, { topic, ts: Date.now() });
@@ -1020,7 +1027,7 @@
         const msgL = document.getElementById('messages-nav-link');
         if (msgL) msgL.style.display = 'inline-flex';
         const sl = document.querySelector('.main-nav a[href="signin.html"]');
-        if (sl) sl.textContent = 'Profile';
+        if (sl) sl.style.display = 'none';
         const creditsBadge = totalCredits > 0
           ? ` &nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700;">${totalCredits} track credit${totalCredits!==1?'s':''}</span> &nbsp;·&nbsp; Vote weight: <strong style="color:var(--accent);">${voteWeight}×</strong>`
           : '';
@@ -1071,8 +1078,12 @@
       wireOtherToggle();
 
       if (userVote) {
-        showMessage(`You already voted for "${userVote}". Thank you!`);
-        lockForm();
+        // Pre-select their current choice; leave the form open so they can change it.
+        const cur = document.querySelector(`[name="topic"][value="${(window.CSS&&CSS.escape)?CSS.escape(userVote):userVote}"]`);
+        if (cur) cur.checked = true;
+        const vb = document.querySelector('.vote-button');
+        if (vb) vb.textContent = 'Update My Vote';
+        showMessage(`Your current vote is "${userVote}". You can change it anytime, only one is ever counted.`);
       }
 
       document.getElementById('vote-form').addEventListener('submit', async function(e) {
@@ -1086,7 +1097,7 @@
         }
         if (!document.getElementById('member-confirm').checked) { showMessage('Please confirm you are a current club member before voting.', true); return; }
         if (!selected) { showMessage('Please select one topic to vote for.', true); return; }
-        if (await getUserVote(session)) { showMessage('You have already submitted your vote.', true); return; }
+        const priorRecord = await getUserVoteRecord(session);   // may be null (first vote)
 
         const btn = document.querySelector('.vote-button');
         btn.disabled = true; btn.textContent = 'Submitting…';
@@ -1112,6 +1123,24 @@
           wireOtherToggle();
           showMessage(`Topic submitted, pending admin approval before it appears on the vote page.`);
         } else {
+          // Changing vote: subtract the previous weighted vote from its topic first,
+          // so exactly one vote is ever counted per member.
+          if (priorRecord && priorRecord.topic && priorRecord.topic !== topic) {
+            const oldW = priorRecord.voteWeight || 1;
+            await incrementCount(priorRecord.topic, -oldW);
+            const oldSel = document.querySelector(`[name="topic"][value="${(window.CSS&&CSS.escape)?CSS.escape(priorRecord.topic):priorRecord.topic}"]`);
+            const oldKey = oldSel && oldSel.dataset && oldSel.dataset.key;
+            if (oldKey) {
+              const oc = await fbGet(`custom-topics/${oldKey}/votes`);
+              await fbPatch(`custom-topics/${oldKey}`, { votes: Math.max(0, (parseInt(oc,10)||0) - oldW) });
+            }
+          }
+          if (priorRecord && priorRecord.topic === topic) {
+            // Same choice resubmitted, nothing to change.
+            showMessage(`Your vote for "${topic}" is unchanged.`);
+            btn.disabled = false; btn.textContent = 'Update My Vote';
+            return;
+          }
           await incrementCount(topic, voteWeight);
           // Custom-topic cards display their own counter; keep it in sync.
           const ckey = selected.dataset && selected.dataset.key;
@@ -1126,9 +1155,11 @@
           }
           updateResults(await loadCounts());
           const weightNote = voteWeight > 1 ? ` Your ${totalCredits} track credits applied a ${voteWeight}× weight.` : '';
-          showMessage(`Thanks, your vote for "${topic}" has been recorded.${weightNote}`);
+          const verb = (priorRecord && priorRecord.topic) ? 'updated to' : 'recorded for';
+          showMessage(`Thanks, your vote has been ${verb} "${topic}".${weightNote}`);
+          const vb2 = document.querySelector('.vote-button'); if (vb2) vb2.textContent = 'Update My Vote';
         }
-        lockForm();
+        btn.disabled = false;
       });
     });
 
