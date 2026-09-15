@@ -2089,7 +2089,8 @@
       input.value = '';
       bubble('student', text);
       history.push({ role: 'student', text: text });
-      var thinking = bubble('tutor', '…');
+      var thinking = bubble('tutor', '');
+      thinking.innerHTML = (window.aiChartLoader ? aiChartLoader('') : '…');
       try {
         var r = await fetch(FN, {
           method: 'POST',

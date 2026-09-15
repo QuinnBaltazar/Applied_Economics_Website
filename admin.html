@@ -1604,7 +1604,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const st = document.getElementById('scan-status');
-        scanBtn.disabled = true; st.textContent = 'Scanning current news, 20-40 seconds…';
+        scanBtn.disabled = true; st.innerHTML = aiChartLoader('Scanning current news, 20-40 seconds');
         try {
           const r = await fetch(FN_BASE + '/scanTopicsNow', {
             method: 'POST',
@@ -1629,7 +1629,10 @@
         const modal = document.getElementById('deck-preview-modal');
         document.getElementById('deck-preview-title').textContent = title;
         document.getElementById('deck-preview-open').href = url;
-        document.getElementById('deck-preview-frame').src = url;
+        const frame = document.getElementById('deck-preview-frame');
+        frame.src = url;
+        // Focus the iframe once it loads so its arrow-key / click navigation works.
+        frame.onload = () => { try { frame.contentWindow.focus(); } catch (e) {} };
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
       }
@@ -1768,7 +1771,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('deck-generate');
-        btn.disabled = true; st.textContent = 'Researching and building, 30-60 seconds…';
+        btn.disabled = true; st.innerHTML = aiChartLoader('Researching and building, 30-60 seconds');
         try {
           const r = await fetch(FN_BASE + '/generateDeck', {
             method: 'POST',
@@ -1801,7 +1804,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('refine-send');
-        btn.disabled = true; st.textContent = 'Revising, 20-40 seconds…';
+        btn.disabled = true; st.innerHTML = aiChartLoader('Revising, 20-40 seconds');
         try {
           const r = await fetch(FN_BASE + '/refineDeck', {
             method: 'POST',
@@ -1886,7 +1889,7 @@
         if (!details) { st.textContent = 'Add the facts first, when, where, what.'; return; }
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
-        flyerGen.disabled = true; st.textContent = 'Writing copy, 15-30 seconds…';
+        flyerGen.disabled = true; st.innerHTML = aiChartLoader('Writing copy, 15-30 seconds');
         try {
           const r = await fetch(FN_BASE + '/generateFlyer', {
             method: 'POST',
@@ -1922,7 +1925,7 @@
         if (!instruction) { st.textContent = 'Describe the change first.'; return; }
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
-        fRefSend.disabled = true; st.textContent = 'Revising, 15-30 seconds…';
+        fRefSend.disabled = true; st.innerHTML = aiChartLoader('Revising, 15-30 seconds');
         try {
           const r = await fetch(FN_BASE + '/refineFlyer', {
             method: 'POST',

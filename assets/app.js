@@ -130,3 +130,18 @@
       document.body.classList.toggle('nav-open', nav.classList.contains('open'));
     }).observe(nav, { attributes: true, attributeFilter: ['class'] });
   })();
+
+// Small reusable AI "thinking" indicator: a gold rising-chart line that
+// redraws up and down. aiChartLoader('label') returns an HTML string;
+// drop it into any status element while an AI call is in flight.
+window.aiChartLoader = function (label) {
+  var svg =
+    '<span class="ai-chart-loader" aria-hidden="true"><svg viewBox="0 0 40 18">' +
+    '<polyline class="acl-line" points="2,15 11,11 20,13 29,5 38,2"/>' +
+    '<circle class="acl-dot" cx="38" cy="2" r="2.6"/>' +
+    '</svg></span>';
+  return label
+    ? '<span class="ai-loading-wrap" role="status">' + svg +
+      '<span class="ai-loading-text">' + String(label).replace(/</g,'&lt;') + '</span></span>'
+    : svg;
+};

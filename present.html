@@ -151,11 +151,20 @@
           document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
         }
       });
-      // tap / click advances (left third goes back), for presenting from a phone
-      stage.addEventListener('click', e => {
+      // tap / click anywhere advances (left third goes back). On document so it
+      // works in the small admin preview iframe, not just the slide area.
+      document.addEventListener('click', e => {
         if (e.target.closest('a')) return;
         (e.clientX < innerWidth / 3) ? show(idx - 1) : show(idx + 1);
       });
+
+      // Keyboard needs focus. In an iframe the parent has it, so make the
+      // document focusable and grab focus on load and whenever it's clicked.
+      document.body.tabIndex = -1;
+      var grab = () => { try { window.focus(); document.body.focus(); } catch (e) {} };
+      grab();
+      document.addEventListener('mouseenter', grab);
+      document.addEventListener('click', grab);
     }
     boot();
   </script>
