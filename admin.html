@@ -1326,10 +1326,12 @@
     }
 
     // ── Reset handlers ────────────────────────────────────────
+    const settle = (ms = 400) => new Promise(r => setTimeout(r, ms));
     async function confirmReset(label, action) {
       if (!confirm(`Are you sure you want to ${label}? This cannot be undone.`)) return;
       setMsg('Working…');
       await action();
+      await settle();          // let the write propagate before re-reading
       await refresh();
       setMsg(`Done, ${label}.`);
     }
@@ -1359,6 +1361,7 @@
       await fetch(`${DB_URL}/vote-history.json`, { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ label, counts, savedAt: Date.now() }) });
       setMsg('Snapshot saved.');
+      await settle();
       await renderVoteHistory();
     }
 
@@ -1444,6 +1447,7 @@
       if (closeTs <= openTs) { statusEl.textContent = 'Close must be after Open.'; return; }
       await fbSet('vote-window', { open: openTs, close: closeTs });
       statusEl.textContent = 'Saved.';
+      await settle();
       await loadVoteWindow();
       setTimeout(() => statusEl.textContent = '', 2000);
     });
