@@ -70,7 +70,7 @@
               letter-spacing:.04em; text-transform:uppercase; }
     .col ul.points li { font-size:clamp(15px,1.7vw,20px); }
 
-    .stats { display:flex; gap:26px; flex-wrap:wrap; }
+    .stats { display:flex; gap:26px; flex-wrap:wrap; justify-content:center; width:100%; }
     .stat { flex:1 1 180px; background:var(--gold-dim); border:1px solid rgba(196,164,72,.25);
             border-radius:18px; padding:26px 22px; transition:transform .3s, box-shadow .3s; }
     .stat:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(0,0,0,.35); }
@@ -98,6 +98,7 @@
       h1::after, h2::after { width:clamp(90px,22%,220px); animation:none; }
     }
     @media (max-width:700px){ .cols { grid-template-columns:1fr; } }
+    .stat { flex:0 1 300px; text-align:center; }
     .imgwrap { margin:2vh auto 0; max-width:82%; display:flex; justify-content:center;
       animation:imgIn .7s cubic-bezier(.2,.7,.2,1) both; }
     .imgwrap img { max-width:100%; max-height:52vh; object-fit:contain; border-radius:14px;
@@ -286,6 +287,18 @@
         countUp(v);
       });
     }
+
+    // Touch swipe: navigate slides on mobile.
+    let _tx = null, _ty = null;
+    document.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) { _tx = e.touches[0].clientX; _ty = e.touches[0].clientY; }
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      if (_tx == null) return;
+      const dx = e.changedTouches[0].clientX - _tx, dy = e.changedTouches[0].clientY - _ty;
+      _tx = _ty = null;
+      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) show(idx + (dx < 0 ? 1 : -1));
+    }, { passive: true });
 
     async function boot() {
       const id = new URLSearchParams(location.search).get('id');
