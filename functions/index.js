@@ -1,15 +1,46 @@
-const { onValueCreated }   = require('firebase-functions/v2/database');
-const { onSchedule }       = require('firebase-functions/v2/scheduler');
+/*
+  UCSB AEC — Cloud Functions
+
+  One scheduled job: if a DM goes unread for 24 hours, email the recipient.
+
+  Why a scheduled function rather than the client:
+  EmailJS runs in the browser, so it can only fire while someone has the page
+  open. "Unread for a day" needs code that runs on a timer with nobody
+  watching, which is what this is.
+
+  SETUP
+    1. Create a free Brevo account (brevo.com) and verify a sender address.
+    2. Settings -> SMTP & API -> create an API key.
+    3. Store it as a secret (the value never goes in this file or in git):
+         firebase functions:secrets:set BREVO_API_KEY
+    4. Set SENDER_EMAIL below to the address you verified in step 1.
+    5. firebase deploy --only functions
+*/
+
+const { onSchedule }  = require('firebase-functions/v2/scheduler');
+const { defineSecret } = require('firebase-functions/params');
 const { setGlobalOptions } = require('firebase-functions/v2');
-const admin                = require('firebase-admin');
-const twilio               = require('twilio');
-const { subtle }           = require('crypto').webcrypto;
+const admin = require('firebase-admin');
+const { subtle } = require('crypto').webcrypto;
 
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1' });
 
-const KP   = 'aec-ucsb-priv-2025';
-const SALT  = 'aec-salt-v1';
+const BREVO_API_KEY = defineSecret('BREVO_API_KEY');
+
+// Must be a sender address verified in your Brevo account, or sends fail.
+const SENDER_EMAIL = 'noreply@ucsbaec.com';
+const SENDER_NAME  = 'UCSB Applied Economics Club';
+const SITE_URL     = 'https://www.ucsbaec.com';
+
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
+// ── preferredEmail is stored encrypted; decrypt it to know where to send ────
+// NOTE: this key is also present in client-side JS and in git history, so it
+// offers no real protection. See migration/RUNBOOK.md — it should be rotated
+// once members/$uid is no longer world-readable.
+const KP = 'aec-ucsb-priv-2025';
+const SALT = 'aec-salt-v1';
 
 let _ck = null;
 async function getCK() {
@@ -25,124 +56,124 @@ async function getCK() {
 
 async function decryptField(v) {
   if (!v || !String(v).startsWith('enc:')) return v;
-  const [, ivHex, b64] = v.split(':');
-  const iv = Buffer.from(ivHex, 'hex');
-  const ct = Buffer.from(b64, 'base64');
-  const pt = await subtle.decrypt({ name: 'AES-GCM', iv }, await getCK(), ct);
-  return new TextDecoder().decode(pt);
-}
-
-function toE164(raw) {
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length === 10) return '+1' + digits;
-  if (digits.length === 11 && digits[0] === '1') return '+' + digits;
-  return '+' + digits;
+  try {
+    const [, ivHex, b64] = String(v).split(':');
+    const pt = await subtle.decrypt(
+      { name: 'AES-GCM', iv: Buffer.from(ivHex, 'hex') },
+      await getCK(),
+      Buffer.from(b64, 'base64')
+    );
+    return new TextDecoder().decode(pt);
+  } catch {
+    return null;
+  }
 }
 
 function eKey(email) {
   return String(email).replace(/[.@#$[\]/]/g, '_');
 }
 
-// ── Triggered SMS: fires immediately when queued by client (legacy path kept) ─
-exports.sendSmsNotification = onValueCreated(
-  'notifications/sms_queue/{entryId}',
-  async (event) => {
-    const entry   = event.data.val();
-    const entryId = event.params.entryId;
-    const ref     = admin.database().ref('notifications/sms_queue/' + entryId);
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
-    try {
-      if (!entry || !entry.toEmail) return;
+async function sendEmail(apiKey, to, toName, senderName, unreadCount) {
+  const plural = unreadCount > 1 ? 's' : '';
+  const body = {
+    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+    to: [{ email: to, name: toName || undefined }],
+    subject: `You have ${unreadCount} unread message${plural} in AEC`,
+    htmlContent:
+      `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">` +
+        `<h2 style="margin:0 0 12px;font-size:19px">You have ${unreadCount} unread message${plural}</h2>` +
+        `<p style="margin:0 0 20px;line-height:1.5;color:#444">` +
+          `${esc(senderName)} messaged you in the Applied Economics Club and you haven't read it yet.` +
+        `</p>` +
+        `<a href="${SITE_URL}/messages.html" style="display:inline-block;background:#C4A448;color:#111;` +
+          `padding:11px 20px;border-radius:7px;text-decoration:none;font-weight:600">Read it</a>` +
+        `<p style="margin:26px 0 0;font-size:12px;color:#888">` +
+          `Sent once per conversation per day. Turn these off in your profile at ` +
+          `<a href="${SITE_URL}/signin.html" style="color:#888">ucsbaec.com</a>.` +
+        `</p>` +
+      `</div>`
+  };
 
-      const memberSnap = await admin.database().ref('members/' + eKey(entry.toEmail)).get();
-      const member = memberSnap.val();
-      if (!member || !member.phone) return;
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': apiKey,
+      'content-type': 'application/json',
+      'accept': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
 
-      const phone = await decryptField(member.phone);
-      if (!phone) return;
-
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const authToken  = process.env.TWILIO_AUTH_TOKEN;
-      const fromNumber = process.env.TWILIO_FROM_NUMBER;
-
-      const client = twilio(accountSid, authToken);
-      const senderName = entry.senderName || 'A member';
-      const preview    = entry.msgPreview  || '';
-
-      await client.messages.create({
-        to:   toE164(phone),
-        from: fromNumber,
-        body: `AEC message from ${senderName}: "${preview}" — reply at https://www.ucsbaec.com/messages.html`
-      });
-    } catch (err) {
-      console.error('SMS send failed:', err);
-    } finally {
-      await ref.remove();
-    }
+  if (!res.ok) {
+    throw new Error(`Brevo ${res.status}: ${(await res.text()).slice(0, 300)}`);
   }
-);
+}
 
-// ── Scheduled reminder: every hour, SMS anyone with 24h+ unread messages ──────
-exports.sendSmsReminders = onSchedule(
-  { schedule: 'every 1 hours', region: 'us-central1' },
+// ── Hourly: email anyone sitting on a DM unread for 24h+ ────────────────────
+exports.sendUnreadEmailReminders = onSchedule(
+  { schedule: 'every 1 hours', region: 'us-central1', secrets: [BREVO_API_KEY] },
   async () => {
-    const db  = admin.database();
+    const db = admin.database();
     const now = Date.now();
-    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const apiKey = BREVO_API_KEY.value();
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken  = process.env.TWILIO_AUTH_TOKEN;
-    const fromNumber = process.env.TWILIO_FROM_NUMBER;
-    const client     = twilio(accountSid, authToken);
+    const snap = await db.ref('dms').get();
+    const dms = snap.val();
+    if (!dms) { console.log('no conversations'); return; }
 
-    const dmsSnap = await db.ref('dms').get();
-    const dms = dmsSnap.val();
-    if (!dms) return;
+    let sent = 0, skipped = 0, failed = 0;
 
     for (const [convId, conv] of Object.entries(dms)) {
-      if (!conv || !conv.meta) continue;
-      const meta = conv.meta;
-      if (!Array.isArray(meta.participants) || !meta.lastAt) continue;
+      const meta = conv && conv.meta;
+      if (!meta || !Array.isArray(meta.participants) || !meta.lastAt) continue;
 
-      const messageAge = now - meta.lastAt;
-      if (messageAge < ONE_DAY) continue;
+      // Not old enough yet.
+      if (now - meta.lastAt < ONE_DAY) continue;
 
       for (const email of meta.participants) {
-        const key    = eKey(email);
+        const key = eKey(email);
+
         const unread = meta['unread_' + key] || 0;
         if (unread === 0) continue;
 
-        // Skip if we already sent an SMS reminder in the last 24h
-        const lastSmsAt = meta['smsReminderAt_' + key] || 0;
-        if (lastSmsAt && now - lastSmsAt < ONE_DAY) continue;
+        // Don't nag: at most one reminder per conversation per day.
+        const lastReminder = meta['emailReminderAt_' + key] || 0;
+        if (lastReminder && now - lastReminder < ONE_DAY) { skipped++; continue; }
 
-        // Only send SMS after an email notification was already sent
-        const emailSentAt = meta['emailNotifiedAt_' + key] || 0;
-        if (!emailSentAt) continue;
+        // Never remind someone about their own message.
+        if (meta.lastFrom && eKey(meta.lastFrom) === key) continue;
 
         try {
           const memberSnap = await db.ref('members/' + key).get();
           const member = memberSnap.val();
-          if (!member || !member.phone) continue;
+          if (!member) { skipped++; continue; }
 
-          const phone = await decryptField(member.phone);
-          if (!phone) continue;
+          // Members can opt out.
+          if (member.emailReminders === false) { skipped++; continue; }
 
-          const senderKey  = meta.lastFrom ? eKey(meta.lastFrom) : null;
-          const senderName = senderKey && meta.names ? (meta.names[senderKey] || 'A member') : 'A member';
+          const to = (await decryptField(member.preferredEmail)) || email;
+          if (!to || !to.includes('@')) { skipped++; continue; }
 
-          await client.messages.create({
-            to:   toE164(phone),
-            from: fromNumber,
-            body: `AEC reminder: You have ${unread} unread message${unread > 1 ? 's' : ''} from ${senderName}. Reply at https://www.ucsbaec.com/messages.html`
-          });
+          const senderKey = meta.lastFrom ? eKey(meta.lastFrom) : null;
+          const senderName =
+            (senderKey && meta.names && meta.names[senderKey]) || 'Another member';
 
-          await db.ref(`dms/${convId}/meta/smsReminderAt_${key}`).set(now);
-          console.log(`SMS reminder sent to ${email} for conv ${convId}`);
+          await sendEmail(apiKey, to, member.name, senderName, unread);
+          await db.ref(`dms/${convId}/meta/emailReminderAt_${key}`).set(now);
+          sent++;
         } catch (err) {
-          console.error(`SMS reminder failed for ${email}:`, err);
+          failed++;
+          console.error(`reminder failed for ${key} in ${convId}:`, err.message);
         }
       }
     }
+
+    console.log(`unread reminders — sent:${sent} skipped:${skipped} failed:${failed}`);
   }
 );

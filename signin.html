@@ -798,8 +798,10 @@
     }
     // Every field the sign-up form collects. Members who joined before a
     // field existed are prompted to fill it in on their next sign-in.
+    // Phone is intentionally excluded: it's optional, so including it would
+    // re-prompt anyone who never adds one on every single sign-in.
     const PROFILE_FIELDS = [
-      'name', 'gradYear', 'preferredEmail', 'phone', 'subject', 'learn', 'goal', 'field'
+      'name', 'gradYear', 'preferredEmail', 'subject', 'learn', 'goal', 'field'
     ];
     function getMissingFields(member) {
       return PROFILE_FIELDS.filter(f => {
