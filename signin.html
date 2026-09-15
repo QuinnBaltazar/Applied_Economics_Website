@@ -1020,22 +1020,25 @@
           const l = document.getElementById('admin-nav-link');
           if (l) l.style.display = 'inline-flex';
         }
+        // Show the welcome shell immediately from the cached session (name only),
+        // but DECIDE the step from the full Firebase record, never the thin
+        // cache. The cache omits profile fields (subject, goals, etc.), so
+        // judging completeness from it would wrongly show the finish-profile
+        // form to members whose profile is already complete.
         fillWelcome(session, false);
-        showWelcomeOrPhonePrompt(session);
-        // Sync from Firebase in background to pick up any admin changes (e.g. newly promoted admin)
-        getFirebaseMember(session.email).then(fb => {
-          if (fb) {
-            const merged = { ...session, ...fb };
-            setSession(merged);
-            fillWelcome(merged, false);
-            // Show admin nav if newly granted admin access
-            if (isAdminSession(merged)) {
-              const l = document.getElementById('admin-nav-link');
-              if (l) l.style.display = 'inline-flex';
-            }
-            showCompleteProfileStep(merged);
+        showStep('step-welcome');
+        (async function () {
+          const fb = await getFirebaseMember(session.email);
+          if (!fb) return;                       // offline / transient: keep welcome
+          const merged = { ...session, ...fb };
+          setSession(merged);
+          fillWelcome(merged, false);
+          if (isAdminSession(merged)) {
+            const l = document.getElementById('admin-nav-link');
+            if (l) l.style.display = 'inline-flex';
           }
-        });
+          showCompleteProfileStep(merged);        // only prompts if truly incomplete
+        })();
       }
     });
 
