@@ -818,7 +818,7 @@
       const msgL = document.getElementById('messages-nav-link');
       if (msgL) msgL.style.display = 'inline-flex';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
-      if (sl) sl.style.display = 'none';
+      if (sl) sl.textContent = 'Profile';
     }
 
     function goToLogin() {
@@ -948,14 +948,14 @@
         document.getElementById('p-phone').textContent = member.phone;
         if (phoneRow) phoneRow.style.display = 'flex';
       } else {
-        if (phoneRow) phoneRow.style.display = 'none';
+        if (phoneRow) phoneRow.textContent = 'Profile';
       }
       const gradRow = document.getElementById('p-gradyear-row');
       if (member.gradYear) {
         document.getElementById('p-gradyear').textContent = member.gradYear;
         if (gradRow) gradRow.style.display = 'flex';
       } else {
-        if (gradRow) gradRow.style.display = 'none';
+        if (gradRow) gradRow.textContent = 'Profile';
       }
 
       // Reminders are on unless explicitly turned off, matching the
@@ -1422,11 +1422,11 @@
       if (window.AECAuth) AECAuth.signOut();
       clearSession();
       const ml = document.getElementById('members-nav-link');
-      if (ml) ml.style.display = 'none';
+      if (ml) ml.textContent = 'Profile';
       const msgL = document.getElementById('messages-nav-link');
-      if (msgL) msgL.style.display = 'none';
+      if (msgL) msgL.textContent = 'Profile';
       const al = document.getElementById('admin-nav-link');
-      if (al) al.style.display = 'none';
+      if (al) al.textContent = 'Profile';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
       if (sl) sl.textContent = 'Sign In';
       document.getElementById('login-email-input').value = '';

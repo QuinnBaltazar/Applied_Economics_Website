@@ -715,7 +715,7 @@
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'inline-flex';
       const sl = document.querySelector('.main-nav a[href="signin.html"]');
-      if (sl) sl.style.display = 'none';
+      if (sl) sl.textContent = 'Profile';
       document.getElementById('messages-nav-link').style.display = 'inline-flex';
       if (isAdminSess(mySession)) {
         const al = document.getElementById('admin-nav-link');
