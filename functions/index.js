@@ -429,8 +429,12 @@ exports.sendPasswordResetNotice = onRequest(
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 // gemini-2.5-flash was retired for new API users (404: "no longer available
-// to new users"); the error message names this as the replacement.
-const GEMINI_MODEL = 'gemini-3.6-flash';
+// to new users"); 3.6-flash is its named replacement. The lite models are the
+// fallback chain: separate (larger) free quotas - 15 RPM / 500 RPD vs 5/20 -
+// and they rarely hit the capacity 503s the flagship gets at peak. Slightly
+// weaker models, but our prompts hand them the facts, so extraction quality
+// holds up.
+const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
 // Free tier gives Gemini 3.x models ZERO google_search grounding quota
 // (AI Studio -> Rate Limit -> Tools: "Gemini 3 / Search grounding 0"), so a
@@ -504,8 +508,13 @@ async function aiBudgetOk() {
   return (result.snapshot.val() || 0) <= AI_DAILY_CAP;
 }
 
-// One call to Gemini. useSearch turns on Google Search grounding, which is
-// what lets it see *current* news and hand back real source URLs.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// One call to Gemini, resilient by design. Walks the model chain; within a
+// model, retries capacity errors (503/500/504) with backoff. Quota errors
+// (429) and missing models (404) skip straight to the next model, since
+// each has its own quota pool. Internal retries do NOT consume extra
+// aiBudgetOk slots - the budget counts user actions, not HTTP attempts.
 async function callGemini(prompt, useSearch) {
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -513,12 +522,34 @@ async function callGemini(prompt, useSearch) {
   };
   if (useSearch && USE_SEARCH_GROUNDING) body.tools = [{ google_search: {} }];
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY.value()}`,
-    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
-  );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = await res.json();
+  let lastErr = null;
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await sleep(2000 * attempt + Math.random() * 1000);
+      let res;
+      try {
+        res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY.value()}`,
+          { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
+        );
+      } catch (e) {
+        lastErr = new Error(`Gemini network: ${e.message}`);
+        continue;                                   // transient - retry same model
+      }
+      if (res.ok) {
+        if (model !== GEMINI_MODELS[0]) console.warn(`Gemini fell back to ${model}`);
+        return parseGemini(await res.json());
+      }
+      const detail = (await res.text()).slice(0, 300);
+      lastErr = new Error(`Gemini ${res.status}: ${detail}`);
+      if (res.status === 429 || res.status === 404) break;   // next model
+      if (![500, 503, 504].includes(res.status)) throw lastErr; // real error: stop
+    }
+  }
+  throw lastErr || new Error('Gemini: all models failed');
+}
+
+function parseGemini(data) {
 
   const cand = data.candidates && data.candidates[0];
   const text = ((cand && cand.content && cand.content.parts) || [])
@@ -545,6 +576,20 @@ function extractJson(text) {
     try { return JSON.parse(raw.slice(start, end)); } catch { /* trim and retry */ }
   }
   throw new Error('unparseable JSON in model output');
+}
+
+// Admins see this in the status line - turn Gemini's JSON blobs into English.
+function friendlyAiError(e) {
+  const m = String(e && e.message || e);
+  if (/503|UNAVAILABLE|high demand/i.test(m))
+    return 'Google\u2019s model is at capacity right now (their side, not ours). It retried and fell back automatically \u2014 wait a minute and try once more.';
+  if (/429|quota|RESOURCE_EXHAUSTED/i.test(m))
+    return 'Free-tier AI quota is used up for today. It resets at midnight Pacific.';
+  if (/no JSON|unparseable|no slides/i.test(m))
+    return 'The model returned something unusable \u2014 try again; if it repeats, simplify the topic or guidance.';
+  if (/only \d+ headlines/i.test(m))
+    return 'Could not fetch enough news headlines to source topics \u2014 the feeds may be briefly unreachable. Try again shortly.';
+  return m.slice(0, 200);
 }
 
 function requireKey(req, res) {
@@ -636,7 +681,7 @@ exports.scanTopicsNow = onRequest(
     if (!requireKey(req, res)) return;
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
     try { res.json(await runTopicScan()); }
-    catch (e) { console.error('scan failed:', e.message); res.status(502).json({ error: e.message }); }
+    catch (e) { console.error('scan failed:', e.message); res.status(502).json({ error: friendlyAiError(e) }); }
   }
 );
 
@@ -741,7 +786,7 @@ exports.generateDeck = onRequest(
       res.json({ id: ref.key, title: deck.title, slides: deck.slides.length });
     } catch (e) {
       console.error('deck generation failed:', e.message);
-      res.status(502).json({ error: e.message });
+      res.status(502).json({ error: friendlyAiError(e) });
     }
   }
 );
@@ -810,7 +855,7 @@ Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":
       res.json({ id, version: (deck.version || 1) + 1, slides: revised.slides.length });
     } catch (e) {
       console.error('refine failed:', e.message);
-      res.status(502).json({ error: e.message });
+      res.status(502).json({ error: friendlyAiError(e) });
     }
   }
 );
