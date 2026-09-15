@@ -99,6 +99,47 @@ async function decryptField(v) {
   }
 }
 
+// ── Who to send to ──────────────────────────────────────────────────────────
+// UCSB addresses stop working after graduation, so current students get both
+// their UCSB and personal address, while alumni get the personal one only.
+//
+// gradYear is either a year string ("2027") or the literal "Alumni". UCSB
+// commencement is in June, so someone whose gradYear matches the current year
+// counts as alumni from July onward.
+function hasGraduated(gradYear, now = new Date()) {
+  if (!gradYear) return false;                    // unknown - assume current
+  if (String(gradYear).trim().toLowerCase() === 'alumni') return true;
+  const y = parseInt(gradYear, 10);
+  if (!Number.isFinite(y)) return false;
+  const thisYear = now.getFullYear();
+  if (y < thisYear) return true;
+  if (y > thisYear) return false;
+  return now.getMonth() >= 6;                     // July (0-indexed) or later
+}
+
+// Returns a de-duplicated list of Brevo recipients.
+function recipientsFor(member, ucsbEmail, personalEmail, now = new Date()) {
+  const name = member && member.name ? member.name : undefined;
+  const out = [];
+  const seen = new Set();
+  const add = (addr) => {
+    const a = String(addr || '').trim().toLowerCase();
+    if (!a || !a.includes('@') || seen.has(a)) return;
+    seen.add(a);
+    out.push({ email: a, name });
+  };
+
+  if (hasGraduated(member && member.gradYear, now)) {
+    add(personalEmail);
+    add(ucsbEmail);          // fallback only - no personal address on file
+    return out.slice(0, 1);  // alumni: personal only
+  }
+
+  add(ucsbEmail);
+  add(personalEmail);
+  return out;
+}
+
 function eKey(email) {
   return String(email).replace(/[.@#$[\]/]/g, '_');
 }
@@ -109,7 +150,7 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-async function sendEmail(apiKey, to, toName, senderName, unreadCount) {
+async function sendEmail(apiKey, recipients, toName, senderName, unreadCount) {
   const vars = {
     count:  unreadCount,
     s:      unreadCount > 1 ? 's' : '',
@@ -119,7 +160,7 @@ async function sendEmail(apiKey, to, toName, senderName, unreadCount) {
 
   const body = {
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-    to: [{ email: to, name: toName || undefined }],
+    to: recipients,
     subject: fill(COPY.subject, vars),
     htmlContent:
       `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">` +
@@ -189,14 +230,15 @@ exports.sendUnreadEmailReminders = onSchedule(
           // On by default: only an explicit false opts out.
           if (member.emailReminders === false) { skipped++; continue; }
 
-          const to = (await decryptField(member.preferredEmail)) || email;
-          if (!to || !to.includes('@')) { skipped++; continue; }
+          const personal = await decryptField(member.preferredEmail);
+          const recipients = recipientsFor(member, email, personal);
+          if (!recipients.length) { skipped++; continue; }
 
           const senderKey = meta.lastFrom ? eKey(meta.lastFrom) : null;
           const senderName =
             (senderKey && meta.names && meta.names[senderKey]) || 'Another member';
 
-          await sendEmail(apiKey, to, member.name, senderName, unread);
+          await sendEmail(apiKey, recipients, member.name, senderName, unread);
           await db.ref(`dms/${convId}/meta/emailReminderAt_${key}`).set(now);
           sent++;
         } catch (err) {
@@ -266,9 +308,10 @@ exports.sendBroadcast = onRequest(
 
     for (const [key, member] of Object.entries(members)) {
       if (!member) { skipped++; continue; }
-      const to = (await decryptField(member.preferredEmail))
-              || (member.email || key.replace(/_/g, '.').replace(/\.ucsb\.edu$/, '@ucsb.edu'));
-      if (!to || !to.includes('@')) { skipped++; continue; }
+      const ucsb = member.email || key.replace(/_/g, '.').replace(/\.ucsb\.edu$/, '@ucsb.edu');
+      const personal = await decryptField(member.preferredEmail);
+      const recipients = recipientsFor(member, ucsb, personal);
+      if (!recipients.length) { skipped++; continue; }
 
       try {
         const r = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -280,7 +323,7 @@ exports.sendBroadcast = onRequest(
           },
           body: JSON.stringify({
             sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-            to: [{ email: to, name: member.name || undefined }],
+            to: recipients,
             subject,
             htmlContent:
               `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;` +
