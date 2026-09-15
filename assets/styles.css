@@ -262,9 +262,13 @@ body.is-admin  [data-auth="admin"]  { display: inline-flex !important; }
     border-bottom: 1px solid rgba(196, 164, 72, 0.25);
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
     opacity: 0; transform: translateY(-8px); pointer-events: none;
+    visibility: hidden;
+    transition: opacity .2s ease, transform .2s ease, visibility 0s linear .2s;
+  }
+  nav#main-nav.open {
+    opacity: 1; transform: none; pointer-events: auto; visibility: visible;
     transition: opacity .2s ease, transform .2s ease;
   }
-  nav#main-nav.open { opacity: 1; transform: none; pointer-events: auto; }
   nav#main-nav a { padding: 13px 16px; border-radius: 10px; font-size: 1.02rem; }
 }
 body.nav-open { overflow: hidden; }
