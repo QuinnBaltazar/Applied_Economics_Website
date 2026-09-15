@@ -10,7 +10,6 @@
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <link rel="stylesheet" href="assets/styles.css" />
   <script src="assets/app.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     :root {
       --bg: #090F1A;
@@ -197,9 +196,17 @@
       padding: 18px 20px; border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.88);
       cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s;
       font-family: inherit;
     }
+    .reset-btn strong, .reset-btn b { color: #fff; }
+    .reset-btn span, .reset-btn small { color: rgba(255,255,255,0.5); }
+    /* .danger was used on a button but never defined. */
+    .reset-btn.danger { color: rgba(255,150,130,0.95); border-color: rgba(255,120,100,0.35); }
+    .reset-btn.danger strong, .reset-btn.danger b { color: rgba(255,170,150,1); }
+    /* Buttons inherit black from the UA stylesheet otherwise. */
+    .nav-toggle { color: #fff; background: none; }
     .reset-btn:hover { border-color: rgba(255,120,100,0.5); background: rgba(255,80,60,0.06); }
     .reset-btn .rb-title { font-weight: 700; font-size: 0.95rem; color: #fff; }
     .reset-btn .rb-desc  { font-size: 0.82rem; color: rgba(255,255,255,0.48); }
@@ -382,9 +389,9 @@
             <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.8 25.7L10.6 4.6l7.2 13.2-12 7.9z" fill="#FFA000"/><path d="M10.6 4.6l5.2 9.5 1.9 3.7-7.1-13.2z" fill="#F57F17"/><path d="M15.8 14.1L10.6 4.6 26.2 25.7l-10.4-11.6z" fill="#FFCA28"/><path d="M5.8 25.7l20.4 0-10.4-11.6-10 11.6z" fill="#FFA000"/></svg>
             Firebase Database
           </a>
-          <a href="https://dashboard.emailjs.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(100,180,255,0.35);color:rgba(100,180,255,0.9);text-decoration:none;font-size:0.88rem;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.1)'" onmouseout="this.style.background='transparent'">
+          <a href="https://app.brevo.com/statistics/email" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(100,180,255,0.35);color:rgba(100,180,255,0.9);text-decoration:none;font-size:0.88rem;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.1)'" onmouseout="this.style.background='transparent'">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
-            EmailJS Dashboard
+            Brevo — Email Stats
           </a>
         </div>
       </div>
@@ -529,26 +536,6 @@
         </div>
       </div>
 
-      <!-- Email blast -->
-      <div class="admin-section" data-panel="panel-settings">
-        <h2>Email Members</h2>
-        <div style="display:flex;flex-direction:column;gap:12px;max-width:640px;">
-          <input type="text" id="blast-subject" placeholder="Subject line…" maxlength="200" style="width:100%;" />
-          <textarea id="blast-body" placeholder="Message body…" maxlength="2000" rows="5" style="width:100%;resize:vertical;"></textarea>
-          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-            <button class="reset-btn" id="btn-send-blast" style="margin:0;padding:12px 24px;flex-shrink:0;">Send to All Members</button>
-            <span id="blast-status" style="font-size:0.88rem;color:rgba(255,255,255,0.55);"></span>
-          </div>
-          <p style="font-size:0.78rem;color:rgba(255,255,255,0.32);margin-top:2px;">
-            Requires <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">EMAILJS_BLAST_TEMPLATE</code> to be configured in admin.html.
-            Create an EmailJS template with variables: <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;to_email&#125;&#125;</code>,
-            <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;member_name&#125;&#125;</code>,
-            <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;subject&#125;&#125;</code>,
-            <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">&#123;&#123;message_body&#125;&#125;</code>.
-          </p>
-        </div>
-      </div>
-
       <!-- Vote history -->
       <div class="admin-section" data-panel="panel-settings">
         <h2>Vote History</h2>
@@ -619,77 +606,12 @@
       'Current Market Bull and Bear Cases','Investment Banking'
     ];
 
-    // ── EmailJS (for password reset emails) ───────────────────
-    // Same service as signin.html. Create a second template in EmailJS:
-    //   Variables: {{to_email}}, {{member_name}}, {{club_name}}
-    //   Subject: "Your AEC account password has been reset"
-    //   Body: "Hi {{member_name}}, an admin has cleared your AEC password.
-    //          Visit sign in to re-verify your email and set a new password."
-    // Then replace 'YOUR_RESET_TEMPLATE_ID' below with the new template ID.
-    const EMAILJS_PUBLIC_KEY      = '8NT7ERI9_COG0opnM';
-    const EMAILJS_SERVICE_ID      = 'service_q979uh8';
-    const EMAILJS_RESET_TEMPLATE  = 'YOUR_RESET_TEMPLATE_ID';
-    const EMAILJS_BLAST_TEMPLATE  = 'template_ttjq5tl'; // create in EmailJS; vars: {{to_email}}, {{member_name}}, {{subject}}, {{message_body}}
-    const EMAILJS_ADMIN_READY     = EMAILJS_RESET_TEMPLATE !== 'YOUR_RESET_TEMPLATE_ID';
-    const EMAILJS_BLAST_READY     = EMAILJS_BLAST_TEMPLATE !== 'YOUR_BLAST_TEMPLATE_ID';
-    if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_PUBLIC_KEY);
-
-    async function sendPasswordResetEmail(email, name) {
-      if (!EMAILJS_ADMIN_READY) return false;
-      try {
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_RESET_TEMPLATE, {
-          to_email: email, member_name: name, club_name: 'UCSB Applied Economics Club'
-        });
-        return true;
-      } catch(e) { console.error('EmailJS reset error:', e); return false; }
-    }
-
-    async function sendEmailBlast() {
-      const subject  = document.getElementById('blast-subject').value.trim();
-      const body     = document.getElementById('blast-body').value.trim();
-      const statusEl = document.getElementById('blast-status');
-      const btn      = document.getElementById('btn-send-blast');
-
-      if (!subject || !body) { statusEl.textContent = 'Please enter a subject and message.'; statusEl.style.color = '#ffb3b3'; return; }
-      if (!EMAILJS_BLAST_READY) {
-        statusEl.innerHTML = 'Set <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">EMAILJS_BLAST_TEMPLATE</code> in admin.html first.';
-        statusEl.style.color = '#ffb3b3'; return;
-      }
-      if (!confirm(`Send "${subject}" to all club members? This cannot be undone.`)) return;
-
-      btn.disabled = true;
-      statusEl.style.color = 'rgba(255,255,255,0.55)';
-      statusEl.textContent = 'Loading members…';
-
-      const raw = await fbGet('members');
-      if (!raw) { statusEl.textContent = 'Could not load members.'; statusEl.style.color = '#ffb3b3'; btn.disabled = false; return; }
-
-      // Deduplicate by email
-      const emailMap = new Map();
-      Object.values(raw).filter(m => m && m.email && m.name).forEach(m => {
-        const prev = emailMap.get(m.email);
-        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
-      });
-      const members = Array.from(emailMap.values());
-
-      let sent = 0, failed = 0;
-      for (const m of members) {
-        statusEl.textContent = `Sending… ${sent + failed + 1} / ${members.length}`;
-        try {
-          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_BLAST_TEMPLATE, {
-            to_email: m.email, member_name: m.name,
-            subject, message_body: body, club_name: 'UCSB Applied Economics Club'
-          });
-          sent++;
-        } catch(e) { console.error('Blast send error for', m.email, e); failed++; }
-        // Small delay to avoid rate-limiting
-        await new Promise(r => setTimeout(r, 150));
-      }
-
-      statusEl.textContent = `Done — ${sent} sent${failed ? ', ' + failed + ' failed' : ''}.`;
-      statusEl.style.color = failed ? '#ffb3b3' : 'rgba(100,220,130,0.9)';
-      btn.disabled = false;
-    }
+    // Password-reset notification emails are not wired up.
+    // The previous implementation used EmailJS with a template ID that was
+    // never created, so it always returned false and no email was ever sent.
+    // Removed rather than left as dead code. To restore it, add a Cloud
+    // Function alongside sendBroadcast that posts to Brevo.
+    async function sendPasswordResetEmail() { return false; }
 
     window.addEventListener('scroll', function() {
       document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8);
@@ -938,7 +860,7 @@
             const updated = Object.assign({}, member, { password: null });
             await fbSet('members/' + eKey(member.email), updated);
             const emailSent = await sendPasswordResetEmail(member.email, member.name);
-            setMsg('Password cleared for ' + member.name + '.' + (emailSent ? ' Reset email sent.' : ' (Set EMAILJS_RESET_TEMPLATE in admin.html to also send a notification email.)'));
+            setMsg('Password cleared for ' + member.name + '.' + (emailSent ? ' Reset email sent.' : ' Tell them directly — no notification email is sent.'));
           });
           actions.appendChild(resetPwdBtn);
 
@@ -1336,7 +1258,6 @@
       setTimeout(() => document.getElementById('vw-status').textContent = '', 2000);
     });
 
-    document.getElementById('btn-send-blast').addEventListener('click', sendEmailBlast);
 
     document.getElementById('btn-reset-custom').addEventListener('click', () =>
       confirmReset('clear all member-submitted topics', async () => {
