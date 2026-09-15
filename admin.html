@@ -716,14 +716,24 @@
     // ── Cloud Function endpoints ──────────────────────────────
     const FN_BASE = 'https://us-central1-applied-economics-club.cloudfunctions.net';
 
-    // The broadcast passphrase is held in memory for the tab only — never in
-    // localStorage, so closing the tab forgets it.
+    // The broadcast passphrase is asked for once per tab. sessionStorage (not
+    // localStorage) so it survives reloads but dies with the tab — a shared
+    // computer in the library doesn't keep it. A rejected key is forgotten so
+    // the next attempt re-prompts instead of failing silently forever.
     let _broadcastKey = null;
+    try { _broadcastKey = sessionStorage.getItem('aec-bkey') || null; } catch (e) {}
     function getBroadcastKey(reason) {
       if (_broadcastKey) return _broadcastKey;
       const entered = window.prompt(reason || 'Enter the broadcast passphrase:');
-      if (entered) _broadcastKey = entered;
+      if (entered) {
+        _broadcastKey = entered;
+        try { sessionStorage.setItem('aec-bkey', entered); } catch (e) {}
+      }
       return _broadcastKey;
+    }
+    function forgetBroadcastKey() {
+      _broadcastKey = null;
+      try { sessionStorage.removeItem('aec-bkey'); } catch (e) {}
     }
 
     // Emails the member to say an admin cleared their password.
@@ -736,7 +746,7 @@
           headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
           body: JSON.stringify({ email })
         });
-        if (r.status === 403) { _broadcastKey = null; return false; }
+        if (r.status === 403) { forgetBroadcastKey(); return false; }
         return r.ok;
       } catch (e) {
         console.error('reset notice failed:', e);
@@ -1555,7 +1565,7 @@
             headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key }
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Proposed ' + d.proposed + ' topics — review below.';
@@ -1636,7 +1646,7 @@
               headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
               body: JSON.stringify({ id: d.id })
             }).catch(() => null);
-            if (r && r.status === 403) { _broadcastKey = null; alert('Passphrase rejected.'); return; }
+            if (r && r.status === 403) { forgetBroadcastKey(); alert('Passphrase rejected.'); return; }
             if (r && r.ok) await loadDecks();
             else alert('Delete failed.');
           });
@@ -1693,7 +1703,7 @@
             body: JSON.stringify({ topic: name, guidance: desc ? 'Board topic description: ' + desc : '' })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { _broadcastKey = null; setMsg('Passphrase rejected.'); }
+          if (r.status === 403) { forgetBroadcastKey(); setMsg('Passphrase rejected.'); }
           else if (!r.ok) setMsg(d.error || ('Deck generation failed (' + r.status + ').'));
           else {
             await loadDecks();
@@ -1720,7 +1730,7 @@
             body: JSON.stringify({ topic, guidance })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Done — "' + d.title + '", ' + d.slides + ' slides.';
@@ -1753,7 +1763,7 @@
             body: JSON.stringify({ id: refining.id, instruction })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Updated to v' + d.version + '.';
@@ -1816,7 +1826,7 @@
               headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
               body: JSON.stringify({ id: f.id })
             }).catch(() => null);
-            if (r && r.status === 403) { _broadcastKey = null; alert('Passphrase rejected.'); return; }
+            if (r && r.status === 403) { forgetBroadcastKey(); alert('Passphrase rejected.'); return; }
             if (r && r.ok) await loadFlyers(); else alert('Delete failed.');
           });
           flyerList.appendChild(row);
@@ -1843,7 +1853,7 @@
             })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Done — "' + d.headline + '". Preview it below.';
@@ -1874,7 +1884,7 @@
             body: JSON.stringify({ id: refiningFlyer.id, instruction })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Updated to v' + d.version + '.';
@@ -1954,7 +1964,7 @@
           });
           const data = await res.json().catch(() => ({}));
 
-          if (res.status === 403)      { _broadcastKey = null; say('Passphrase rejected.', 'error'); }
+          if (res.status === 403)      { forgetBroadcastKey(); say('Passphrase rejected.', 'error'); }
           else if (res.status === 429) say(data.error || 'Sent too recently — wait a minute.', 'error');
           else if (!res.ok)            say(data.error || `Failed (${res.status}).`, 'error');
           else {
@@ -1963,7 +1973,8 @@
             if (data.skipped) t += ` ${data.skipped} skipped (no usable address).`;
             say(t, data.failed ? 'error' : 'ok');
             if (!data.failed) { subjectEl.value = ''; bodyEl.value = ''; countEl.textContent = '0'; }
-            _broadcastKey = key;   // reuse for password-reset notices this tab
+            _broadcastKey = key;
+            try { sessionStorage.setItem('aec-bkey', key); } catch (e) {}
             keyEl.value = '';
           }
         } catch (err) {
