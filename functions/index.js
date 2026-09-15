@@ -437,10 +437,10 @@ const AI_DAILY_CAP = 40;
 async function aiBudgetOk() {
   const day = new Date().toISOString().slice(0, 10);
   const ref = admin.database().ref('ai-usage/' + day);
-  const n = (await ref.get()).val() || 0;
-  if (n >= AI_DAILY_CAP) return false;
-  await ref.set(n + 1);
-  return true;
+  // Transaction, not read-then-set: two simultaneous calls at the cap could
+  // otherwise both pass the check.
+  const result = await ref.transaction(n => (n || 0) + 1);
+  return (result.snapshot.val() || 0) <= AI_DAILY_CAP;
 }
 
 // One call to Gemini. useSearch turns on Google Search grounding, which is
@@ -686,6 +686,18 @@ Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":
       const revised = extractJson(text);
       if (!revised || !Array.isArray(revised.slides) || !revised.slides.length) {
         throw new Error('revision returned no slides');
+      }
+      // Keep the outgoing version so a bad revision right before a meeting is
+      // recoverable (decks/{id}/history/{version}). Bounded to the last 5.
+      const v = deck.version || 1;
+      await ref.child('history/' + v).set({
+        title: deck.title || '', subtitle: deck.subtitle || '',
+        slides: deck.slides, savedAt: Date.now()
+      });
+      const hist = (await ref.child('history').get()).val() || {};
+      const keys = Object.keys(hist).map(Number).sort((a, b) => a - b);
+      for (const k of keys.slice(0, Math.max(0, keys.length - 5))) {
+        await ref.child('history/' + k).remove();
       }
       await ref.update({
         title: String(revised.title || deck.title).slice(0, 120),

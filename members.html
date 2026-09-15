@@ -375,6 +375,10 @@
     }
     async function encField(v) {
       if (!v) return v;
+      // Never wrap ciphertext in a second layer. decField returns the raw
+      // 'enc:' string when decryption fails, so without this guard a failed
+      // decrypt followed by a save would corrupt the field permanently.
+      if (String(v).startsWith('enc:')) return v;
       try {
         const key = await _getCK();
         const iv  = crypto.getRandomValues(new Uint8Array(12));

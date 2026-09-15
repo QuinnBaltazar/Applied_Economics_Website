@@ -45,6 +45,20 @@
     "custom-topics": { ".read": "auth != null", ".write": "auth != null" },
     "pending-topics":{ ".read": false, ".write": "auth != null" },
     "activity":      { ".read": false, ".write": "auth != null" },
-    "notifications": { ".read": false, ".write": "auth != null" }
+    "notifications": { ".read": false, ".write": "auth != null" },
+
+    "vote-window":   { ".read": "auth != null", ".write": false },
+    "vote-history":  { ".read": "auth != null", ".write": false },
+    "submissions": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('members').child(auth.uid).child('isAdmin').val() == true)",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "track-progress": {
+      "$uid": { ".read": "auth != null && auth.uid == $uid", ".write": "auth != null && auth.uid == $uid" }
+    },
+    "decks":         { ".read": "auth != null", ".write": false },
+    "ai-usage":      { ".read": false, ".write": false }
   }
 }

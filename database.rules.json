@@ -2,16 +2,18 @@
   "rules": {
     "vote-counts":   { ".read": true, ".write": true },
     "vote-records":  { ".read": true, ".write": true },
-    "vote-window":   { ".read": true, ".write": false },
+    "vote-window":   { ".read": true, ".write": true },
     "custom-topics": { ".read": true, ".write": true },
     "pending-topics":{ ".read": true,  ".write": true },
     "members":       { ".read": true, ".write": true },
     "messages":      { ".read": true, ".write": true },
     "dms":           { ".read": true, ".write": true },
-    "activity":      { ".read": false, ".write": true },
+    "activity":      { ".read": true,  ".write": true },
     "notifications": { ".read": false, ".write": true },
     "track-progress":{ ".read": true,  ".write": true },
     "decks":         { ".read": true,  ".write": false },
-    "ai-usage":      { ".read": false, ".write": false }
+    "ai-usage":      { ".read": false, ".write": false },
+    "vote-history":  { ".read": true,  ".write": true },
+    "submissions":   { ".read": true,  ".write": true }
   }
 }
