@@ -376,6 +376,7 @@
           <button class="admin-tab" data-target="panel-tracks">Submissions <span class="tab-badge" id="tab-badge-submissions" style="display:none"></span></button>
           <button class="admin-tab" data-target="panel-activity">Activity</button>
           <button class="admin-tab" data-target="panel-messages">Messages <span class="tab-badge" id="tab-badge-messages" style="display:none"></span></button>
+          <button class="admin-tab" data-target="panel-decks">Decks</button>
           <button class="admin-tab" data-target="panel-broadcast">Email All</button>
           <button class="admin-tab" data-target="panel-settings">Settings</button>
         </div>
@@ -414,6 +415,10 @@
       <!-- Custom (Other) topics -->
       <div class="admin-section" data-panel="panel-topics">
         <h2>Pending Topics <span id="pending-badge" style="display:none;background:rgba(255,160,50,0.2);color:rgba(255,160,50,0.9);border-radius:999px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:8px;vertical-align:middle;"></span></h2>
+        <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button type="button" id="btn-scan-topics" class="reset-pwd-btn" style="font-size:0.85rem;padding:8px 18px;">Scan news for topics now</button>
+          <span id="scan-status" style="font-size:0.82rem;color:rgba(255,255,255,0.5);"></span>
+        </div>
         <div id="pending-topics-list"></div>
       </div>
 
@@ -423,6 +428,44 @@
       </div>
 
       <!-- Members management -->
+      <div class="admin-section" data-panel="panel-decks">
+        <h2>AI Presentation Decks</h2>
+        <div class="section-body">
+          <p style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin:0 0 18px;line-height:1.5">
+            Generates a meeting deck on any topic using current, sourced information.
+            Decks open in the browser — arrow keys to present, F for fullscreen.
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:680px;margin-bottom:16px">
+            <input type="text" id="deck-topic" maxlength="120" placeholder="Topic — e.g. the approved topic for this week's meeting"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem" />
+            <textarea id="deck-guidance" rows="2" maxlength="1000" placeholder="Optional guidance — audience level, angle, anything to emphasise…"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem;font-family:inherit;resize:vertical"></textarea>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button type="button" id="deck-generate" class="reset-pwd-btn" style="font-size:0.88rem;padding:10px 20px;border-color:rgba(196,164,72,0.45);color:#D4B55E;">Generate deck</button>
+              <span id="deck-status" style="font-size:0.85rem;color:rgba(255,255,255,0.5);"></span>
+            </div>
+          </div>
+
+          <div id="deck-list"><p class="empty-state">Loading decks…</p></div>
+
+          <div id="deck-refine" style="display:none;margin-top:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:18px;max-width:680px">
+            <div style="font-weight:700;margin-bottom:4px">Refine: <span id="refine-title"></span></div>
+            <p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0 0 10px">
+              Tell the AI what to change — it revises the deck in place and bumps the version.
+            </p>
+            <textarea id="refine-instruction" rows="3" maxlength="1000"
+              placeholder="e.g. Make slide 3 simpler, add a slide on the Fed's response, shorten the discussion questions…"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.9rem;font-family:inherit;resize:vertical"></textarea>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+              <button type="button" id="refine-send" class="reset-pwd-btn" style="font-size:0.86rem;padding:9px 18px;">Apply changes</button>
+              <button type="button" id="refine-cancel" class="reset-pwd-btn" style="font-size:0.86rem;padding:9px 18px;opacity:0.6;">Close</button>
+              <span id="refine-status" style="font-size:0.83rem;color:rgba(255,255,255,0.5);"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="admin-section" data-panel="panel-broadcast">
         <h2>Email All Members</h2>
         <div class="section-body">
@@ -724,15 +767,24 @@
         const row = document.createElement('div');
         row.className = 'topic-row';
         const timeStr = t.submittedAt ? new Date(t.submittedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+        const aiBadge = t.ai
+          ? ' <span style="font-size:0.66rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:rgba(196,164,72,0.15);color:#D4B55E;margin-left:6px;">AI</span>'
+          : '';
+        const srcLinks = Array.isArray(t.sources) && t.sources.length
+          ? '<div style="margin-top:5px;font-size:0.76rem;">' + t.sources.slice(0,4).map(sr => {
+              const u = String(sr.url||''); if (!/^https?:\/\//i.test(u)) return '';
+              return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer" style="color:rgba(100,180,255,0.85);text-decoration:none;margin-right:12px;">' + escapeHtml(String(sr.title||u).slice(0,60)) + '</a>';
+            }).join('') + '</div>'
+          : '';
         row.innerHTML = `
           <div class="topic-row-info">
-            <div class="topic-row-name">${escapeHtml(t.name)}</div>
-            <div class="topic-row-meta">${escapeHtml(t.desc||'')} &nbsp;·&nbsp; By ${escapeHtml(t.createdBy||'anonymous')} &nbsp;·&nbsp; ${escapeHtml(timeStr)}</div>
+            <div class="topic-row-name">${escapeHtml(t.name)}${aiBadge}</div>
+            <div class="topic-row-meta">${escapeHtml(t.desc||'')} &nbsp;·&nbsp; By ${escapeHtml(t.createdBy||'anonymous')} &nbsp;·&nbsp; ${escapeHtml(timeStr)}${srcLinks}</div>
           </div>
-          <button class="reset-pwd-btn" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);" data-key="${escapeHtml(t.key)}">Approve</button>
+          <button class="reset-pwd-btn approve-topic-btn" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);" data-key="${escapeHtml(t.key)}">Approve</button>
           <button class="delete-topic-btn" data-key="${escapeHtml(t.key)}" style="margin-left:6px;">Reject</button>
         `;
-        row.querySelector('[style*="Approve"]').addEventListener('click', async function() {
+        row.querySelector('.approve-topic-btn').addEventListener('click', async function() {
           const key = this.dataset.key;
           // Move to custom-topics
           await fetch(`${DB_URL}/custom-topics.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:t.name, desc:t.desc||'', votes:0, createdBy:t.createdBy||'anonymous' }) });
@@ -1415,6 +1467,141 @@
       await refresh();
     });
 
+
+
+    // ── AI: topic scan + deck management ─────────────────────────────────────
+    (function initAI() {
+      const scanBtn = document.getElementById('btn-scan-topics');
+      if (scanBtn) scanBtn.addEventListener('click', async () => {
+        const key = getBroadcastKey('Passphrase required to run the topic scan:');
+        if (!key) return;
+        const st = document.getElementById('scan-status');
+        scanBtn.disabled = true; st.textContent = 'Scanning current news — 20-40 seconds…';
+        try {
+          const r = await fetch(FN_BASE + '/scanTopicsNow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key }
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
+          else {
+            st.textContent = 'Proposed ' + d.proposed + ' topics — review below.';
+            if (typeof refresh === 'function') await refresh();
+          }
+        } catch (e) { st.textContent = 'Could not reach the scanner.'; }
+        finally { scanBtn.disabled = false; }
+      });
+
+      const listEl = document.getElementById('deck-list');
+      if (!listEl) return;
+      let refining = null;
+
+      async function loadDecks() {
+        const raw = await fbGet('decks');
+        const decks = raw ? Object.entries(raw).map(([k, v]) => ({ id: k, ...v }))
+                              .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)) : [];
+        if (!decks.length) { listEl.innerHTML = '<p class="empty-state">No decks yet — generate one above.</p>'; return; }
+        listEl.innerHTML = '';
+        decks.forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'topic-row';
+          const when = d.updatedAt ? new Date(d.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+          row.innerHTML =
+            '<div class="topic-row-info">' +
+              '<div class="topic-row-name">' + escapeHtml(d.title || d.topic || 'Untitled') + '</div>' +
+              '<div class="topic-row-meta">' + (d.slides ? d.slides.length + ' slides' : '') +
+                ' &nbsp;·&nbsp; v' + (d.version || 1) + ' &nbsp;·&nbsp; ' + escapeHtml(when) + '</div>' +
+            '</div>' +
+            '<a class="reset-pwd-btn" style="text-decoration:none;border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);" ' +
+              'href="present.html?id=' + encodeURIComponent(d.id) + '" target="_blank" rel="noopener">Present</a>' +
+            '<button class="reset-pwd-btn deck-refine-btn" style="margin-left:6px;" data-id="' + escapeHtml(d.id) + '">Refine</button>' +
+            '<button class="delete-topic-btn deck-del-btn" style="margin-left:6px;" data-id="' + escapeHtml(d.id) + '">Delete</button>';
+
+          row.querySelector('.deck-refine-btn').addEventListener('click', () => {
+            refining = d;
+            document.getElementById('refine-title').textContent = d.title || d.topic;
+            document.getElementById('refine-status').textContent = '';
+            document.getElementById('deck-refine').style.display = 'block';
+            document.getElementById('refine-instruction').focus();
+          });
+          row.querySelector('.deck-del-btn').addEventListener('click', async function () {
+            if (!confirm('Delete deck "' + (d.title || d.topic) + '"? This cannot be undone.')) return;
+            const key = getBroadcastKey('Passphrase required to delete the deck:');
+            if (!key) return;
+            const r = await fetch(FN_BASE + '/deleteDeck', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+              body: JSON.stringify({ id: d.id })
+            }).catch(() => null);
+            if (r && r.status === 403) { _broadcastKey = null; alert('Passphrase rejected.'); return; }
+            if (r && r.ok) await loadDecks();
+            else alert('Delete failed.');
+          });
+          listEl.appendChild(row);
+        });
+      }
+
+      document.getElementById('deck-generate').addEventListener('click', async () => {
+        const topic = document.getElementById('deck-topic').value.trim();
+        const guidance = document.getElementById('deck-guidance').value.trim();
+        const st = document.getElementById('deck-status');
+        if (!topic) { st.textContent = 'Enter a topic first.'; return; }
+        const key = getBroadcastKey('Passphrase required to generate a deck:');
+        if (!key) return;
+        const btn = document.getElementById('deck-generate');
+        btn.disabled = true; st.textContent = 'Researching and building — 30-60 seconds…';
+        try {
+          const r = await fetch(FN_BASE + '/generateDeck', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            body: JSON.stringify({ topic, guidance })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
+          else {
+            st.textContent = 'Done — "' + d.title + '", ' + d.slides + ' slides.';
+            document.getElementById('deck-topic').value = '';
+            document.getElementById('deck-guidance').value = '';
+            await loadDecks();
+          }
+        } catch (e) { st.textContent = 'Could not reach the generator.'; }
+        finally { btn.disabled = false; }
+      });
+
+      document.getElementById('refine-cancel').addEventListener('click', () => {
+        document.getElementById('deck-refine').style.display = 'none'; refining = null;
+      });
+      document.getElementById('refine-send').addEventListener('click', async () => {
+        if (!refining) return;
+        const instruction = document.getElementById('refine-instruction').value.trim();
+        const st = document.getElementById('refine-status');
+        if (!instruction) { st.textContent = 'Describe the change first.'; return; }
+        const key = getBroadcastKey('Passphrase required to refine the deck:');
+        if (!key) return;
+        const btn = document.getElementById('refine-send');
+        btn.disabled = true; st.textContent = 'Revising — 20-40 seconds…';
+        try {
+          const r = await fetch(FN_BASE + '/refineDeck', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            body: JSON.stringify({ id: refining.id, instruction })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (r.status === 403) { _broadcastKey = null; st.textContent = 'Passphrase rejected.'; }
+          else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
+          else {
+            st.textContent = 'Updated to v' + d.version + '.';
+            document.getElementById('refine-instruction').value = '';
+            await loadDecks();
+          }
+        } catch (e) { st.textContent = 'Could not reach the refiner.'; }
+        finally { btn.disabled = false; }
+      });
+
+      loadDecks();
+    })();
 
     // ── Email All Members ─────────────────────────────────────────────────────
     // The passphrase is verified server-side. admin.html's own admin check is

@@ -422,3 +422,303 @@ exports.sendPasswordResetNotice = onRequest(
     }
   }
 );
+
+/* ════════════════════════════════════════════════════════════════════════
+   AI FEATURES — Gemini (free tier, project aec-ai)
+   ════════════════════════════════════════════════════════════════════════ */
+
+const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+const GEMINI_MODEL = 'gemini-2.5-flash';
+
+// Hard daily cap across ALL AI calls. The free tier allows far more; this is
+// a circuit breaker so a bug or abuse can't hammer the API.
+const AI_DAILY_CAP = 40;
+
+async function aiBudgetOk() {
+  const day = new Date().toISOString().slice(0, 10);
+  const ref = admin.database().ref('ai-usage/' + day);
+  const n = (await ref.get()).val() || 0;
+  if (n >= AI_DAILY_CAP) return false;
+  await ref.set(n + 1);
+  return true;
+}
+
+// One call to Gemini. useSearch turns on Google Search grounding, which is
+// what lets it see *current* news and hand back real source URLs.
+async function callGemini(prompt, useSearch) {
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 8192 }
+  };
+  if (useSearch) body.tools = [{ google_search: {} }];
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY.value()}`,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
+  );
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = await res.json();
+
+  const cand = data.candidates && data.candidates[0];
+  const text = ((cand && cand.content && cand.content.parts) || [])
+    .map(p => p.text || '').join('');
+
+  // Grounded source URLs, if any.
+  const sources = [];
+  const chunks = cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks;
+  if (Array.isArray(chunks)) {
+    for (const c of chunks) {
+      if (c.web && c.web.uri) sources.push({ title: c.web.title || c.web.uri, url: c.web.uri });
+    }
+  }
+  return { text, sources };
+}
+
+// Models wrap JSON in prose or fences; dig the first JSON value out.
+function extractJson(text) {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw = fenced ? fenced[1] : text;
+  const start = raw.search(/[[{]/);
+  if (start === -1) throw new Error('no JSON in model output');
+  for (let end = raw.length; end > start; end--) {
+    try { return JSON.parse(raw.slice(start, end)); } catch { /* trim and retry */ }
+  }
+  throw new Error('unparseable JSON in model output');
+}
+
+function requireKey(req, res) {
+  const provided = String(req.get('x-broadcast-key') || '');
+  const expected = BROADCAST_KEY.value();
+  if (!provided || provided.length !== expected.length || provided !== expected) {
+    res.status(403).json({ error: 'Not authorised' });
+    return false;
+  }
+  return true;
+}
+
+// ── Topic scanner ───────────────────────────────────────────────────────────
+async function runTopicScan() {
+  const db = admin.database();
+
+  // Everything already on or proposed for the board, so we never re-propose.
+  const [counts, custom, pending] = await Promise.all([
+    db.ref('vote-counts').get(), db.ref('custom-topics').get(), db.ref('pending-topics').get()
+  ]);
+  const existing = [
+    ...Object.keys(counts.val() || {}),
+    ...Object.values(custom.val() || {}).map(t => t && t.name),
+    ...Object.values(pending.val() || {}).map(t => t && t.name)
+  ].filter(Boolean);
+
+  const prompt =
+`You help a university Applied Economics Club pick weekly discussion topics that members vote on.
+
+Search for what is currently happening in markets, economics, and finance (today's date matters — recent news only). Propose exactly 5 discussion topics.
+
+Rules:
+- Each topic must be tied to a real, current event or development you found via search.
+- Each needs: "name" (max 60 chars, punchy, board-ready), "desc" (2 sentences: what happened and why it's worth discussing), and "why" (1 sentence on relevance to students).
+- Do NOT propose anything similar to these existing topics: ${existing.join('; ') || '(none)'}
+- Skip anything you cannot ground in a real source. Fewer than 5 well-sourced topics beats 5 with a made-up one.
+
+Reply with ONLY a JSON array: [{"name":"...","desc":"...","why":"..."}]`;
+
+  const { text, sources } = await callGemini(prompt, true);
+  const topics = extractJson(text);
+  if (!Array.isArray(topics)) throw new Error('expected a JSON array of topics');
+
+  let added = 0;
+  for (const t of topics.slice(0, 5)) {
+    if (!t || !t.name || !t.desc) continue;
+    await db.ref('pending-topics').push({
+      name: String(t.name).slice(0, 80),
+      desc: (String(t.desc) + (t.why ? ' ' + String(t.why) : '')).slice(0, 500),
+      createdBy: 'AI scanner',
+      ai: true,
+      sources: sources.slice(0, 6),
+      createdAt: Date.now()
+    });
+    added++;
+  }
+  console.log(`topic scan: proposed ${added} (sources: ${sources.length})`);
+  return { proposed: added, sources: sources.length };
+}
+
+// Daily at 07:00 Pacific — proposals are waiting when an admin checks in.
+exports.scanTopicsDaily = onSchedule(
+  { schedule: 'every day 07:00', timeZone: 'America/Los_Angeles', region: 'us-central1', secrets: [GEMINI_API_KEY] },
+  async () => {
+    if (!(await aiBudgetOk())) { console.warn('AI daily cap reached'); return; }
+    try { await runTopicScan(); } catch (e) { console.error('daily scan failed:', e.message); }
+  }
+);
+
+// "Scan now" button in admin.
+exports.scanTopicsNow = onRequest(
+  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY],
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+    if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
+    try { res.json(await runTopicScan()); }
+    catch (e) { console.error('scan failed:', e.message); res.status(502).json({ error: e.message }); }
+  }
+);
+
+// ── Deck generator ──────────────────────────────────────────────────────────
+// A deck is structured JSON in decks/{id}; present.html renders it. Slides:
+//   {type:"title",   heading, sub}
+//   {type:"bullets", heading, points:[str]}
+//   {type:"split",   heading, left:{title,points}, right:{title,points}}
+//   {type:"stat",    heading, stats:[{value,label}]}
+//   {type:"quote",   text, attribution}
+//   {type:"sources", links:[{title,url}]}
+const DECK_SCHEMA = `[
+ {"type":"title","heading":"...","sub":"..."},
+ {"type":"bullets","heading":"...","points":["..."]},
+ {"type":"split","heading":"...","left":{"title":"...","points":["..."]},"right":{"title":"...","points":["..."]}},
+ {"type":"stat","heading":"...","stats":[{"value":"...","label":"..."}]},
+ {"type":"quote","text":"...","attribution":"..."}
+]`;
+
+function deckPrompt(topic, guidance) {
+  return `You are preparing a presentation for a university Applied Economics Club meeting (~30 undergrads, mixed experience). Search for current, factual information first.
+
+Topic: ${topic}
+${guidance ? `Presenter guidance to follow: ${guidance}` : ''}
+
+Build a 8-11 slide deck as JSON. Slide types available:
+${DECK_SCHEMA}
+
+Requirements:
+- Slide 1 must be type "title".
+- Mix types; never more than two "bullets" slides in a row.
+- Max 5 points per slide, each under 16 words. No sub-bullets.
+- Use a "stat" slide for real numbers you found (market moves, rates, valuations).
+- End with discussion questions (type "bullets", heading "Discussion").
+- Only include facts you can ground in search results. No invented numbers.
+
+Reply with ONLY JSON: {"title":"...","subtitle":"...","slides":[...]}`;
+}
+
+function sanitizeDeck(deck, topic, sources) {
+  if (!deck || !Array.isArray(deck.slides) || !deck.slides.length) {
+    throw new Error('model returned no slides');
+  }
+  const slides = deck.slides.slice(0, 14).filter(s => s && s.type);
+  if (sources.length) {
+    slides.push({ type: 'sources', links: sources.slice(0, 8) });
+  }
+  return {
+    title: String(deck.title || topic).slice(0, 120),
+    subtitle: String(deck.subtitle || 'UCSB Applied Economics Club').slice(0, 160),
+    topic: String(topic).slice(0, 120),
+    slides
+  };
+}
+
+exports.generateDeck = onRequest(
+  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+
+    const topic = String((req.body && req.body.topic) || '').trim();
+    const guidance = String((req.body && req.body.guidance) || '').trim().slice(0, 1000);
+    if (!topic) { res.status(400).json({ error: 'topic is required' }); return; }
+    if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
+
+    try {
+      const { text, sources } = await callGemini(deckPrompt(topic, guidance), true);
+      const deck = sanitizeDeck(extractJson(text), topic, sources);
+      const ref = await admin.database().ref('decks').push({
+        ...deck,
+        version: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      console.log(`deck generated: ${ref.key} "${deck.title}" (${deck.slides.length} slides)`);
+      res.json({ id: ref.key, title: deck.title, slides: deck.slides.length });
+    } catch (e) {
+      console.error('deck generation failed:', e.message);
+      res.status(502).json({ error: e.message });
+    }
+  }
+);
+
+// ── Deck refinement — the "prompt window" in admin ──────────────────────────
+exports.refineDeck = onRequest(
+  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+
+    const id = String((req.body && req.body.id) || '').trim();
+    const instruction = String((req.body && req.body.instruction) || '').trim().slice(0, 1000);
+    if (!id || !instruction) { res.status(400).json({ error: 'id and instruction are required' }); return; }
+
+    const ref = admin.database().ref('decks/' + id);
+    const snap = await ref.get();
+    const deck = snap.val();
+    if (!deck) { res.status(404).json({ error: 'No deck with that id' }); return; }
+    if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
+
+    const prompt = `Here is a presentation deck as JSON for a university Applied Economics Club:
+
+${JSON.stringify({ title: deck.title, subtitle: deck.subtitle, slides: deck.slides })}
+
+Revise it according to this instruction from the presenter:
+"${instruction}"
+
+Rules:
+- Keep the same JSON schema. Slide types: title, bullets, split, stat, quote, sources.
+- Change only what the instruction asks for; keep everything else intact.
+- Keep any "sources" slide unless told to remove it.
+- If the instruction needs current facts, search for them; never invent numbers.
+
+Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":[...]}`;
+
+    try {
+      const { text } = await callGemini(prompt, true);
+      const revised = extractJson(text);
+      if (!revised || !Array.isArray(revised.slides) || !revised.slides.length) {
+        throw new Error('revision returned no slides');
+      }
+      await ref.update({
+        title: String(revised.title || deck.title).slice(0, 120),
+        subtitle: String(revised.subtitle || deck.subtitle || '').slice(0, 160),
+        slides: revised.slides.slice(0, 16),
+        version: (deck.version || 1) + 1,
+        updatedAt: Date.now(),
+        lastInstruction: instruction
+      });
+      console.log(`deck ${id} refined -> v${(deck.version || 1) + 1}`);
+      res.json({ id, version: (deck.version || 1) + 1, slides: revised.slides.length });
+    } catch (e) {
+      console.error('refine failed:', e.message);
+      res.status(502).json({ error: e.message });
+    }
+  }
+);
+
+// ── Admin: delete a deck ────────────────────────────────────────────────────
+// decks is write:false at the rules level, so deletion has to come through
+// here (Admin SDK bypasses rules). Passphrase-gated like the rest.
+exports.deleteDeck = onRequest(
+  { region: 'us-central1', secrets: [BROADCAST_KEY],
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+    const id = String((req.body && req.body.id) || '').trim();
+    if (!id) { res.status(400).json({ error: 'id is required' }); return; }
+    const ref = admin.database().ref('decks/' + id);
+    if (!(await ref.get()).exists()) { res.status(404).json({ error: 'No deck with that id' }); return; }
+    await ref.remove();
+    console.log('deck deleted:', id);
+    res.json({ deleted: id });
+  }
+);
