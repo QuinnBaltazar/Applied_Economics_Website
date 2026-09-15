@@ -235,7 +235,10 @@
                `stroke-dasharray="${len}" stroke-dashoffset="${len}"><animate attributeName="stroke-dashoffset" from="${len}" to="0" dur="1s" begin="0.2s" fill="freeze"/></path>` +
                pts.map((p, i) => `<circle cx="${x(i)}" cy="${y(p.value)}" r="4.5" fill="#D4B55E" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="${0.9 + i * 0.04}s" fill="freeze"/></circle>`).join('');
       }
-      const xlabels = pts.map((p, i) => `<text x="${x(i)}" y="${H - padB + 22}" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-size="13">${esc(p.label).slice(0, 14)}</text>`).join('');
+      const xlabels = pts.map((p, i) => {
+        const anchor = i === 0 ? 'start' : (i === pts.length - 1 ? 'end' : 'middle');
+        return `<text x="${x(i)}" y="${H - padB + 22}" text-anchor="${anchor}" fill="rgba(255,255,255,0.55)" font-size="13">${esc(p.label).slice(0, 16)}</text>`;
+      }).join('');
       return `
         <h2>${esc(s.heading || '')}</h2>
         <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-height:56vh;">
@@ -253,11 +256,14 @@
       const W = 900, H = 380;
       const d = `M40,300 C160,300 200,120 320,120 C440,120 470,60 560,60 C650,60 700,300 820,300`;
       const len = 2400;
+      const last = stages.length - 1;
       const dots = stages.map((st, i) => {
-        const cx = 40 + (i / (Math.max(1, stages.length - 1))) * 780;
-        const cy = 300 - Math.sin((i / Math.max(1, stages.length - 1)) * Math.PI) * 180;
+        const cx = 40 + (i / (Math.max(1, last))) * 780;
+        const cy = 300 - Math.sin((i / Math.max(1, last)) * Math.PI) * 180;
+        const label = String(st).replace(/\s*\(.*$/, '').trim().slice(0, 18);
+        const anchor = i === 0 ? 'start' : (i === last ? 'end' : 'middle');
         return `<circle cx="${cx}" cy="${cy}" r="6" fill="#D4B55E"/>` +
-               `<text x="${cx}" y="${cy - 16}" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="16" font-weight="700">${esc(st).slice(0, 22)}</text>`;
+               `<text x="${cx}" y="${cy - 16}" text-anchor="${anchor}" fill="rgba(255,255,255,0.85)" font-size="16" font-weight="700">${esc(label)}</text>`;
       }).join('');
       return `
         <h2>${esc(s.heading || '')}</h2>

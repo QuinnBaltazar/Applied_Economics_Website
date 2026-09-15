@@ -773,6 +773,9 @@ VISUALS (use them, a finance deck should not be all text):
   headlines above or stable common knowledge). Its numbers must be real; if you
   do not have real figures, do NOT fabricate a chart, use a "cycle" or "stat"
   instead. Add note:"illustrative" only if the shape is conceptual.
+- "cycle" stage names must be 1-2 words each (e.g. "Accumulation"), never
+  parenthetical explanations; put explanation in the notes or a bullets slide.
+  Chart point labels max 12 characters.
 - Use a "cycle" slide to show a conceptual sequence of stages (market cycle,
   Wyckoff phases, sector rotation, a process). This is schematic, so it is the
   right way to show a concept without implying fake precision.
