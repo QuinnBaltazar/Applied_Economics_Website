@@ -720,6 +720,8 @@ const DECK_SCHEMA = `[
  {"type":"bullets","heading":"...","points":["..."]},
  {"type":"split","heading":"...","left":{"title":"...","points":["..."]},"right":{"title":"...","points":["..."]}},
  {"type":"stat","heading":"...","stats":[{"value":"...","label":"..."}]},
+ {"type":"chart","heading":"...","chartType":"line|bar","points":[{"label":"Q1","value":12.4},{"label":"Q2","value":15.1}],"note":"optional: source or 'illustrative'"},
+ {"type":"cycle","heading":"...","stages":["Accumulation","Markup","Distribution","Markdown"],"note":"optional"},
  {"type":"quote","text":"...","attribution":"..."}
 ]`;
 
@@ -752,6 +754,16 @@ RIGOR (this is a finance club; members will notice hand-waving):
   frame it qualitatively instead.
 - If you are not confident something is established and correct, leave it out.
   A shorter, correct deck beats a longer, plausible-sounding one.
+
+VISUALS (use them, a finance deck should not be all text):
+- Use a "chart" slide when you have at least two REAL data points (from the
+  headlines above or stable common knowledge). Its numbers must be real; if you
+  do not have real figures, do NOT fabricate a chart, use a "cycle" or "stat"
+  instead. Add note:"illustrative" only if the shape is conceptual.
+- Use a "cycle" slide to show a conceptual sequence of stages (market cycle,
+  Wyckoff phases, sector rotation, a process). This is schematic, so it is the
+  right way to show a concept without implying fake precision.
+- Aim for at least one visual slide (chart, cycle, or stat) in the deck.
 
 STRUCTURE:
 - Slide 1 must be type "title".
