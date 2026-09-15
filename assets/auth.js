@@ -34,19 +34,28 @@
   }
 
   // ── 1. Token-attaching fetch wrapper ────────────────────────────────────
+  // Firebase restores the signed-in session ASYNCHRONOUSLY on every page
+  // load. Pages fire their data requests immediately, so without waiting,
+  // the first requests go out unauthenticated, the rules 401 them, and
+  // every list renders empty. Database calls therefore wait for the first
+  // auth-state resolution before leaving the building.
   var rawFetch = window.fetch.bind(window);
+  var authReady = new Promise(function (resolve) {
+    var un = auth.onAuthStateChanged(function () { un(); resolve(); });
+  });
   window.fetch = function (input, init) {
     try {
       var url = typeof input === 'string' ? input : (input && input.url) || '';
       if (url.indexOf(DB_HOST) !== -1 && url.indexOf('.json') !== -1 &&
           url.indexOf('auth=') === -1) {
-        var u = auth.currentUser;
-        if (u) {
+        return authReady.then(function () {
+          var u = auth.currentUser;
+          if (!u) return rawFetch(input, init);
           return u.getIdToken().then(function (t) {
             var sep = url.indexOf('?') === -1 ? '?' : '&';
             return rawFetch(url + sep + 'auth=' + encodeURIComponent(t), init);
           });
-        }
+        });
       }
     } catch (e) { /* fall through to raw */ }
     return rawFetch(input, init);
