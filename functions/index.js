@@ -1217,14 +1217,23 @@ exports.adminMember = onRequest(
 // with its own budgets, so it can never starve the admin flagship pool.
 // Defaults; admins override live from the admin Settings panel
 // (stored at config/tutor, no redeploy needed).
+//
+// Clamp ceilings are set by what the free tier actually serves, not by
+// optimism: the tutor runs on the two lite pools (500 requests/day each,
+// about 1,000 combined), which are shared with topic scans and the flyer
+// quality critics. Global tops out at 800 to leave that headroom; per
+// member tops out at 100 so nobody can eat the club's whole pool. If
+// Google resizes the free tier, this comment and these numbers are the
+// place to update.
 const TUTOR_DEFAULTS = { perMember: 40, global: 600 };
+const TUTOR_MAX = { perMember: 100, global: 800 };
 async function tutorBudgets() {
   try {
     const c = (await admin.database().ref('config/tutor').get()).val() || {};
-    return {
-      perMember: Math.min(500, Math.max(1, parseInt(c.perMember, 10) || TUTOR_DEFAULTS.perMember)),
-      global: Math.min(2000, Math.max(1, parseInt(c.global, 10) || TUTOR_DEFAULTS.global))
-    };
+    const global = Math.min(TUTOR_MAX.global, Math.max(1, parseInt(c.global, 10) || TUTOR_DEFAULTS.global));
+    const perMember = Math.min(TUTOR_MAX.perMember, global,
+      Math.max(1, parseInt(c.perMember, 10) || TUTOR_DEFAULTS.perMember));
+    return { perMember, global };
   } catch (e) { return { ...TUTOR_DEFAULTS }; }
 }
 

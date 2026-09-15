@@ -647,16 +647,18 @@
         <h2>AI Tutor Limits</h2>
         <div class="section-body" style="margin-bottom:26px;">
           <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0 0 12px;">
-            Daily tutor message allowances. Applies immediately, no redeploy.</p>
+            Daily tutor message allowances. Applies immediately, no redeploy.
+            The free Google tier serves about 1,000 lite-model requests a day, shared with
+            topic scans and flyer quality checks, so the ceilings below leave headroom.</p>
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
             <div>
               <label for="cfg-tutor-member" style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.52);margin-bottom:6px;">Per member / day</label>
-              <input type="number" id="cfg-tutor-member" min="1" max="500"
+              <input type="number" id="cfg-tutor-member" min="1" max="100"
                 style="width:130px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;font-size:0.9rem" />
             </div>
             <div>
               <label for="cfg-tutor-global" style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.52);margin-bottom:6px;">Club-wide / day</label>
-              <input type="number" id="cfg-tutor-global" min="1" max="2000"
+              <input type="number" id="cfg-tutor-global" min="1" max="800"
                 style="width:130px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;font-size:0.9rem" />
             </div>
             <button type="button" id="cfg-tutor-save" class="reset-pwd-btn" style="padding:10px 20px;font-size:0.86rem;">Save limits</button>
@@ -1950,8 +1952,8 @@
       gEl.value = cur.global || 600;
       document.getElementById('cfg-tutor-save').addEventListener('click', async () => {
         const msg = document.getElementById('cfg-tutor-msg');
-        const perMember = Math.min(500, Math.max(1, parseInt(mEl.value, 10) || 40));
-        const global = Math.min(2000, Math.max(1, parseInt(gEl.value, 10) || 600));
+        const global = Math.min(800, Math.max(1, parseInt(gEl.value, 10) || 600));
+        const perMember = Math.min(100, global, Math.max(1, parseInt(mEl.value, 10) || 40));
         mEl.value = perMember; gEl.value = global;
         await fbSet('config/tutor', { perMember, global, updatedAt: Date.now() });
         msg.textContent = 'Saved. Applies to the next tutor message.';
