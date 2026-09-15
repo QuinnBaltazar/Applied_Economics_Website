@@ -56,7 +56,7 @@ const hexToBuf = (h) =>
   if (DRY) { console.log('\n--dry-run: nothing written'); process.exit(0); }
 
   const res = await auth.importUsers(users, {
-    hash: { algorithm: 'SHA256', rounds: 0 }
+    hash: { algorithm: 'SHA256', rounds: 1 }
   });
   console.log(`imported ${res.successCount}, failed ${res.failureCount}`);
   res.errors.forEach(e => console.log(`  [${e.index}] ${e.error.message}`));
