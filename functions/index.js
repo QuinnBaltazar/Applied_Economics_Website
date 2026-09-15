@@ -1210,3 +1210,87 @@ exports.adminMember = onRequest(
     res.json({ ok: true, action, email });
   }
 );
+
+// ── Module tutor: member-facing AI, the first non-admin AI surface ─────────
+// Any signed-in @ucsb.edu member may use it; the auth migration is what
+// makes that safe to expose. Runs on the lite chain (500/day per model)
+// with its own budgets, so it can never starve the admin flagship pool.
+const TUTOR_PER_MEMBER_DAY = 40;
+const TUTOR_GLOBAL_DAY = 600;
+
+async function requireMember(req, res) {
+  try {
+    const m = String(req.get('authorization') || '').match(/^Bearer\s+(.+)$/i);
+    if (!m) { res.status(401).json({ error: 'Sign in required' }); return null; }
+    const decoded = await admin.auth().verifyIdToken(m[1]);
+    const email = String(decoded.email || '').toLowerCase();
+    if (!email.endsWith('@ucsb.edu')) {
+      res.status(403).json({ error: 'UCSB account required' }); return null;
+    }
+    return email;
+  } catch (e) {
+    res.status(401).json({ error: 'Session expired - reload and sign in again' });
+    return null;
+  }
+}
+
+exports.tutorChat = onRequest(
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 60,
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    const email = await requireMember(req, res);
+    if (!email) return;
+
+    const message = String((req.body && req.body.message) || '').trim().slice(0, 1000);
+    const lesson = String((req.body && req.body.lesson) || '').trim().slice(0, 5000);
+    const track = String((req.body && req.body.track) || '').trim().slice(0, 80);
+    const history = (Array.isArray(req.body && req.body.history) ? req.body.history : [])
+      .slice(-12)
+      .map(h => ({ role: h.role === 'tutor' ? 'tutor' : 'student', text: String(h.text || '').slice(0, 800) }));
+    if (!message) { res.status(400).json({ error: 'Say something first' }); return; }
+
+    // Budgets: per member per day, and a global tutor ceiling.
+    const day = new Date().toISOString().slice(0, 10);
+    const mine = await admin.database().ref(`ai-usage-tutor/${day}/${eKey(email)}`)
+      .transaction(n => (n || 0) + 1);
+    if ((mine.snapshot.val() || 0) > TUTOR_PER_MEMBER_DAY) {
+      res.status(429).json({ error: `Daily tutor limit reached (${TUTOR_PER_MEMBER_DAY} messages). Resets at midnight Pacific.` });
+      return;
+    }
+    const global = await admin.database().ref(`ai-usage-tutor/${day}/_total`)
+      .transaction(n => (n || 0) + 1);
+    if ((global.snapshot.val() || 0) > TUTOR_GLOBAL_DAY) {
+      res.status(429).json({ error: 'The tutor is resting until midnight Pacific - club-wide daily limit reached.' });
+      return;
+    }
+
+    const convo = history.map(h => `${h.role === 'tutor' ? 'TUTOR' : 'STUDENT'}: ${h.text}`).join('\n');
+    const prompt =
+`You are the study tutor for the UCSB Applied Economics Club's career-track modules. A member is working through${track ? ` the ${track} track` : ' a module'}.
+
+CURRENT LESSON CONTENT (their screen right now):
+${lesson || '(not provided - answer generally but say you cannot see their lesson)'}
+
+${convo ? `CONVERSATION SO FAR:\n${convo}\n` : ''}STUDENT: ${message}
+
+How to tutor:
+- Teach, do not just answer. For quiz-style questions, guide with a hint or a leading question first; give the full answer only if they are clearly stuck or ask directly.
+- Ground every explanation in the lesson content above. If they ask something outside it, answer briefly and steer back.
+- Concrete and quantitative where the lesson is. Never invent market data.
+- Max 150 words. Plain text, no markdown headers. Never use em dashes; use commas.
+- Encouraging but not saccharine. Student-to-student register, professional.
+
+Reply with ONLY the tutor's next message.`;
+
+    try {
+      const { text } = await callGemini(prompt, false, BULK_CHAIN);
+      const reply = String(text || '').trim().slice(0, 1500);
+      if (!reply) throw new Error('empty reply');
+      res.json({ reply, remaining: Math.max(0, TUTOR_PER_MEMBER_DAY - (mine.snapshot.val() || 0)) });
+    } catch (e) {
+      console.error('tutor failed:', e.message);
+      res.status(502).json({ error: friendlyAiError(e) });
+    }
+  }
+);

@@ -2024,5 +2024,98 @@
 
     });
   </script>
+  <!-- Module tutor -->
+  <button id="tutor-fab" aria-label="Ask the tutor" style="position:fixed;right:22px;bottom:22px;z-index:120;
+    width:58px;height:58px;border-radius:50%;border:1px solid rgba(196,164,72,0.55);cursor:pointer;
+    background:rgba(9,15,26,0.95);color:#D4B55E;font-size:24px;box-shadow:0 12px 32px rgba(0,0,0,0.45);">?</button>
+  <div id="tutor-panel" style="display:none;position:fixed;right:22px;bottom:92px;z-index:120;width:min(380px,calc(100vw - 44px));
+    height:min(520px,70vh);background:#0E1829;border:1px solid rgba(196,164,72,0.4);border-radius:16px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.5);flex-direction:column;overflow:hidden;">
+    <div style="padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;">
+      <img src="assets/icon.svg" alt="" style="width:26px;height:26px;" />
+      <strong style="font-size:0.92rem;">Module Tutor</strong>
+      <span id="tutor-remaining" style="margin-left:auto;font-size:0.72rem;color:rgba(255,255,255,0.4);"></span>
+      <button id="tutor-close" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div id="tutor-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:0.88rem;line-height:1.5;"></div>
+    <div style="padding:10px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:8px;">
+      <textarea id="tutor-input" rows="1" maxlength="1000" placeholder="Ask about this lesson…"
+        style="flex:1;resize:none;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);
+               background:rgba(255,255,255,0.05);color:#fff;font:inherit;font-size:0.88rem;"></textarea>
+      <button id="tutor-send" style="padding:0 16px;border-radius:10px;border:1px solid rgba(196,164,72,0.5);
+        background:rgba(196,164,72,0.12);color:#D4B55E;font-weight:700;cursor:pointer;">Send</button>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var FN = 'https://us-central1-applied-economics-club.cloudfunctions.net/tutorChat';
+    var fab = document.getElementById('tutor-fab');
+    var panel = document.getElementById('tutor-panel');
+    var msgs = document.getElementById('tutor-msgs');
+    var input = document.getElementById('tutor-input');
+    var history = [];
+
+    function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function bubble(role, text) {
+      var d = document.createElement('div');
+      d.style.cssText = role === 'tutor'
+        ? 'align-self:flex-start;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:9px 13px;max-width:88%;white-space:pre-wrap;'
+        : 'align-self:flex-end;background:rgba(196,164,72,0.14);border:1px solid rgba(196,164,72,0.3);border-radius:12px 12px 4px 12px;padding:9px 13px;max-width:88%;white-space:pre-wrap;';
+      d.textContent = text;
+      msgs.appendChild(d);
+      msgs.scrollTop = msgs.scrollHeight;
+      return d;
+    }
+    function lessonContext() {
+      var main = document.getElementById('page-main');
+      return (main ? main.innerText : document.body.innerText).replace(/\s+/g, ' ').slice(0, 5000);
+    }
+
+    fab.addEventListener('click', function () {
+      var open = panel.style.display === 'flex';
+      panel.style.display = open ? 'none' : 'flex';
+      if (!open && !msgs.childElementCount) {
+        bubble('tutor', 'Hey, I can see the lesson you have open. Stuck on a concept, a quiz question, or want something explained a different way?');
+      }
+      if (!open) input.focus();
+    });
+    document.getElementById('tutor-close').addEventListener('click', function () { panel.style.display = 'none'; });
+
+    async function send() {
+      var text = input.value.trim();
+      if (!text) return;
+      var tok = window.AECAuth ? await AECAuth.token() : null;
+      if (!tok) { bubble('tutor', 'Sign in first (signin.html), then come back. The tutor is members-only.'); return; }
+      input.value = '';
+      bubble('student', text);
+      history.push({ role: 'student', text: text });
+      var thinking = bubble('tutor', '…');
+      try {
+        var r = await fetch(FN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
+          body: JSON.stringify({
+            message: text, lesson: lessonContext(),
+            track: document.title.replace(/\|.*$/, '').trim(),
+            history: history.slice(-12)
+          })
+        });
+        var d = await r.json();
+        thinking.textContent = r.ok ? d.reply : (d.error || 'Something went wrong, try again.');
+        if (r.ok) {
+          history.push({ role: 'tutor', text: d.reply });
+          if (typeof d.remaining === 'number')
+            document.getElementById('tutor-remaining').textContent = d.remaining + ' left today';
+        }
+      } catch (e) {
+        thinking.textContent = 'Could not reach the tutor, try again.';
+      }
+    }
+    document.getElementById('tutor-send').addEventListener('click', send);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+  })();
+  </script>
 </body>
 </html>
