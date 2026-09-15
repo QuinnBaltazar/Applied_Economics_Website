@@ -18,6 +18,7 @@
 */
 
 const { onSchedule }  = require('firebase-functions/v2/scheduler');
+const { onRequest }   = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
@@ -26,7 +27,13 @@ const { subtle } = require('crypto').webcrypto;
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1' });
 
-const BREVO_API_KEY = defineSecret('BREVO_API_KEY');
+const BREVO_API_KEY  = defineSecret('BREVO_API_KEY');
+// Passphrase the admin types in admin.html to authorise a broadcast.
+// admin.html's own admin check is client-side only, so it cannot protect an
+// HTTP endpoint — anyone can call the URL directly. This shared secret is the
+// stopgap until the site moves to Firebase Auth (see migration/RUNBOOK.md),
+// at which point this should become a proper auth-token check.
+const BROADCAST_KEY = defineSecret('BROADCAST_KEY');
 
 // Must be a sender address verified in your Brevo account, or sends fail.
 // Using a personal Gmail for now. Gmail's DMARC policy means Brevo sends this
@@ -37,7 +44,8 @@ const SENDER_EMAIL = 'quinnbaltazar@gmail.com';
 const SENDER_NAME  = 'UCSB Applied Economics Club';
 const SITE_URL     = 'https://www.ucsbaec.com';
 
-const ONE_DAY = 24 * 60 * 60 * 1000;
+// A message unread for this long triggers a reminder.
+const REMIND_AFTER = 60 * 60 * 1000;   // 1 hour
 
 // ── Email wording ───────────────────────────────────────────────────────────
 // Edit these freely. Placeholders are substituted before sending:
@@ -50,7 +58,7 @@ const COPY = {
   heading:  'You have {count} unread message{s}',
   body:     '{sender} messaged you in the Applied Economics Club and you haven\'t read it yet.',
   button:   'Read it',
-  footer:   'Sent once per conversation per day. Turn these off in your profile.'
+  footer:   'Sent once per conversation until you read it. Turn these off in your profile.'
 };
 
 function fill(tpl, vars) {
@@ -140,7 +148,7 @@ async function sendEmail(apiKey, to, toName, senderName, unreadCount) {
 
 // ── Hourly: email anyone sitting on a DM unread for 24h+ ────────────────────
 exports.sendUnreadEmailReminders = onSchedule(
-  { schedule: 'every 1 hours', region: 'us-central1', secrets: [BREVO_API_KEY] },
+  { schedule: 'every 15 minutes', region: 'us-central1', secrets: [BREVO_API_KEY] },
   async () => {
     const db = admin.database();
     const now = Date.now();
@@ -157,7 +165,7 @@ exports.sendUnreadEmailReminders = onSchedule(
       if (!meta || !Array.isArray(meta.participants) || !meta.lastAt) continue;
 
       // Not old enough yet.
-      if (now - meta.lastAt < ONE_DAY) continue;
+      if (now - meta.lastAt < REMIND_AFTER) continue;
 
       for (const email of meta.participants) {
         const key = eKey(email);
@@ -165,9 +173,10 @@ exports.sendUnreadEmailReminders = onSchedule(
         const unread = meta['unread_' + key] || 0;
         if (unread === 0) continue;
 
-        // Don't nag: at most one reminder per conversation per day.
-        const lastReminder = meta['emailReminderAt_' + key] || 0;
-        if (lastReminder && now - lastReminder < ONE_DAY) { skipped++; continue; }
+        // One reminder per unread streak. Opening the thread clears this flag
+        // (see messages.html), so reading resets the clock and a later message
+        // can trigger a fresh reminder.
+        if (meta['emailReminderAt_' + key]) { skipped++; continue; }
 
         // Never remind someone about their own message.
         if (meta.lastFrom && eKey(meta.lastFrom) === key) continue;
@@ -177,7 +186,7 @@ exports.sendUnreadEmailReminders = onSchedule(
           const member = memberSnap.val();
           if (!member) { skipped++; continue; }
 
-          // Members can opt out.
+          // On by default: only an explicit false opts out.
           if (member.emailReminders === false) { skipped++; continue; }
 
           const to = (await decryptField(member.preferredEmail)) || email;
@@ -198,5 +207,100 @@ exports.sendUnreadEmailReminders = onSchedule(
     }
 
     console.log(`unread reminders — sent:${sent} skipped:${skipped} failed:${failed}`);
+  }
+);
+
+
+// ── Admin: email every member ───────────────────────────────────────────────
+// POST { subject, body }  with header  x-broadcast-key: <passphrase>
+// Recipients are sent individually so nobody sees anyone else's address.
+exports.sendBroadcast = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [BREVO_API_KEY, BROADCAST_KEY],
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com']
+  },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+
+    // Constant-time-ish comparison; reject before doing any work.
+    const provided = String(req.get('x-broadcast-key') || '');
+    const expected = BROADCAST_KEY.value();
+    if (!provided || provided.length !== expected.length || provided !== expected) {
+      console.warn('broadcast rejected: bad key from', req.ip);
+      res.status(403).json({ error: 'Not authorised' });
+      return;
+    }
+
+    const subject = String((req.body && req.body.subject) || '').trim();
+    const bodyText = String((req.body && req.body.body) || '').trim();
+    if (!subject || !bodyText) {
+      res.status(400).json({ error: 'subject and body are both required' });
+      return;
+    }
+    if (subject.length > 200 || bodyText.length > 20000) {
+      res.status(400).json({ error: 'subject or body too long' });
+      return;
+    }
+
+    const db = admin.database();
+
+    // Cooldown, so a stuck button can't mail everyone repeatedly.
+    const lastRef = db.ref('admin/lastBroadcastAt');
+    const lastAt = (await lastRef.get()).val() || 0;
+    if (Date.now() - lastAt < 60 * 1000) {
+      res.status(429).json({ error: 'A broadcast was just sent. Wait a minute.' });
+      return;
+    }
+    await lastRef.set(Date.now());
+
+    const membersSnap = await db.ref('members').get();
+    const members = membersSnap.val() || {};
+    const apiKey = BREVO_API_KEY.value();
+
+    // Preserve the author's line breaks without letting them inject markup.
+    const htmlBody = esc(bodyText).replace(/\n/g, '<br>');
+
+    let sent = 0, failed = 0, skipped = 0;
+    const errors = [];
+
+    for (const [key, member] of Object.entries(members)) {
+      if (!member) { skipped++; continue; }
+      const to = (await decryptField(member.preferredEmail))
+              || (member.email || key.replace(/_/g, '.').replace(/\.ucsb\.edu$/, '@ucsb.edu'));
+      if (!to || !to.includes('@')) { skipped++; continue; }
+
+      try {
+        const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'api-key': apiKey,
+            'content-type': 'application/json',
+            'accept': 'application/json'
+          },
+          body: JSON.stringify({
+            sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+            to: [{ email: to, name: member.name || undefined }],
+            subject,
+            htmlContent:
+              `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;` +
+                `max-width:520px;margin:0 auto;padding:24px;color:#111">` +
+                `<p style="margin:0 0 18px;line-height:1.6;font-size:15px">${htmlBody}</p>` +
+                `<p style="margin:28px 0 0;font-size:12px;color:#888;border-top:1px solid #eee;padding-top:14px">` +
+                  `Sent to all members of the UCSB Applied Economics Club.` +
+                `</p>` +
+              `</div>`
+          })
+        });
+        if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 120)}`);
+        sent++;
+      } catch (err) {
+        failed++;
+        if (errors.length < 5) errors.push(`${key}: ${err.message}`);
+      }
+    }
+
+    console.log(`broadcast "${subject}" — sent:${sent} failed:${failed} skipped:${skipped}`);
+    res.json({ sent, failed, skipped, errors });
   }
 );

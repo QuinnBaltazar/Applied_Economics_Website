@@ -369,6 +369,7 @@
           <button class="admin-tab" data-target="panel-tracks">Submissions <span class="tab-badge" id="tab-badge-submissions" style="display:none"></span></button>
           <button class="admin-tab" data-target="panel-activity">Activity</button>
           <button class="admin-tab" data-target="panel-messages">Messages <span class="tab-badge" id="tab-badge-messages" style="display:none"></span></button>
+          <button class="admin-tab" data-target="panel-broadcast">Email All</button>
           <button class="admin-tab" data-target="panel-settings">Settings</button>
         </div>
       </div>
@@ -415,6 +416,65 @@
       </div>
 
       <!-- Members management -->
+      <div class="admin-section" data-panel="panel-broadcast">
+        <h2>Email All Members</h2>
+        <div class="section-body">
+          <p style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin:0 0 18px;line-height:1.5">
+            Sends one email to every member, individually — nobody sees anyone else's address.
+            Check the recipient count before sending; there is no undo.
+          </p>
+
+          <div style="margin-bottom:14px">
+            <label class="field-label" for="bc-subject"
+              style="display:block;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:6px">Subject</label>
+            <input type="text" id="bc-subject" maxlength="200" placeholder="e.g. Meeting moved to Thursday"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);
+                     background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem" />
+          </div>
+
+          <div style="margin-bottom:14px">
+            <label class="field-label" for="bc-body"
+              style="display:block;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:6px">Message</label>
+            <textarea id="bc-body" rows="9" maxlength="20000" placeholder="Write your message. Line breaks are preserved."
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);
+                     background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem;font-family:inherit;
+                     resize:vertical;line-height:1.5"></textarea>
+            <div style="text-align:right;font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:4px">
+              <span id="bc-count">0</span> / 20000
+            </div>
+          </div>
+
+          <div style="margin-bottom:18px">
+            <label class="field-label" for="bc-key"
+              style="display:block;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:6px">Broadcast passphrase</label>
+            <input type="password" id="bc-key" autocomplete="off" placeholder="Required to authorise sending"
+              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);
+                     background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem" />
+            <span style="display:block;font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:5px">
+              Set with <code>firebase functions:secrets:set BROADCAST_KEY</code>. Never stored in the page.
+            </span>
+          </div>
+
+          <div id="bc-preview" style="display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+               border-radius:10px;padding:16px;margin-bottom:16px">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.4);margin-bottom:8px">Preview</div>
+            <div id="bc-preview-subject" style="font-weight:700;margin-bottom:8px"></div>
+            <div id="bc-preview-body" style="color:rgba(255,255,255,0.7);font-size:0.9rem;line-height:1.55;white-space:pre-wrap"></div>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button type="button" id="bc-preview-btn" class="reset-pwd-btn" style="font-size:0.88rem;padding:10px 20px">Preview</button>
+            <button type="button" id="bc-send" class="reset-pwd-btn"
+              style="font-size:0.88rem;padding:10px 20px;background:rgba(255,160,50,0.16);
+                     border-color:rgba(255,160,50,0.4);color:rgba(255,190,110,0.95)">
+              Send to <span id="bc-recipients">…</span> members
+            </button>
+          </div>
+
+          <div id="bc-msg" style="margin-top:14px;font-size:0.88rem;display:none"></div>
+        </div>
+      </div>
+
       <div class="admin-section" data-panel="panel-members">
         <h2>Members</h2>
         <div class="member-search-wrap">
@@ -1389,6 +1449,92 @@
         });
       });
     })();
+
+    // ── Email All Members ─────────────────────────────────────────────────────
+    // The passphrase is verified server-side. admin.html's own admin check is
+    // client-side only, so it cannot protect the endpoint on its own.
+    (function initBroadcast() {
+      const BROADCAST_URL =
+        'https://us-central1-applied-economics-club.cloudfunctions.net/sendBroadcast';
+
+      const subjectEl = document.getElementById('bc-subject');
+      const bodyEl    = document.getElementById('bc-body');
+      const keyEl     = document.getElementById('bc-key');
+      const sendBtn   = document.getElementById('bc-send');
+      const previewBtn= document.getElementById('bc-preview-btn');
+      const msgEl     = document.getElementById('bc-msg');
+      const countEl   = document.getElementById('bc-count');
+      const recipEl   = document.getElementById('bc-recipients');
+      if (!sendBtn) return;
+
+      function say(text, kind) {
+        msgEl.style.display = 'block';
+        msgEl.textContent = text;
+        msgEl.style.color = kind === 'error' ? 'rgba(255,120,120,0.95)'
+                          : kind === 'ok'    ? 'rgba(120,220,150,0.95)'
+                                             : 'rgba(255,255,255,0.6)';
+      }
+
+      bodyEl.addEventListener('input', () => { countEl.textContent = bodyEl.value.length; });
+
+      previewBtn.addEventListener('click', () => {
+        const box = document.getElementById('bc-preview');
+        document.getElementById('bc-preview-subject').textContent = subjectEl.value || '(no subject)';
+        document.getElementById('bc-preview-body').textContent    = bodyEl.value || '(empty)';
+        box.style.display = 'block';
+      });
+
+      // Show how many people this will actually reach.
+      fetch(DB_URL + '/members.json?shallow=true')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { recipEl.textContent = d ? Object.keys(d).length : '?'; })
+        .catch(() => { recipEl.textContent = '?'; });
+
+      sendBtn.addEventListener('click', async () => {
+        const subject = subjectEl.value.trim();
+        const body    = bodyEl.value.trim();
+        const key     = keyEl.value;
+
+        if (!subject) { say('Add a subject line.', 'error'); return; }
+        if (!body)    { say('Add a message.', 'error'); return; }
+        if (!key)     { say('Enter the broadcast passphrase.', 'error'); return; }
+
+        const n = recipEl.textContent;
+        if (!confirm(`Send "${subject}" to ${n} members?\n\nThis cannot be undone.`)) return;
+
+        sendBtn.disabled = true;
+        const label = sendBtn.innerHTML;
+        sendBtn.textContent = 'Sending…';
+        say('Sending — this can take a moment for a large list.', 'info');
+
+        try {
+          const res = await fetch(BROADCAST_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            body: JSON.stringify({ subject, body })
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (res.status === 403)      say('Passphrase rejected.', 'error');
+          else if (res.status === 429) say(data.error || 'Sent too recently — wait a minute.', 'error');
+          else if (!res.ok)            say(data.error || `Failed (${res.status}).`, 'error');
+          else {
+            let t = `Sent to ${data.sent} member${data.sent === 1 ? '' : 's'}.`;
+            if (data.failed)  t += ` ${data.failed} failed.`;
+            if (data.skipped) t += ` ${data.skipped} skipped (no usable address).`;
+            say(t, data.failed ? 'error' : 'ok');
+            if (!data.failed) { subjectEl.value = ''; bodyEl.value = ''; countEl.textContent = '0'; }
+            keyEl.value = '';
+          }
+        } catch (err) {
+          say('Could not reach the server. Is sendBroadcast deployed?', 'error');
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = label;
+        }
+      });
+    })();
+
   </script>
 </body>
 </html>

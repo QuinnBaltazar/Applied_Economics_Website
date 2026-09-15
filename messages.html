@@ -509,8 +509,11 @@
           ['unread_'+eKey(partnerEmail)]: 0
         });
       } else {
-        // Mark as read
+        // Mark as read. Clearing emailReminderAt too resets the reminder clock,
+        // so the next unread message can trigger a fresh reminder — otherwise
+        // a member would only ever be reminded once per conversation.
         await fbSet('dms/'+cid+'/meta/unread_'+eKey(mySession.email), 0);
+        await fbSet('dms/'+cid+'/meta/emailReminderAt_'+eKey(mySession.email), null);
       }
 
       // Render thread header
