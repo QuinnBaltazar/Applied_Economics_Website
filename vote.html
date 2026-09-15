@@ -1078,6 +1078,12 @@
       document.getElementById('vote-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const selected = document.querySelector('[name="topic"]:checked');
+        if (!session) {
+          const m = document.getElementById('vote-message');
+          m.innerHTML = 'Voting is members-only now. <a href="signin.html" style="color:var(--accent);text-decoration:underline;">Sign in</a> and your vote will count.';
+          m.style.color = '#ffb3b3';
+          return;
+        }
         if (!document.getElementById('member-confirm').checked) { showMessage('Please confirm you are a current club member before voting.', true); return; }
         if (!selected) { showMessage('Please select one topic to vote for.', true); return; }
         if (await getUserVote(session)) { showMessage('You have already submitted your vote.', true); return; }
@@ -1107,6 +1113,12 @@
           showMessage(`Topic submitted, pending admin approval before it appears on the vote page.`);
         } else {
           await incrementCount(topic, voteWeight);
+          // Custom-topic cards display their own counter; keep it in sync.
+          const ckey = selected.dataset && selected.dataset.key;
+          if (ckey) {
+            const cur = await fbGet(`custom-topics/${ckey}/votes`);
+            await fbPatch(`custom-topics/${ckey}`, { votes: (parseInt(cur, 10) || 0) + voteWeight });
+          }
           await saveUserVote(session, topic);
           if (session && FB_READY) {
             fbPatch(`vote-records/${eKey(session.email)}`, { credits: totalCredits, voteWeight });

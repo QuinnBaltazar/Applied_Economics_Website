@@ -644,6 +644,26 @@
 
       <!-- Vote window -->
       <div class="admin-section" data-panel="panel-settings">
+        <h2>AI Tutor Limits</h2>
+        <div class="section-body" style="margin-bottom:26px;">
+          <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0 0 12px;">
+            Daily tutor message allowances. Applies immediately, no redeploy.</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div>
+              <label for="cfg-tutor-member" style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.52);margin-bottom:6px;">Per member / day</label>
+              <input type="number" id="cfg-tutor-member" min="1" max="500"
+                style="width:130px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;font-size:0.9rem" />
+            </div>
+            <div>
+              <label for="cfg-tutor-global" style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.52);margin-bottom:6px;">Club-wide / day</label>
+              <input type="number" id="cfg-tutor-global" min="1" max="2000"
+                style="width:130px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;font-size:0.9rem" />
+            </div>
+            <button type="button" id="cfg-tutor-save" class="reset-pwd-btn" style="padding:10px 20px;font-size:0.86rem;">Save limits</button>
+            <span id="cfg-tutor-msg" style="font-size:0.82rem;color:rgba(255,255,255,0.5);"></span>
+          </div>
+        </div>
+
         <h2>Vote Window</h2>
         <div style="display:flex;flex-direction:column;gap:12px;max-width:520px;">
           <div style="display:flex;gap:16px;flex-wrap:wrap;">
@@ -869,7 +889,12 @@
         row.querySelector('.approve-topic-btn').addEventListener('click', async function() {
           const key = this.dataset.key;
           // Move to custom-topics
-          await fetch(`${DB_URL}/custom-topics.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:t.name, desc:t.desc||'', votes:0, createdBy: t.ai ? '' : (t.createdBy||'anonymous') }) });
+          await fetch(`${DB_URL}/custom-topics.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name:t.name, desc:t.desc||'', votes: t.ai ? 0 : 1, createdBy: t.ai ? '' : (t.createdBy||'anonymous') }) });
+          // The submitter voted when they proposed it; land that vote now.
+          if (!t.ai) {
+            const cur = await fbGet(`vote-counts/${encodeURIComponent(t.name)}`);
+            await fbPatch('vote-counts', { [t.name]: (parseInt(cur, 10) || 0) + 1 });
+          }
           await fbDelete(`pending-topics/${key}`);
           await refresh();
           setMsg(`"${t.name}" approved and added to the vote page.`);
@@ -1913,6 +1938,25 @@
       loadFlyers();
 
       loadDecks();
+    })();
+
+    // ── Tutor budget editor ───────────────────────────────────────────────────
+    (async function tutorConfig() {
+      const mEl = document.getElementById('cfg-tutor-member');
+      if (!mEl) return;
+      const gEl = document.getElementById('cfg-tutor-global');
+      const cur = await fbGet('config/tutor') || {};
+      mEl.value = cur.perMember || 40;
+      gEl.value = cur.global || 600;
+      document.getElementById('cfg-tutor-save').addEventListener('click', async () => {
+        const msg = document.getElementById('cfg-tutor-msg');
+        const perMember = Math.min(500, Math.max(1, parseInt(mEl.value, 10) || 40));
+        const global = Math.min(2000, Math.max(1, parseInt(gEl.value, 10) || 600));
+        mEl.value = perMember; gEl.value = global;
+        await fbSet('config/tutor', { perMember, global, updatedAt: Date.now() });
+        msg.textContent = 'Saved. Applies to the next tutor message.';
+        setTimeout(() => { msg.textContent = ''; }, 3000);
+      });
     })();
 
     // ── AI status banner ──────────────────────────────────────────────────────

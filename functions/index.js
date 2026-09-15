@@ -1215,8 +1215,18 @@ exports.adminMember = onRequest(
 // Any signed-in @ucsb.edu member may use it; the auth migration is what
 // makes that safe to expose. Runs on the lite chain (500/day per model)
 // with its own budgets, so it can never starve the admin flagship pool.
-const TUTOR_PER_MEMBER_DAY = 40;
-const TUTOR_GLOBAL_DAY = 600;
+// Defaults; admins override live from the admin Settings panel
+// (stored at config/tutor, no redeploy needed).
+const TUTOR_DEFAULTS = { perMember: 40, global: 600 };
+async function tutorBudgets() {
+  try {
+    const c = (await admin.database().ref('config/tutor').get()).val() || {};
+    return {
+      perMember: Math.min(500, Math.max(1, parseInt(c.perMember, 10) || TUTOR_DEFAULTS.perMember)),
+      global: Math.min(2000, Math.max(1, parseInt(c.global, 10) || TUTOR_DEFAULTS.global))
+    };
+  } catch (e) { return { ...TUTOR_DEFAULTS }; }
+}
 
 async function requireMember(req, res) {
   try {
@@ -1251,16 +1261,17 @@ exports.tutorChat = onRequest(
     if (!message) { res.status(400).json({ error: 'Say something first' }); return; }
 
     // Budgets: per member per day, and a global tutor ceiling.
+    const budgets = await tutorBudgets();
     const day = new Date().toISOString().slice(0, 10);
     const mine = await admin.database().ref(`ai-usage-tutor/${day}/${eKey(email)}`)
       .transaction(n => (n || 0) + 1);
-    if ((mine.snapshot.val() || 0) > TUTOR_PER_MEMBER_DAY) {
-      res.status(429).json({ error: `Daily tutor limit reached (${TUTOR_PER_MEMBER_DAY} messages). Resets at midnight Pacific.` });
+    if ((mine.snapshot.val() || 0) > budgets.perMember) {
+      res.status(429).json({ error: `Daily tutor limit reached (${budgets.perMember} messages). Resets at midnight Pacific.` });
       return;
     }
     const global = await admin.database().ref(`ai-usage-tutor/${day}/_total`)
       .transaction(n => (n || 0) + 1);
-    if ((global.snapshot.val() || 0) > TUTOR_GLOBAL_DAY) {
+    if ((global.snapshot.val() || 0) > budgets.global) {
       res.status(429).json({ error: 'The tutor is resting until midnight Pacific - club-wide daily limit reached.' });
       return;
     }
@@ -1287,7 +1298,7 @@ Reply with ONLY the tutor's next message.`;
       const { text } = await callGemini(prompt, false, BULK_CHAIN);
       const reply = String(text || '').trim().slice(0, 1500);
       if (!reply) throw new Error('empty reply');
-      res.json({ reply, remaining: Math.max(0, TUTOR_PER_MEMBER_DAY - (mine.snapshot.val() || 0)) });
+      res.json({ reply, remaining: Math.max(0, budgets.perMember - (mine.snapshot.val() || 0)) });
     } catch (e) {
       console.error('tutor failed:', e.message);
       res.status(502).json({ error: friendlyAiError(e) });
