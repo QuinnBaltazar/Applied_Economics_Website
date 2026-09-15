@@ -711,7 +711,9 @@ function deckPrompt(topic, guidance, articles) {
   const ctx = articles && articles.length
     ? `\nRecent related headlines (numbered; cite with "refs" on any slide that uses one):\n${numberedHeadlines(articles)}\n`
     : '';
-  return `You are preparing a presentation for a university Applied Economics Club meeting (~30 undergrads, mixed experience).
+  return `${CLUB_BRIEF}
+
+You are preparing a presentation for this club's weekly meeting (~30 undergrads, mixed experience).
 
 Topic: ${topic}
 ${guidance ? `Presenter guidance to follow: ${guidance}` : ''}
@@ -885,6 +887,21 @@ exports.deleteDeck = onRequest(
   }
 );
 
+// ── Club brief ──────────────────────────────────────────────────────────────
+// Injected into every flyer and deck prompt so the model writes from real
+// identity instead of guessing. Edit freely - this is the one place the
+// club describes itself to the AI.
+const CLUB_BRIEF = `ABOUT THE CLUB (use this to inform everything you write):
+UCSB Applied Economics Club (ucsbaec.com). Undergraduate club at UC Santa Barbara, open to all majors.
+What makes it different: members VOTE each week on what the club covers next - the agenda is member-driven, not board-driven.
+What members get:
+- Weekly sessions on the topic members voted for, with real market context
+- Industry speakers (finance, consulting, tech)
+- Career tracks with hands-on modules: Investment Banking, Trading, Equity Research, Venture Capital, Consulting, AdTech - build a DCF, tear down an M&A deal, write a stock initiation report
+- A member community: directory, messaging, and presentations built for every meeting
+Audience: ambitious undergrads who want practical finance/econ skills and a network, from freshmen to seniors. No experience required.
+Voice: confident, concrete, student-to-student. Name real things (tracks, voting, speakers) instead of vague benefits. Never use cliches like "join our community", "fun and exciting", or stacked exclamation marks.`;
+
 // ── Flyers ──────────────────────────────────────────────────────────────────
 // Gemini writes the copy; flyer.html renders it in club branding. All Gemini
 // image models are 0/0 on the free tier, so the design is template-driven -
@@ -905,10 +922,14 @@ exports.generateFlyer = onRequest(
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
     const prompt =
-`Write copy for a ${purpose} flyer for the UCSB Applied Economics Club (undergrad econ/finance club: weekly topic votes, industry speakers, career tracks in IB/trading/equity research/VC/consulting, member community).
+`${CLUB_BRIEF}
+
+Write copy for a ${purpose} flyer for this club.
 
 Facts from the organiser - use every date, time, room and link EXACTLY as written, and invent no others:
 ${details}
+
+Make the copy highlight what the club actually IS (the voting mechanic, the career tracks, the speakers) - not generic club-fair filler.
 
 Reply with ONLY JSON:
 {
@@ -963,7 +984,9 @@ exports.refineFlyer = onRequest(
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
     const prompt =
-`Current flyer copy for the UCSB Applied Economics Club (JSON):
+`${CLUB_BRIEF}
+
+Current flyer copy for this club (JSON):
 ${JSON.stringify({ headline: flyer.headline, subhead: flyer.subhead, hook: flyer.hook, bullets: flyer.bullets || [], cta: flyer.cta, footer: flyer.footer })}
 
 Organiser facts (dates/times/rooms/links must be used exactly, never invented):

@@ -89,6 +89,43 @@
     .story .site { font-size:32px; }
     .story .qr { width:170px; height:170px; border-radius:18px; }
 
+    /* ── Identity & polish layer ── */
+    .flyer { print-color-adjust: exact; -webkit-print-color-adjust: exact; position:relative; }
+    .flyer.bold {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+        radial-gradient(900px 500px at 85% -10%, rgba(196,164,72,0.16), transparent 60%),
+        radial-gradient(700px 500px at -10% 110%, rgba(43,74,111,0.5), transparent 55%);
+      background-size: 44px 44px, 44px 44px, auto, auto;
+      background-color: var(--bg);
+    }
+    .ghost-monogram {
+      position:absolute; top:-30px; right:-14px; font-family:Georgia,serif; font-weight:700;
+      font-size:340px; line-height:1; color:transparent; pointer-events:none; user-select:none;
+      -webkit-text-stroke:2px rgba(196,164,72,0.07);
+    }
+    .story .ghost-monogram { font-size:520px; top:-40px; }
+    .chart-motif { position:absolute; left:0; right:0; bottom:0; width:100%; height:auto;
+      pointer-events:none; opacity:0.9; }
+    .kicker { display:inline-flex; align-items:center; gap:10px; margin-bottom:18px;
+      color:var(--gold-lt); font-weight:800; letter-spacing:.22em; text-transform:uppercase; font-size:13px; }
+    .kicker::before { content:""; width:34px; height:3px; background:var(--gold); border-radius:2px; }
+    .story .kicker { font-size:22px; }
+    .chips { display:flex; gap:9px; flex-wrap:wrap; margin-top:18px; position:relative; }
+    .chips span { border:1px solid rgba(196,164,72,0.45); color:var(--gold-lt);
+      border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:700;
+      letter-spacing:.05em; text-transform:uppercase; background:rgba(196,164,72,0.07); }
+    .story .chips span { font-size:21px; padding:10px 22px; }
+    .flyer .headline { font-size:72px; letter-spacing:-0.03em; line-height:1.0; }
+    .story .headline { font-size:110px; }
+    .cta { background:var(--gold); border-color:var(--gold); color:#101B2C;
+      box-shadow:0 14px 34px rgba(196,164,72,0.25); position:relative; }
+    .cta::after { content:"\2192"; position:absolute; right:22px; top:50%; transform:translateY(-50%);
+      font-size:1.25em; font-weight:800; }
+    .bottom { border-top:1px solid rgba(196,164,72,0.3); padding-top:18px; position:relative; }
+    .head-row, .hook, .bullets, .cta { position:relative; }
+
     /* ── Visual styles (orthogonal to poster/story format) ── */
     .flyer.style-classic {
       background:#F6F0E2;
@@ -105,6 +142,14 @@
     .style-classic .footer-line { color:#4A5568; }
     .style-classic .site { color:#8C7326; }
     .style-classic .qr { border:1px solid #D9CFB6; }
+    .style-classic { background-image:none; }
+    .style-classic .ghost-monogram { -webkit-text-stroke-color:rgba(16,27,44,0.06); }
+    .style-classic .chart-motif path { stroke:#101B2C; opacity:.5; }
+    .style-classic .chart-motif .area { fill:rgba(16,27,44,0.05); }
+    .style-classic .chips span { border-color:#B7A968; color:#8C7326; background:rgba(140,115,38,0.07); }
+    .style-classic .kicker { color:#8C7326; }
+    .style-classic .cta { background:#101B2C; color:#F6F0E2; box-shadow:none; }
+    .style-classic .bottom { border-top-color:#D9CFB6; }
 
     .flyer.style-grid { background:var(--bg); border-top:14px solid var(--gold); }
     .style-grid .crest { border-radius:14px; }
@@ -190,13 +235,27 @@
       const crest = f.showCrest === false ? '' : '<div class="crest">AE</div>';
       const qr = f.showQr === false ? '' :
         `<img class="qr" src="${qrUrl}" alt="QR code to ucsbaec.com" onerror="this.style.display='none'" />`;
+      const motif = `
+        <div class="ghost-monogram" aria-hidden="true">AE</div>
+        <svg class="chart-motif" viewBox="0 0 800 140" aria-hidden="true" preserveAspectRatio="none">
+          <path class="area" d="M0,130 L90,112 L180,118 L270,88 L360,96 L470,60 L580,70 L690,34 L800,10 L800,140 L0,140 Z"
+                fill="rgba(196,164,72,0.07)"/>
+          <path d="M0,130 L90,112 L180,118 L270,88 L360,96 L470,60 L580,70 L690,34 L800,10"
+                fill="none" stroke="rgba(196,164,72,0.5)" stroke-width="2.5"/>
+          <circle cx="690" cy="34" r="5" fill="rgba(212,181,94,0.9)"/>
+        </svg>`;
       return `
       <div class="flyer ${template}" id="flyer">
+        ${motif}
         <div class="head-row pos-${pos}">
           ${crest}
+          ${f.purpose ? `<div class="kicker">${esc(f.purpose)}</div>` : ''}
           <div class="club">UCSB Applied Economics Club</div>
           <h1 class="headline" data-f="headline">${esc(f.headline)}</h1>
           <div class="subhead" data-f="subhead">${esc(f.subhead||'')}</div>
+          <div class="chips" aria-hidden="true">
+            <span>Vote-driven topics</span><span>Industry speakers</span><span>Career tracks</span>
+          </div>
         </div>
         <p class="hook" data-f="hook" ${f.hook?'':'style="display:none"'}>${esc(f.hook||'')}</p>
         <ul class="bullets" id="bullets">${(f.bullets||[]).map(b=>
