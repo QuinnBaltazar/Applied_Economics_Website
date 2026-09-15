@@ -10,20 +10,26 @@
     node import-members.js --dry-run     # inspect first
     node import-members.js               # actually import
 */
-const admin = require('firebase-admin');
+// firebase-admin v13 removed the legacy admin.credential namespace from the
+// CJS entry point - the modular API is the supported path.
+const { initializeApp, applicationDefault } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getDatabase } = require('firebase-admin/database');
 const DRY = process.argv.includes('--dry-run');
 
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
+initializeApp({
+  credential: applicationDefault(),
   databaseURL: 'https://applied-economics-club-default-rtdb.firebaseio.com'
 });
+const auth = getAuth();
+const db = getDatabase();
 
 // RTDB stores the SHA-256 as hex; Auth import wants raw bytes.
 const hexToBuf = (h) =>
   /^[0-9a-f]{64}$/i.test(h || '') ? Buffer.from(h, 'hex') : null;
 
 (async () => {
-  const snap = await admin.database().ref('members').get();
+  const snap = await db.ref('members').get();
   const members = snap.val() || {};
   const users = [];
   const skipped = [];
@@ -49,7 +55,7 @@ const hexToBuf = (h) =>
 
   if (DRY) { console.log('\n--dry-run: nothing written'); process.exit(0); }
 
-  const res = await admin.auth().importUsers(users, {
+  const res = await auth.importUsers(users, {
     hash: { algorithm: 'SHA256', rounds: 0 }
   });
   console.log(`imported ${res.successCount}, failed ${res.failureCount}`);
