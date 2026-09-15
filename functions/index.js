@@ -434,7 +434,13 @@ const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 // and they rarely hit the capacity 503s the flagship gets at peak. Slightly
 // weaker models, but our prompts hand them the facts, so extraction quality
 // holds up.
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+// Task-based routing. The flagship pool is only 20 req/day; the lite pools
+// are 500/day each. So the scarce flagship goes to member-facing prose
+// (decks, flyers) and the plentiful lite models handle extraction work
+// (topic scans), where the facts arrive in the prompt and model strength
+// matters least. Each chain still ends in the other pool as a fallback.
+const QUALITY_CHAIN = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+const BULK_CHAIN    = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.6-flash'];
 
 // Free tier gives Gemini 3.x models ZERO google_search grounding quota
 // (AI Studio -> Rate Limit -> Tools: "Gemini 3 / Search grounding 0"), so a
@@ -515,7 +521,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // (429) and missing models (404) skip straight to the next model, since
 // each has its own quota pool. Internal retries do NOT consume extra
 // aiBudgetOk slots - the budget counts user actions, not HTTP attempts.
-async function callGemini(prompt, useSearch) {
+async function callGemini(prompt, useSearch, chain = QUALITY_CHAIN) {
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.4, maxOutputTokens: 8192 }
@@ -523,7 +529,7 @@ async function callGemini(prompt, useSearch) {
   if (useSearch && USE_SEARCH_GROUNDING) body.tools = [{ google_search: {} }];
 
   let lastErr = null;
-  for (const model of GEMINI_MODELS) {
+  for (const model of chain) {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) await sleep(2000 * attempt + Math.random() * 1000);
       let res;
@@ -537,7 +543,7 @@ async function callGemini(prompt, useSearch) {
         continue;                                   // transient - retry same model
       }
       if (res.ok) {
-        if (model !== GEMINI_MODELS[0]) console.warn(`Gemini fell back to ${model}`);
+        if (model !== chain[0]) console.warn(`Gemini fell back to ${model}`);
         return parseGemini(await res.json());
       }
       const detail = (await res.text()).slice(0, 300);
@@ -637,7 +643,7 @@ Rules:
 
 Reply with ONLY a JSON array: [{"name":"...","desc":"...","refs":[1,2]}]`;
 
-  const { text } = await callGemini(prompt, false);
+  const { text } = await callGemini(prompt, false, BULK_CHAIN);
   const topics = extractJson(text);
   if (!Array.isArray(topics)) throw new Error('expected a JSON array of topics');
 
@@ -894,6 +900,7 @@ exports.generateFlyer = onRequest(
     const purpose = String((req.body && req.body.purpose) || 'Recruiting').trim().slice(0, 60);
     const details = String((req.body && req.body.details) || '').trim().slice(0, 1200);
     const template = ['bold', 'story'].includes(req.body && req.body.template) ? req.body.template : 'bold';
+    const style = ['bold', 'classic', 'grid'].includes(req.body && req.body.style) ? req.body.style : 'bold';
     if (!details) { res.status(400).json({ error: 'details are required - when/where/what should the flyer say?' }); return; }
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
@@ -920,6 +927,7 @@ Reply with ONLY JSON:
       const flyer = {
         purpose,
         template,
+        style,
         headline: String(c.headline).slice(0, 60),
         subhead: String(c.subhead || '').slice(0, 90),
         hook: String(c.hook || '').slice(0, 180),

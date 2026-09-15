@@ -501,6 +501,11 @@
                 <option value="bold">Poster (print / PDF)</option>
                 <option value="story">Instagram story</option>
               </select>
+              <select id="flyer-style" style="flex:1;min-width:170px;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem">
+                <option value="bold">Bold (navy &amp; gold)</option>
+                <option value="classic">Classic (paper, serif)</option>
+                <option value="grid">Grid (structured)</option>
+              </select>
             </div>
             <textarea id="flyer-details" rows="3" maxlength="1200"
               placeholder="The facts, exactly as they should appear - e.g. First meeting Thursday Oct 2, 6:00 PM, North Hall 1110. Free pizza. All majors."
@@ -1775,12 +1780,14 @@
           const row = document.createElement('div');
           row.className = 'topic-row';
           const when = f.updatedAt ? new Date(f.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-          const url = 'flyer.html?id=' + encodeURIComponent(f.id);
+          const url = 'flyer.html?id=' + encodeURIComponent(f.id) +
+            (f.style && f.style !== 'bold' ? '&style=' + f.style : '');
           row.innerHTML =
             '<div class="topic-row-info">' +
               '<div class="topic-row-name">' + escapeHtml(f.headline || '(untitled)') + '</div>' +
               '<div class="topic-row-meta">' + escapeHtml(f.purpose || '') +
                 ' &nbsp;·&nbsp; ' + (f.template === 'story' ? 'Story' : 'Poster') +
+                (f.style && f.style !== 'bold' ? ' · ' + f.style : '') +
                 ' &nbsp;·&nbsp; v' + (f.version || 1) + ' &nbsp;·&nbsp; ' + escapeHtml(when) + '</div>' +
             '</div>' +
             '<button class="reset-pwd-btn flyer-preview-btn">Preview</button>' +
@@ -1829,6 +1836,7 @@
             body: JSON.stringify({
               purpose: document.getElementById('flyer-purpose').value,
               template: document.getElementById('flyer-template').value,
+              style: document.getElementById('flyer-style').value,
               details
             })
           });

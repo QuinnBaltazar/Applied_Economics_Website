@@ -89,10 +89,40 @@
     .story .site { font-size:32px; }
     .story .qr { width:170px; height:170px; border-radius:18px; }
 
+    /* ── Visual styles (orthogonal to poster/story format) ── */
+    .flyer.style-classic {
+      background:#F6F0E2;
+      border:1px solid #D9CFB6;
+      color:#101B2C;
+    }
+    .style-classic .crest { border-color:#101B2C; color:#101B2C; background:#EFE7D2; }
+    .style-classic .club { color:#8C7326; }
+    .style-classic .headline { font-family:Georgia,'Times New Roman',serif; color:#101B2C; letter-spacing:0; }
+    .style-classic .subhead { color:#4A5568; }
+    .style-classic .hook { color:#2A3648; border-left-color:#C4A448; }
+    .style-classic .bullets li { color:#101B2C; }
+    .style-classic .cta { background:#101B2C; border-color:#101B2C; color:#F6F0E2; }
+    .style-classic .footer-line { color:#4A5568; }
+    .style-classic .site { color:#8C7326; }
+    .style-classic .qr { border:1px solid #D9CFB6; }
+
+    .flyer.style-grid { background:var(--bg); border-top:14px solid var(--gold); }
+    .style-grid .crest { border-radius:14px; }
+    .style-grid .headline { text-transform:uppercase; letter-spacing:0.01em; }
+    .style-grid .hook { border-left:0; padding:16px 20px; background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1); border-radius:12px; }
+    .style-grid .bullets li { border:1px solid rgba(196,164,72,0.3); border-radius:10px;
+      padding:12px 16px 12px 40px; background:rgba(196,164,72,0.06); }
+    .style-grid .bullets li::before { left:14px; }
+    .style-grid .cta { background:var(--gold); border-color:var(--gold); color:#101B2C; }
+    .style-grid.story .bullets li { padding:20px 24px 20px 62px; }
+    .style-grid.story .bullets li::before { left:22px; }
+
     @media print {
       body { background:#fff; padding:0; }
       .toolbar { display:none; }
       .flyer.bold { border:0; }
+      .flyer.style-classic { border:0; }
       @page { size:letter; margin:0; }
     }
   </style>
@@ -151,13 +181,25 @@
 
       const template = ['bold','story'].includes(qs.get('template')) ? qs.get('template')
                      : (f.template === 'story' ? 'story' : 'bold');
+      const styles = ['bold','classic','grid'];
+      const style = styles.includes(qs.get('style')) ? qs.get('style') : (f.style || 'bold');
       document.title = f.headline + ' — UCSB AEC flyer';
-      stage.innerHTML = render(f, template);
+      stage.innerHTML = render(f, template + (style !== 'bold' ? ' style-' + style : ''));
 
       const other = template === 'bold' ? 'story' : 'bold';
       const link = document.getElementById('btn-other');
       link.textContent = other === 'story' ? 'Instagram story format' : 'Print poster format';
-      link.href = `flyer.html?id=${encodeURIComponent(id)}&template=${other}`;
+      link.href = `flyer.html?id=${encodeURIComponent(id)}&template=${other}&style=${style}`;
+
+      // style switcher pills
+      const bar = document.querySelector('.toolbar');
+      styles.forEach(st => {
+        if (st === style) return;
+        const a = document.createElement('a');
+        a.textContent = { bold:'Bold style', classic:'Classic style', grid:'Grid style' }[st];
+        a.href = `flyer.html?id=${encodeURIComponent(id)}&template=${template}&style=${st}`;
+        bar.appendChild(a);
+      });
       document.getElementById('btn-print').addEventListener('click', () => print());
       fitStory();
       addEventListener('resize', fitStory);
