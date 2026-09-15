@@ -38,12 +38,7 @@
       display:flex; flex-direction:column; padding:64px 60px;
       position:relative; overflow:hidden;
     }
-    .crest {
-      width:88px; height:88px; border-radius:50%;
-      border:2px solid var(--gold); display:flex; align-items:center; justify-content:center;
-      font-weight:800; font-size:30px; letter-spacing:1px; color:var(--gold-lt);
-      background:rgba(9,15,26,0.6);
-    }
+    .crest { width:96px; height:96px; display:block; }
     .club { margin-top:20px; color:var(--gold); font-weight:700; letter-spacing:.18em;
             text-transform:uppercase; font-size:15px; }
     .headline { margin-top:14px; font-size:64px; line-height:1.04; letter-spacing:-0.02em; font-weight:800; }
@@ -75,7 +70,7 @@
         var(--bg);
       display:flex; flex-direction:column; padding:110px 88px; overflow:hidden;
     }
-    .story .crest { width:130px; height:130px; font-size:44px; }
+    .story .crest { width:150px; height:150px; }
     .story .club { font-size:24px; margin-top:30px; }
     .story .headline { font-size:104px; margin-top:22px; }
     .story .subhead { font-size:36px; margin-top:22px; }
@@ -132,7 +127,7 @@
       border:1px solid #D9CFB6;
       color:#101B2C;
     }
-    .style-classic .crest { border-color:#101B2C; color:#101B2C; background:#EFE7D2; }
+    .style-classic .crest { filter:none; }
     .style-classic .club { color:#8C7326; }
     .style-classic .headline { font-family:Georgia,'Times New Roman',serif; color:#101B2C; letter-spacing:0; }
     .style-classic .subhead { color:#4A5568; }
@@ -152,7 +147,7 @@
     .style-classic .bottom { border-top-color:#D9CFB6; }
 
     .flyer.style-grid { background:var(--bg); border-top:14px solid var(--gold); }
-    .style-grid .crest { border-radius:14px; }
+    
     .style-grid .headline { text-transform:uppercase; letter-spacing:0.01em; }
     .style-grid .hook { border-left:0; padding:16px 20px; background:rgba(255,255,255,0.05);
       border:1px solid rgba(255,255,255,0.1); border-radius:12px; }
@@ -235,7 +230,7 @@
       const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=' +
                     encodeURIComponent('https://www.ucsbaec.com');
       const pos = ['left','center','right'].includes(f.logoPos) ? f.logoPos : 'left';
-      const crest = f.showCrest === false ? '' : '<div class="crest">AE</div>';
+      const crest = f.showCrest === false ? '' : '<img class="crest" src="assets/icon.svg" alt="AEC crest" />';
       const qr = f.showQr === false ? '' :
         `<img class="qr" src="${qrUrl}" alt="QR code to ucsbaec.com" onerror="this.style.display='none'" />`;
       const motif = `

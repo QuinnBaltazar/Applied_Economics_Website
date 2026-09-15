@@ -920,6 +920,63 @@ Voice: confident, concrete, student-to-student. Name real things (tracks, voting
 // image models are 0/0 on the free tier, so the design is template-driven -
 // which is also why it stays on-brand. Facts (dates, rooms, links) come from
 // the admin and must be used verbatim; the model only writes around them.
+// ── Flyer quality guardrails ────────────────────────────────────────────────
+// Two layers before a flyer is saved. Layer 1 is programmatic and free:
+// caps enforced by REJECTION (truncating mid-word was itself producing
+// broken-looking copy), every digit-bearing organizer fact must appear,
+// banned phrases blocked. Layer 2 is a cheap critic call on the lite chain
+// that reads the copy against the organizer facts. Failures feed back into
+// a regeneration, up to three attempts.
+const FLYER_CAPS = { headline: 60, subhead: 90, hook: 180, cta: 110, footer: 80, bullet: 60 };
+
+function checkFlyerCopy(c, details) {
+  const problems = [];
+  if (!c || typeof c !== 'object') return ['no JSON object returned'];
+  if (!String(c.headline || '').trim()) problems.push('headline is empty');
+  for (const [k, cap] of Object.entries(FLYER_CAPS)) {
+    if (k === 'bullet') continue;
+    if (String(c[k] || '').length > cap) problems.push(`${k} exceeds ${cap} characters, shorten it`);
+  }
+  const bullets = Array.isArray(c.bullets) ? c.bullets : [];
+  if (bullets.length < 2 || bullets.length > 4) problems.push('need 2 to 4 bullets');
+  bullets.forEach((b, i) => {
+    if (String(b).length > FLYER_CAPS.bullet) problems.push(`bullet ${i + 1} exceeds ${FLYER_CAPS.bullet} characters`);
+  });
+
+  const all = JSON.stringify(c).toLowerCase();
+  // every organizer token containing a digit (dates, times, rooms) must appear
+  for (const tok of String(details).split(/[\s,]+/)) {
+    const t = tok.replace(/^[^\w]+/, '').replace(/[^\w:]+$/, '');
+    if (t.length >= 2 && /\d/.test(t) && !all.includes(t.toLowerCase())) {
+      problems.push(`organizer fact "${t}" is missing from the copy`);
+    }
+  }
+  if (all.includes('\u2014')) problems.push('remove em dashes, use commas');
+  for (const bad of ['join our community', 'fun and exciting', '!!']) {
+    if (all.includes(bad)) problems.push(`remove the phrase or pattern "${bad}"`);
+  }
+  return problems;
+}
+
+async function criticFlyerCopy(c, details, purpose) {
+  const prompt =
+`You are proofreading ${purpose} flyer copy for a university economics club. Organizer facts:
+${details}
+
+Copy (JSON): ${JSON.stringify(c)}
+
+Check: dates, times, rooms and links match the facts exactly; no invented specifics; spelling and grammar; the copy makes sense to a student walking past. Reply ONLY JSON: {"ok":true} or {"ok":false,"problems":["..."]}`;
+  try {
+    const { text } = await callGemini(prompt, false, BULK_CHAIN);
+    const v = extractJson(text);
+    if (v && v.ok === true) return [];
+    return (v && Array.isArray(v.problems) && v.problems.length)
+      ? v.problems.map(String).slice(0, 6) : ['critic rejected the copy'];
+  } catch (e) {
+    return [];   // critic unavailable: programmatic checks stand alone
+  }
+}
+
 exports.generateFlyer = onRequest(
   { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
@@ -955,9 +1012,23 @@ Reply with ONLY JSON:
 }`;
 
     try {
-      const { text } = await callGemini(prompt, false);
-      const c = extractJson(text);
-      if (!c || !c.headline) throw new Error('no usable copy returned');
+      let c = null, problems = [], attempt = 0;
+      for (attempt = 1; attempt <= 3; attempt++) {
+        const attemptPrompt = problems.length
+          ? prompt + `\n\nYour previous attempt was rejected for these reasons, fix every one:\n- ${problems.join('\n- ')}`
+          : prompt;
+        const { text } = await callGemini(attemptPrompt, false);
+        c = extractJson(text);
+        problems = checkFlyerCopy(c, details);
+        if (!problems.length) problems = await criticFlyerCopy(c, details, purpose);
+        if (!problems.length) break;
+        console.warn(`flyer attempt ${attempt} rejected:`, problems.join(' | '));
+      }
+      if (problems.length) {
+        res.status(422).json({ error: 'Three attempts failed quality checks: ' +
+          problems.slice(0, 3).join('; ') + '. Adjust the details and try again.' });
+        return;
+      }
       const flyer = {
         purpose,
         template,

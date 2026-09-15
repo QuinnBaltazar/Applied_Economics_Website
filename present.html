@@ -91,6 +91,7 @@
     function slideHtml(s, deck) {
       const t = s.type;
       if (t === 'title') return `
+        <img src="assets/icon.svg" alt="" style="width:92px;height:92px;margin-bottom:26px;" />
         <div class="eyebrow">UCSB Applied Economics Club</div>
         <h1>${esc(s.heading || deck.title)}</h1>
         ${s.sub || deck.subtitle ? `<p class="sub">${esc(s.sub || deck.subtitle)}</p>` : ''}`;
