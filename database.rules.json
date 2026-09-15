@@ -56,7 +56,8 @@
 
     "decks":         { ".read": true,  ".write": false },
     "flyers":        { ".read": true,  ".write": false },
-    "ai-usage":      { ".read": false, ".write": false },
+    "ai-usage":      { ".read": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true", ".write": false },
+    "ai-health":     { ".read": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true", ".write": false },
     "admin":         { ".read": false, ".write": false }
   }
 }

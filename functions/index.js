@@ -495,6 +495,16 @@ async function aiBudgetOk() {
   return (result.snapshot.val() || 0) <= AI_DAILY_CAP;
 }
 
+// Telemetry for the admin AI-status banner. Google never announces free
+// tier changes; the first sign is always our own calls failing in a new
+// way. Fire-and-forget so health writes can never break a real request.
+function recordAiHealth(bucket, extra) {
+  const day = new Date().toISOString().slice(0, 10);
+  const ref = admin.database().ref('ai-health/' + day);
+  ref.child(bucket).transaction(n => (n || 0) + 1).catch(() => {});
+  if (extra) ref.child('last').set({ ...extra, at: Date.now() }).catch(() => {});
+}
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // One call to Gemini, resilient by design. Walks the model chain; within a
@@ -524,11 +534,17 @@ async function callGemini(prompt, useSearch, chain = QUALITY_CHAIN) {
         continue;                                   // transient - retry same model
       }
       if (res.ok) {
-        if (model !== chain[0]) console.warn(`Gemini fell back to ${model}`);
+        recordAiHealth('ok');
+        if (model !== chain[0]) {
+          console.warn(`Gemini fell back to ${model}`);
+          recordAiHealth('fallbacks', { kind: 'fallback', model });
+        }
         return parseGemini(await res.json());
       }
       const detail = (await res.text()).slice(0, 300);
       lastErr = new Error(`Gemini ${res.status}: ${detail}`);
+      const bucket = res.status === 429 ? 'err429' : res.status === 404 ? 'err404' : 'err5xx';
+      recordAiHealth(bucket, { kind: bucket, model, status: res.status, detail: detail.slice(0, 140) });
       if (res.status === 429 || res.status === 404) break;   // next model
       if (![500, 503, 504].includes(res.status)) throw lastErr; // real error: stop
     }

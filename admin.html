@@ -386,6 +386,17 @@
         </div>
       </div>
 
+      <div class="admin-section" data-panel="panel-overview">
+        <div id="ai-status-card" style="display:none;border-radius:14px;padding:16px 20px;border:1px solid;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span id="ai-status-dot" style="width:10px;height:10px;border-radius:50%;display:inline-block;"></span>
+            <strong id="ai-status-title" style="font-size:0.95rem;"></strong>
+            <span id="ai-status-usage" style="margin-left:auto;font-size:0.8rem;color:rgba(255,255,255,0.5);"></span>
+          </div>
+          <div id="ai-status-detail" style="margin-top:6px;font-size:0.84rem;color:rgba(255,255,255,0.65);line-height:1.5;"></div>
+        </div>
+      </div>
+
       <!-- Quick links -->
       <div class="admin-section" data-panel="panel-overview">
         <h2>Quick Links</h2>
@@ -1902,6 +1913,47 @@
       loadFlyers();
 
       loadDecks();
+    })();
+
+    // ── AI status banner ──────────────────────────────────────────────────────
+    // Google does not announce free-tier changes; the first symptom is our own
+    // calls failing in new ways. This reads today's telemetry and translates
+    // it into a plain-language admin banner.
+    (async function aiStatus() {
+      const card = document.getElementById('ai-status-card');
+      if (!card) return;
+      const day = new Date().toISOString().slice(0, 10);
+      const [health, usage] = await Promise.all([
+        fbGet('ai-health/' + day), fbGet('ai-usage/' + day)
+      ]);
+      const h = health || {};
+      const used = usage || 0;
+      const set = (color, bg, title, detail) => {
+        card.style.display = 'block';
+        card.style.borderColor = bg.replace('0.12', '0.4');
+        card.style.background = bg;
+        document.getElementById('ai-status-dot').style.background = color;
+        document.getElementById('ai-status-title').textContent = title;
+        document.getElementById('ai-status-detail').textContent = detail;
+        document.getElementById('ai-status-usage').textContent = used + ' / 40 AI actions today';
+      };
+      const last = h.last ? (' Last: ' + (h.last.model || '') + ' returned ' + (h.last.status || h.last.kind) +
+        (h.last.detail ? ' , ' + h.last.detail : '') + '.') : '';
+
+      if ((h.err404 || 0) > 0) {
+        set('#ff6b6b', 'rgba(255,80,80,0.12)', 'Google may have retired a model we use',
+          'A model returned 404 today. If scans or decks keep failing, the model list in functions/index.js needs updating, the same fix as when gemini-2.5-flash was retired.' + last);
+      } else if ((h.err429 || 0) > 2) {
+        set('#ffb347', 'rgba(255,160,50,0.12)', 'Hitting Google quota limits today',
+          (h.err429) + ' quota errors so far. Either heavy club usage or Google changed the free tier limits. Usage resets at midnight Pacific.' + last);
+      } else if ((h.fallbacks || 0) > 3 || (h.err5xx || 0) > 5) {
+        set('#ffb347', 'rgba(255,160,50,0.12)', 'AI running on backup models',
+          'The primary model is failing over more than usual (' + (h.fallbacks || 0) + ' fallbacks, ' + (h.err5xx || 0) + ' capacity errors). Output quality may dip slightly. Usually temporary on Google\u2019s side.' + last);
+      } else if ((h.ok || 0) > 0 || used > 0) {
+        set('#78dc96', 'rgba(100,220,140,0.12)', 'AI systems normal',
+          (h.ok || 0) + ' successful calls today, primary model healthy.');
+      }
+      // no activity today: card stays hidden
     })();
 
     // ── Placements curation ───────────────────────────────────────────────────
