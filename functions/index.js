@@ -1008,3 +1008,46 @@ exports.deleteFlyer = onRequest(
     res.json({ deleted: id });
   }
 );
+
+// ── Admin: direct flyer edits (no AI, no budget) ────────────────────────────
+// The edit mode in flyer.html collects the fields and saves them here
+// verbatim. Whitelisted and length-capped; bumps version like a refine.
+exports.updateFlyer = onRequest(
+  { region: 'us-central1', secrets: [BROADCAST_KEY],
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    if (!requireKey(req, res)) return;
+    const id = String((req.body && req.body.id) || '').trim();
+    const f = (req.body && req.body.fields) || {};
+    if (!id) { res.status(400).json({ error: 'id is required' }); return; }
+
+    const ref = admin.database().ref('flyers/' + id);
+    const cur = (await ref.get()).val();
+    if (!cur) { res.status(404).json({ error: 'No flyer with that id' }); return; }
+
+    const str = (v, n) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n);
+    const upd = {};
+    if ('headline' in f) upd.headline = str(f.headline, 60);
+    if ('subhead' in f) upd.subhead = str(f.subhead, 90);
+    if ('hook' in f) upd.hook = str(f.hook, 180);
+    if ('cta' in f) upd.cta = str(f.cta, 110);
+    if ('footer' in f) upd.footer = str(f.footer, 80);
+    if ('bullets' in f && Array.isArray(f.bullets)) {
+      upd.bullets = f.bullets.map(b => str(b, 60)).filter(Boolean).slice(0, 5);
+    }
+    if ('style' in f && ['bold', 'classic', 'grid'].includes(f.style)) upd.style = f.style;
+    if ('template' in f && ['bold', 'story'].includes(f.template)) upd.template = f.template;
+    if ('logoPos' in f && ['left', 'center', 'right'].includes(f.logoPos)) upd.logoPos = f.logoPos;
+    if ('showCrest' in f) upd.showCrest = !!f.showCrest;
+    if ('showQr' in f) upd.showQr = !!f.showQr;
+
+    if (upd.headline === '') { res.status(400).json({ error: 'headline cannot be empty' }); return; }
+    if (!Object.keys(upd).length) { res.status(400).json({ error: 'nothing to update' }); return; }
+
+    upd.version = (cur.version || 1) + 1;
+    upd.updatedAt = Date.now();
+    await ref.update(upd);
+    res.json({ id, version: upd.version });
+  }
+);

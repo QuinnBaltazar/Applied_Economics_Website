@@ -118,6 +118,41 @@
     .style-grid.story .bullets li { padding:20px 24px 20px 62px; }
     .style-grid.story .bullets li::before { left:22px; }
 
+    .head-row.pos-center { text-align:center; }
+    .head-row.pos-center .crest { margin:0 auto; }
+    .head-row.pos-right { text-align:right; }
+    .head-row.pos-right .crest { margin-left:auto; }
+    .head-row.pos-center .club, .head-row.pos-center .headline,
+    .head-row.pos-center .subhead { text-align:center; }
+    .head-row.pos-right .club, .head-row.pos-right .headline,
+    .head-row.pos-right .subhead { text-align:right; }
+
+    body.editing [contenteditable] { outline:1.5px dashed rgba(196,164,72,0.55); outline-offset:4px;
+      border-radius:4px; min-width:24px; }
+    body.editing [contenteditable]:focus { outline-style:solid; background:rgba(196,164,72,0.07); }
+    .edit-panel {
+      position:fixed; left:16px; top:14px; z-index:10; display:none;
+      background:rgba(9,15,26,0.94); border:1px solid rgba(196,164,72,0.4);
+      border-radius:14px; padding:14px 16px; width:230px; color:#fff; font-size:13px;
+    }
+    body.editing .edit-panel { display:block; }
+    .edit-panel label { display:block; margin:10px 0 4px; color:rgba(255,255,255,0.6);
+      font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+    .edit-panel select { width:100%; padding:7px 9px; border-radius:7px;
+      border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#fff; }
+    .edit-panel .row { display:flex; align-items:center; gap:8px; margin-top:9px; }
+    .bullet-tools { display:none; }
+    body.editing .bullet-tools { display:inline-flex; gap:6px; margin-top:10px; }
+    body.editing .bullets li .del-b {
+      position:absolute; right:-30px; top:50%; transform:translateY(-50%);
+      cursor:pointer; color:rgba(255,120,120,0.85); font-weight:700; font-size:15px;
+    }
+    .del-b { display:none; }
+    body.editing .del-b { display:block; }
+    .mini-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.2);
+      color:#fff; border-radius:7px; padding:6px 12px; font:600 12px/1 inherit; cursor:pointer; }
+    .mini-btn:hover { border-color:var(--gold); }
+
     @media print {
       body { background:#fff; padding:0; }
       .toolbar { display:none; }
@@ -132,6 +167,16 @@
     <button id="btn-print">Print / Save PDF</button>
     <a id="btn-other" href="#">Switch format</a>
   </div>
+  <div class="edit-panel">
+    <div style="font-weight:700;font-size:14px">Design</div>
+    <label for="ep-logo">Logo position</label>
+    <select id="ep-logo"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+    <div class="row"><input type="checkbox" id="ep-crest" checked style="accent-color:#C4A448" /><label for="ep-crest" style="margin:0;text-transform:none;font-size:13px;color:#fff">Show logo</label></div>
+    <div class="row"><input type="checkbox" id="ep-qr" checked style="accent-color:#C4A448" /><label for="ep-qr" style="margin:0;text-transform:none;font-size:13px;color:#fff">Show QR code</label></div>
+    <div style="margin-top:12px;color:rgba(255,255,255,0.45);font-size:11.5px;line-height:1.45">
+      Click any text on the flyer to edit it. Style and format pills up top are saved too.
+    </div>
+  </div>
   <div id="stage"><div style="color:rgba(255,255,255,0.6)">Loading flyer…</div></div>
   <script>
     const DB = 'https://applied-economics-club-default-rtdb.firebaseio.com';
@@ -141,23 +186,30 @@
     function render(f, template) {
       const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=' +
                     encodeURIComponent('https://www.ucsbaec.com');
+      const pos = ['left','center','right'].includes(f.logoPos) ? f.logoPos : 'left';
+      const crest = f.showCrest === false ? '' : '<div class="crest">AE</div>';
+      const qr = f.showQr === false ? '' :
+        `<img class="qr" src="${qrUrl}" alt="QR code to ucsbaec.com" onerror="this.style.display='none'" />`;
       return `
       <div class="flyer ${template}" id="flyer">
-        <div class="crest">AE</div>
-        <div class="club">UCSB Applied Economics Club</div>
-        <h1 class="headline">${esc(f.headline)}</h1>
-        ${f.subhead ? `<div class="subhead">${esc(f.subhead)}</div>` : ''}
-        ${f.hook ? `<p class="hook">${esc(f.hook)}</p>` : ''}
-        <ul class="bullets">${(f.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join('')}</ul>
+        <div class="head-row pos-${pos}">
+          ${crest}
+          <div class="club">UCSB Applied Economics Club</div>
+          <h1 class="headline" data-f="headline">${esc(f.headline)}</h1>
+          <div class="subhead" data-f="subhead">${esc(f.subhead||'')}</div>
+        </div>
+        <p class="hook" data-f="hook" ${f.hook?'':'style="display:none"'}>${esc(f.hook||'')}</p>
+        <ul class="bullets" id="bullets">${(f.bullets||[]).map(b=>
+          `<li><span data-f="bullet">${esc(b)}</span><span class="del-b" title="Remove">✕</span></li>`).join('')}</ul>
+        <span class="bullet-tools"><button type="button" class="mini-btn" id="add-bullet">+ bullet</button></span>
         <div class="spacer"></div>
-        ${f.cta ? `<div class="cta">${esc(f.cta)}</div>` : ''}
+        <div class="cta" data-f="cta" ${f.cta?'':'style="display:none"'}>${esc(f.cta||'')}</div>
         <div class="bottom">
           <div>
-            ${f.footer ? `<div class="footer-line">${esc(f.footer)}</div>` : ''}
+            <div class="footer-line" data-f="footer">${esc(f.footer||'')}</div>
             <div class="site">ucsbaec.com</div>
           </div>
-          <img class="qr" src="${qrUrl}" alt="QR code to ucsbaec.com"
-               onerror="this.style.display='none'" />
+          ${qr}
         </div>
       </div>`;
     }
@@ -201,6 +253,89 @@
         bar.appendChild(a);
       });
       document.getElementById('btn-print').addEventListener('click', () => print());
+
+      // ── Edit mode (?edit=1): contenteditable text + design panel + Save ──
+      if (qs.get('edit') === '1') {
+        document.body.classList.add('editing');
+        let dirty = false;
+        const markDirty = () => { dirty = true; saveBtn.textContent = 'Save changes'; };
+
+        document.querySelectorAll('[data-f]').forEach(el => {
+          el.setAttribute('contenteditable', 'plaintext-only');
+          el.style.display = '';                       // reveal empty optional fields
+          el.addEventListener('input', markDirty);
+        });
+        document.getElementById('add-bullet').addEventListener('click', () => {
+          const li = document.createElement('li');
+          li.innerHTML = '<span data-f="bullet" contenteditable="plaintext-only">New reason to come</span>' +
+                         '<span class="del-b" title="Remove">✕</span>';
+          li.querySelector('[data-f]').addEventListener('input', markDirty);
+          document.getElementById('bullets').appendChild(li);
+          markDirty();
+        });
+        document.getElementById('bullets').addEventListener('click', e => {
+          if (e.target.classList.contains('del-b')) { e.target.closest('li').remove(); markDirty(); }
+        });
+
+        const epLogo = document.getElementById('ep-logo');
+        const epCrest = document.getElementById('ep-crest');
+        const epQr = document.getElementById('ep-qr');
+        epLogo.value = ['left','center','right'].includes(f.logoPos) ? f.logoPos : 'left';
+        epCrest.checked = f.showCrest !== false;
+        epQr.checked = f.showQr !== false;
+        epLogo.addEventListener('change', () => {
+          const hr = document.querySelector('.head-row');
+          hr.className = 'head-row pos-' + epLogo.value; markDirty();
+        });
+        epCrest.addEventListener('change', () => {
+          const c = document.querySelector('.crest');
+          if (c) c.style.display = epCrest.checked ? '' : 'none'; markDirty();
+        });
+        epQr.addEventListener('change', () => {
+          const q = document.querySelector('.qr');
+          if (q) q.style.display = epQr.checked ? '' : 'none'; markDirty();
+        });
+
+        const bar = document.querySelector('.toolbar');
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save changes';
+        saveBtn.style.borderColor = 'rgba(100,220,130,0.6)';
+        bar.prepend(saveBtn);
+
+        // keep pills inside edit mode
+        bar.querySelectorAll('a').forEach(a => {
+          if (a.href && !a.href.includes('edit=1')) a.href += '&edit=1';
+        });
+
+        saveBtn.addEventListener('click', async () => {
+          const key = prompt('Broadcast passphrase to save:');
+          if (!key) return;
+          const get = f2 => { const el = document.querySelector('[data-f="' + f2 + '"]'); return el ? el.innerText.trim() : ''; };
+          const fields = {
+            headline: get('headline'), subhead: get('subhead'), hook: get('hook'),
+            cta: get('cta'), footer: get('footer'),
+            bullets: [...document.querySelectorAll('[data-f="bullet"]')].map(el => el.innerText.trim()).filter(Boolean),
+            style, template,
+            logoPos: epLogo.value, showCrest: epCrest.checked, showQr: epQr.checked
+          };
+          if (!fields.headline) { alert('Headline cannot be empty.'); return; }
+          saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+          try {
+            const r = await fetch('https://us-central1-applied-economics-club.cloudfunctions.net/updateFlyer', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+              body: JSON.stringify({ id, fields })
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.status === 403) alert('Passphrase rejected.');
+            else if (!r.ok) alert(d.error || 'Save failed (' + r.status + ').');
+            else { dirty = false; saveBtn.textContent = 'Saved ✓ (v' + d.version + ')'; }
+          } catch (e) { alert('Could not reach the server.'); }
+          finally { saveBtn.disabled = false; }
+        });
+        addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+      }
+
       fitStory();
       addEventListener('resize', fitStory);
     }
