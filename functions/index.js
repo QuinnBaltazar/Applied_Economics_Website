@@ -720,12 +720,18 @@ const DECK_SCHEMA = `[
  {"type":"title","heading":"...","sub":"..."},
  {"type":"bullets","heading":"...","points":["..."]},
  {"type":"split","heading":"...","left":{"title":"...","points":["..."]},"right":{"title":"...","points":["..."]}},
- {"type":"stat","heading":"...","stats":[{"value":"...","label":"..."}]},
- {"type":"chart","heading":"...","chartType":"line|bar","points":[{"label":"Q1","value":12.4},{"label":"Q2","value":15.1}],"note":"optional: source or 'illustrative'"},
+ {"type":"cards","heading":"...","numbered":true,"cards":[{"title":"...","body":"1-2 sentence explanation"}]},
+ {"type":"stat","heading":"...","stats":[{"value":"...","label":"what this number means, in plain words"}]},
+ {"type":"chart","heading":"...","chartType":"line|bar","points":[{"label":"Q1","value":12.4}],"note":"source or 'illustrative'"},
  {"type":"cycle","heading":"...","stages":["Accumulation","Markup","Distribution","Markdown"],"note":"optional"},
  {"type":"image","heading":"...","imageRef":1,"caption":"one-line caption"},
  {"type":"quote","text":"...","attribution":"..."}
-]`;
+]
+Every slide except "title" may also carry:
+ "kicker": "SECTION \u00b7 DETAIL"  (short uppercase eyebrow, e.g. "METHODOLOGY \u00b7 IDENTIFICATION")
+ "sub": "one italic line of context under the heading"
+ "src": "short citation for facts on this slide, e.g. 'Kuttner (2001); FRED'"
+ "notes": "speaker notes (see NOTES below)"`;
 
 function deckPrompt(topic, guidance, research) {
   research = research || {};
@@ -774,12 +780,39 @@ VISUALS (use them, a finance deck should not be all text):
   fits the point; do NOT force one. Never invent an image or a URL.
 - Aim for at least two visual slides (chart, cycle, stat, or image) in the deck.
 
-STRUCTURE:
-- Slide 1 must be type "title".
-- Include at least one slide that names and explains the core framework.
-- Mix types; never more than two "bullets" slides in a row.
-- Max 5 points per slide, each under 16 words. No sub-bullets.
-- End with discussion questions (type "bullets", heading "Discussion").
+STYLE (this club has a house style; follow it on every slide):
+- Every slide except the title gets a "kicker": a short uppercase eyebrow like
+  "FED SURPRISES \u00b7 METHODOLOGY" or "KEY PAPER \u00b7 QJE 2025" naming the
+  section plus the specific context.
+- Headings state the TAKEAWAY, not the topic. "Larger surprises, larger sector
+  reactions" beats "Results". Add a "sub" line for context where useful.
+- Use "cards" (2x2 grid) for methodology steps, framework components,
+  contributions, and the closing pitch. Set "numbered":true when order matters.
+  Card titles are punchy; bodies are 1-2 full sentences that actually explain.
+- Stats are never bare numbers: every "label" says what the number MEANS
+  ("Fed meetings in our sample", "decline by October 2025"). 2-4 per slide.
+- Give facts a "src" line (short citation) whenever they come from the research
+  above or a nameable source.
+- Be honest about uncertainty: include a limitations point or slide where
+  relevant. Prefix supported findings with "\u2713 " and limitations with
+  "\u2013 "; this is how strong decks earn trust.
+
+NOTES (required on every content slide):
+- "notes" is the presenter's script: 2-5 sentences of what to actually SAY, in
+  plain spoken English, not a repeat of the slide text.
+- Start with a timing tag like "[1 min]" and end with "TRANSITION: <one line
+  leading into the next slide>".
+
+ARC (order the deck like an argument, not a list):
+1. "title"
+2. Hook: why this matters right now (stat or bullets, kicker "WHY IT MATTERS")
+3. The core question or framework, named and attributed
+4. Evidence and mechanics: how it works, real examples (chart, cycle, image, cards)
+5. Implications: what a student investor should do with this
+6. Closing: numbered "cards" slide answering "Why does this matter?"
+7. Final "bullets" slide, heading "Discussion", 3-4 open questions
+- Mix types; never two same-type slides in a row (bullets may repeat once).
+- Max 5 points per list, each under 16 words. No sub-bullets.
 
 Reply with ONLY JSON: {"title":"...","subtitle":"...","slides":[...]}`;
 }
@@ -883,7 +916,7 @@ Revise it according to this instruction from the presenter:
 "${instruction}"
 
 Rules:
-- Keep the same JSON schema. Slide types: title, bullets, split, stat, quote, sources.
+- Keep the same JSON schema. Slide types: title, bullets, split, cards, stat, chart, cycle, image, quote, sources.\n- Preserve each slide's kicker/sub/src/notes fields unless the instruction changes them.
 - Change only what the instruction asks for; keep everything else intact.
 - Keep any "sources" slide unless told to remove it.
 - NEVER invent market data, prices, percentages or dates; if the instruction asks
@@ -1030,17 +1063,35 @@ async function fetchPageText(url, maxLen) {
   } catch (e) { return ''; }
 }
 
+// Spend-guard: Brave's plan bills $5/1000 requests but grants $5 free credit
+// monthly (= ~1000 requests). We hard-cap at 800/month so the card on file is
+// never charged; past the cap, research silently runs on the free sources.
+const BRAVE_MONTHLY_CAP = 800;
+function braveMonthKey() { return 'brave-usage/' + new Date().toISOString().slice(0, 7); }
+async function braveBudgetOk() {
+  try {
+    const snap = await admin.database().ref(braveMonthKey()).get();
+    return (snap.val() || 0) < BRAVE_MONTHLY_CAP;
+  } catch (e) { return false; }   // if unsure, don't spend
+}
+function braveCount() {
+  admin.database().ref(braveMonthKey())
+    .transaction(n => (n || 0) + 1).catch(() => {});
+}
+
 // Brave web search (only if a key is configured).
 async function braveSearch(topic) {
   const out = { chunks: [], sources: [] };
   let key = null;
   try { key = BRAVE_API_KEY.value() || process.env.BRAVE_API_KEY || null; } catch (e) { key = process.env.BRAVE_API_KEY || null; }
   if (!key) return out;   // no key configured -> research runs free on Wikipedia + Commons + RSS
+  if (!(await braveBudgetOk())) { console.warn('brave monthly cap reached; using free sources'); return out; }
   try {
     const res = await fetch('https://api.search.brave.com/res/v1/web/search?q=' +
       encodeURIComponent(topic) + '&count=6&freshness=py', {
       headers: { 'Accept': 'application/json', 'X-Subscription-Token': key }
     });
+    braveCount();   // count every billed API call, ok or not
     if (!res.ok) return out;
     const data = await res.json();
     const results = (data.web && data.web.results) || [];

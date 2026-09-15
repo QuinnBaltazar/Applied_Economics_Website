@@ -106,6 +106,27 @@
     .slide .cap { margin-top:1.3vh; text-align:center; color:rgba(255,255,255,.82);
       font-size:clamp(15px,1.7vw,20px); }
     @keyframes imgIn { from{opacity:0; transform:scale(.97)} to{opacity:1; transform:none} }
+    .kicker { color:var(--gold-lt); font-size:clamp(11px,1.2vw,14px); font-weight:800;
+      letter-spacing:.22em; text-transform:uppercase; opacity:.92; }
+    .subline { color:var(--muted); font-style:italic; font-size:clamp(15px,1.8vw,21px); margin-top:-8px; }
+    .cards { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; width:100%; }
+    .card { background:rgba(255,255,255,.035); border:1px solid rgba(212,181,94,.16);
+      border-radius:14px; padding:20px 22px; text-align:left; }
+    .card .num { display:inline-flex; align-items:center; justify-content:center;
+      width:30px; height:30px; border-radius:8px; background:rgba(212,181,94,.14);
+      color:var(--gold-lt); font-weight:800; font-size:14px; margin-bottom:10px; }
+    .card h4 { margin:0 0 6px; color:var(--gold-lt); font-size:clamp(15px,1.8vw,20px); }
+    .card p { margin:0; color:rgba(255,255,255,.78); font-size:clamp(13px,1.5vw,17px); line-height:1.45; }
+    .srcline { position:absolute; left:min(5vw,64px); bottom:12px; color:rgba(255,255,255,.34);
+      font-size:clamp(10px,1.1vw,13px); }
+    #notes { position:fixed; left:0; right:0; bottom:0; z-index:30; display:none;
+      background:rgba(10,12,17,.96); border-top:1px solid rgba(212,181,94,.3);
+      padding:18px min(5vw,64px) 26px; max-height:38vh; overflow:auto;
+      color:rgba(255,255,255,.85); font-size:15px; line-height:1.55; white-space:pre-wrap; }
+    #notes.open { display:block; }
+    #notes .nlabel { color:var(--gold-lt); font-weight:800; letter-spacing:.14em;
+      text-transform:uppercase; font-size:11px; margin-bottom:8px; }
+    @media (max-width:640px){ .cards { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -125,6 +146,7 @@
     <span id="pos"></span>
     <span>← → to navigate · F fullscreen</span>
   </div>
+  <div id="notes"><div class="nlabel">Speaker notes · press N to hide</div><div id="ntext"></div></div>
   <script>
     const DB = 'https://applied-economics-club-default-rtdb.firebaseio.com';
     const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -163,6 +185,12 @@
       if (t === 'chart') return chartSlide(s);
       if (t === 'cycle') return cycleSlide(s);
       if (t === 'image') return imageSlide(s);
+      if (t === 'cards') return `
+        <h2>${esc(s.heading || '')}</h2>
+        <div class="cards">${(s.cards||[]).slice(0,6).map((c,i)=>`<div class="card">
+          ${s.numbered ? `<span class="num">${String(i+1).padStart(2,'0')}</span>` : ''}
+          <h4>${esc(c.title||'')}</h4><p>${esc(c.body||'')}</p></div>`).join('')}
+        </div>`;
       return `<h2>${esc(s.heading || '')}</h2>`;   // unknown type: degrade gracefully
     }
 
@@ -281,12 +309,20 @@
       document.getElementById('pos').textContent = (idx + 1) + ' / ' + total;
       document.getElementById('bar').style.width = ((idx + 1) / total * 100) + '%';
       // Animate any stat numbers on the newly shown slide.
+      const nEl = document.getElementById('ntext');
+      if (nEl && window._deckSlides) nEl.textContent = (window._deckSlides[idx] && window._deckSlides[idx].notes) || 'No notes for this slide.';
       const active = document.querySelectorAll('.slide')[idx];
       if (active) active.querySelectorAll('.stat .v').forEach(v => {
         if (!v.getAttribute('data-v')) v.setAttribute('data-v', v.textContent);
         countUp(v);
       });
     }
+
+    document.addEventListener('keydown', e => {
+      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey) {
+        document.getElementById('notes').classList.toggle('open');
+      }
+    });
 
     // Touch swipe: navigate slides on mobile.
     let _tx = null, _ty = null;
@@ -311,7 +347,14 @@
 
       document.title = deck.title + ', UCSB AEC';
       const stage = document.getElementById('stage');
-      stage.innerHTML = deck.slides.map(s => `<section class="slide">${slideHtml(s, deck)}</section>`).join('');
+      stage.innerHTML = deck.slides.map(s => {
+        let body = slideHtml(s, deck);
+        if (s.type !== 'title' && s.kicker) body = `<div class="kicker">${esc(s.kicker)}</div>` + body;
+        if (s.type !== 'title' && s.sub) body = body.replace('</h2>', `</h2><p class="subline">${esc(s.sub)}</p>`);
+        if (s.src) body += `<div class="srcline">${esc(s.src)}</div>`;
+        return `<section class="slide">${body}</section>`;
+      }).join('');
+      window._deckSlides = deck.slides;
       total = deck.slides.length;
       show(0);
 

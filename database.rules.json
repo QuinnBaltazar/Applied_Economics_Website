@@ -60,6 +60,7 @@
     "config":         { ".read": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true", ".write": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true" },
     "ai-usage":      { ".read": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true", ".write": false },
     "ai-health":     { ".read": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true", ".write": false },
+    "brave-usage":   { ".read": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true", ".write": false },
     "admin":         { ".read": false, ".write": false }
   }
 }
