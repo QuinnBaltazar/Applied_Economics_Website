@@ -39,6 +39,24 @@ const SITE_URL     = 'https://www.ucsbaec.com';
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
+// ── Email wording ───────────────────────────────────────────────────────────
+// Edit these freely. Placeholders are substituted before sending:
+//   {count}   number of unread messages   e.g. 3
+//   {s}       "s" when count > 1, else ""  e.g. "message{s}" -> "messages"
+//   {sender}  who sent the last message    e.g. Samuel Millen
+//   {name}    the recipient's name
+const COPY = {
+  subject:  'You have {count} unread message{s} in AEC',
+  heading:  'You have {count} unread message{s}',
+  body:     '{sender} messaged you in the Applied Economics Club and you haven\'t read it yet.',
+  button:   'Read it',
+  footer:   'Sent once per conversation per day. Turn these off in your profile.'
+};
+
+function fill(tpl, vars) {
+  return tpl.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+}
+
 // ── preferredEmail is stored encrypted; decrypt it to know where to send ────
 // NOTE: this key is also present in client-side JS and in git history, so it
 // offers no real protection. See migration/RUNBOOK.md — it should be rotated
@@ -84,23 +102,24 @@ function esc(s) {
 }
 
 async function sendEmail(apiKey, to, toName, senderName, unreadCount) {
-  const plural = unreadCount > 1 ? 's' : '';
+  const vars = {
+    count:  unreadCount,
+    s:      unreadCount > 1 ? 's' : '',
+    sender: esc(senderName),
+    name:   esc(toName || 'there')
+  };
+
   const body = {
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
     to: [{ email: to, name: toName || undefined }],
-    subject: `You have ${unreadCount} unread message${plural} in AEC`,
+    subject: fill(COPY.subject, vars),
     htmlContent:
       `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">` +
-        `<h2 style="margin:0 0 12px;font-size:19px">You have ${unreadCount} unread message${plural}</h2>` +
-        `<p style="margin:0 0 20px;line-height:1.5;color:#444">` +
-          `${esc(senderName)} messaged you in the Applied Economics Club and you haven't read it yet.` +
-        `</p>` +
+        `<h2 style="margin:0 0 12px;font-size:19px">${fill(COPY.heading, vars)}</h2>` +
+        `<p style="margin:0 0 20px;line-height:1.5;color:#444">${fill(COPY.body, vars)}</p>` +
         `<a href="${SITE_URL}/messages.html" style="display:inline-block;background:#C4A448;color:#111;` +
-          `padding:11px 20px;border-radius:7px;text-decoration:none;font-weight:600">Read it</a>` +
-        `<p style="margin:26px 0 0;font-size:12px;color:#888">` +
-          `Sent once per conversation per day. Turn these off in your profile at ` +
-          `<a href="${SITE_URL}/signin.html" style="color:#888">ucsbaec.com</a>.` +
-        `</p>` +
+          `padding:11px 20px;border-radius:7px;text-decoration:none;font-weight:600">${fill(COPY.button, vars)}</a>` +
+        `<p style="margin:26px 0 0;font-size:12px;color:#888">${fill(COPY.footer, vars)}</p>` +
       `</div>`
   };
 
