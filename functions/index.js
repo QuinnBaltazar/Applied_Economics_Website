@@ -1,5 +1,5 @@
 /*
-  UCSB AEC — Cloud Functions
+  UCSB AEC, Cloud Functions
 
   One scheduled job: if a DM goes unread for 24 hours, email the recipient.
 
@@ -61,7 +61,7 @@ function fill(tpl, vars) {
 
 // ── preferredEmail is stored encrypted; decrypt it to know where to send ────
 // NOTE: this key is also present in client-side JS and in git history, so it
-// offers no real protection. See migration/RUNBOOK.md — it should be rotated
+// offers no real protection. See migration/RUNBOOK.md, it should be rotated
 // once members/$uid is no longer world-readable.
 const KP = 'aec-ucsb-priv-2025';
 const SALT = 'aec-salt-v1';
@@ -242,7 +242,7 @@ exports.sendUnreadEmailReminders = onSchedule(
       }
     }
 
-    console.log(`unread reminders — sent:${sent} skipped:${skipped} failed:${failed}`);
+    console.log(`unread reminders, sent:${sent} skipped:${skipped} failed:${failed}`);
   }
 );
 
@@ -330,7 +330,7 @@ exports.sendBroadcast = onRequest(
       }
     }
 
-    console.log(`broadcast "${subject}" — sent:${sent} failed:${failed} skipped:${skipped}`);
+    console.log(`broadcast "${subject}", sent:${sent} failed:${failed} skipped:${skipped}`);
     res.json({ sent, failed, skipped, errors });
   }
 );
@@ -405,7 +405,7 @@ exports.sendPasswordResetNotice = onRequest(
 );
 
 /* ════════════════════════════════════════════════════════════════════════
-   AI FEATURES — Gemini (free tier, project aec-ai)
+   AI FEATURES, Gemini (free tier, project aec-ai)
    ════════════════════════════════════════════════════════════════════════ */
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
@@ -479,7 +479,7 @@ async function fetchHeadlines(maxPerFeed = 10) {
 
 function numberedHeadlines(items) {
   return items.map((h, i) =>
-    `[${i + 1}] (${h.source}) ${h.title}${h.desc ? ' — ' + h.desc : ''}`).join('\n');
+    `[${i + 1}] (${h.source}) ${h.title}${h.desc ? ', ' + h.desc : ''}`).join('\n');
 }
 
 // Hard daily cap across ALL AI calls. The free tier allows far more; this is
@@ -637,6 +637,7 @@ ${numberedHeadlines(headlines)}
 Rules:
 - Every topic must be based on one or more of the numbered headlines. Include their numbers in "refs".
 - Each topic needs: "name" (max 60 chars, punchy, board-ready), "desc" (2 sentences: what happened and why it matters), "refs" (array of headline numbers used).
+- Never use em dashes in any text; use commas or periods.
 - Do NOT propose anything similar to these existing topics: ${existing.join('; ') || '(none)'}
 - Do not invent facts beyond the headlines. If fewer than 5 topics are well-supported, return fewer.
 
@@ -668,7 +669,7 @@ Reply with ONLY a JSON array: [{"name":"...","desc":"...","refs":[1,2]}]`;
   return { proposed: added, headlines: headlines.length };
 }
 
-// Daily at 07:00 Pacific — proposals are waiting when an admin checks in.
+// Daily at 07:00 Pacific, proposals are waiting when an admin checks in.
 exports.scanTopicsDaily = onSchedule(
   { schedule: 'every day 07:00', timeZone: 'America/Los_Angeles', region: 'us-central1', secrets: [GEMINI_API_KEY] },
   async () => {
@@ -798,7 +799,7 @@ exports.generateDeck = onRequest(
   }
 );
 
-// ── Deck refinement — the "prompt window" in admin ──────────────────────────
+// ── Deck refinement, the "prompt window" in admin ──────────────────────────
 exports.refineDeck = onRequest(
   { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
@@ -898,7 +899,7 @@ What members get:
 - Career tracks with hands-on modules: Investment Banking, Trading, Equity Research, Venture Capital, Consulting, AdTech - build a DCF, tear down an M&A deal, write a stock initiation report
 - A member community: directory, messaging, and presentations built for every meeting
 Audience: ambitious undergrads who want practical finance/econ skills and a network, from freshmen to seniors. No experience required.
-Voice: confident, concrete, student-to-student. Name real things (tracks, voting, speakers) instead of vague benefits. Never use cliches like "join our community", "fun and exciting", or stacked exclamation marks.`;
+Voice: confident, concrete, student-to-student. Name real things (tracks, voting, speakers) instead of vague benefits. Never use cliches like "join our community", "fun and exciting", or stacked exclamation marks. Never use em dashes; use commas or periods instead.`;
 
 // ── Flyers ──────────────────────────────────────────────────────────────────
 // Gemini writes the copy; flyer.html renders it in club branding. All Gemini

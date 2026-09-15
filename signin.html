@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign In | UCSB Applied Economics Club</title>
-  <meta name="description" content="Member portal for the UCSB Applied Economics Club — a registered student organization at UC Santa Barbara. Sign in or create a member profile to access the directory, voting, and club messaging." />
+  <meta name="description" content="Member portal for the UCSB Applied Economics Club, a registered student organization at UC Santa Barbara. Sign in or create a member profile to access the directory, voting, and club messaging." />
   <meta name="theme-color" content="#090F1A" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Sign In | UCSB Applied Economics Club" />
-  <meta property="og:description" content="Member portal — sign in or create an account." />
+  <meta property="og:description" content="Member portal, sign in or create an account." />
   <meta property="og:image" content="https://www.ucsbaec.com/assets/og-image.svg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
@@ -454,7 +454,7 @@
             <span class="step-logo-text">New Member</span>
           </div>
           <h1>Join AEC</h1>
-          <p class="subtitle">You're verified — a few quick questions to build your member profile. This helps us connect you with the right people and tailor club discussions.</p>
+          <p class="subtitle">You're verified, a few quick questions to build your member profile. This helps us connect you with the right people and tailor club discussions.</p>
           <form id="new-member-form" class="auth-form" novalidate>
             <div class="field-group">
               <label class="field-label" for="nm-name">Full Name <span class="req">*</span></label>
@@ -480,7 +480,7 @@
             <div class="field-group">
               <label class="field-label" for="nm-email">Personal Email <span class="req">*</span></label>
               <input type="email" id="nm-email" class="auth-input" placeholder="yourname@gmail.com" />
-              <span class="field-hint">Must be a non-UCSB address — this stays active after graduation and is where message notifications are sent.</span>
+              <span class="field-hint">Must be a non-UCSB address, this stays active after graduation and is where message notifications are sent.</span>
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-phone">Phone Number <span class="opt">(optional)</span></label>
@@ -503,7 +503,7 @@
             <div class="field-group">
               <label class="field-label" for="nm-field">Where do you work or what field are you entering? <span class="req">*</span></label>
               <input type="text" id="nm-field" class="auth-input" placeholder="e.g. Goldman Sachs, consulting, public policy…" maxlength="100" />
-              <span class="field-hint">This is how we connect members to people already working in relevant industries — one of the core reasons the club exists.</span>
+              <span class="field-hint">This is how we connect members to people already working in relevant industries, one of the core reasons the club exists.</span>
             </div>
             <button type="submit" class="auth-btn">Complete Registration</button>
             <p class="auth-msg" id="nm-msg"></p>
@@ -560,14 +560,14 @@
           </div>
         </div>
 
-        <!-- STEP: Add Phone (legacy — kept for fallback) -->
+        <!-- STEP: Add Phone (legacy, kept for fallback) -->
         <div id="step-add-phone" class="hidden">
           <div class="step-logo">
             <div class="step-logo-mark">AE</div>
             <span class="step-logo-text">Quick update</span>
           </div>
           <h1>Add your phone number</h1>
-          <p class="subtitle">Members use phone numbers to reach each other directly outside the app. Add yours so others can contact you — or skip for now.</p>
+          <p class="subtitle">Members use phone numbers to reach each other directly outside the app. Add yours so others can contact you, or skip for now.</p>
           <div class="field-group">
             <label class="field-label" for="add-phone-input">Phone Number</label>
             <input type="tel" id="add-phone-input" class="auth-input" placeholder="e.g. (805) 555-0123" maxlength="20" />
@@ -620,7 +620,7 @@
   </main>
 
   <!--
-    EMAIL SETUP (EmailJS — free, no backend needed):
+    EMAIL SETUP (EmailJS, free, no backend needed):
     1. Sign up at https://www.emailjs.com
     2. Add an Email Service (Gmail, Outlook, etc.) → copy the Service ID
     3. Create a template with these variables: {{to_email}}, {{code}}, {{club_name}}
@@ -863,7 +863,7 @@
           '<div class="field-group">' +
             '<label class="field-label" for="cp-email">Personal Email <span class="req">*</span></label>' +
             '<input type="email" id="cp-email" class="auth-input" placeholder="yourname@gmail.com" />' +
-            '<span class="field-hint">Non-UCSB address — stays active after graduation, used for message notifications.</span>' +
+            '<span class="field-hint">Non-UCSB address, stays active after graduation, used for message notifications.</span>' +
           '</div>');
       }
       if (missing.includes('phone')) {
@@ -920,7 +920,7 @@
         : `You're signed in as ${member.email}.`;
       document.getElementById('p-name').textContent    = member.name;
       document.getElementById('p-subject').textContent = member.subject;
-      document.getElementById('p-field').textContent   = member.field || '—';
+      document.getElementById('p-field').textContent   = member.field || ', ';
       document.getElementById('p-email').textContent   = member.preferredEmail;
       const phoneRow = document.getElementById('p-phone-row');
       if (member.phone) {
@@ -981,7 +981,7 @@
       } catch (err) {
         box.checked = !on;
         setRemindersLabel(!on);
-        msg.textContent = 'Could not save — try again.';
+        msg.textContent = 'Could not save, try again.';
         msg.style.color = 'rgba(255,120,120,0.9)';
       } finally {
         box.disabled = false;
@@ -1024,7 +1024,7 @@
     async function sendVerificationCode(email) {
       currentCode = generateCode();
       if (!EMAILJS_READY) {
-        setMsg('resend-msg', `Dev mode — code: ${currentCode}`, 'info');
+        setMsg('resend-msg', `Dev mode, code: ${currentCode}`, 'info');
         return true;
       }
       try {
@@ -1049,7 +1049,7 @@
         return;
       }
       if (entered !== currentCode) {
-        setMsg('code-msg', 'Incorrect code — please try again.', 'error');
+        setMsg('code-msg', 'Incorrect code, please try again.', 'error');
         document.getElementById('code-input').classList.add('error-field');
         return;
       }
@@ -1090,7 +1090,7 @@
       this.disabled = true;
       setMsg('resend-msg', 'Sending…', 'info');
       const sent = await sendVerificationCode(currentEmail);
-      setMsg('resend-msg', sent ? 'Code resent — check your inbox.' : 'Failed to resend. Try again.', sent ? 'success' : 'error');
+      setMsg('resend-msg', sent ? 'Code resent, check your inbox.' : 'Failed to resend. Try again.', sent ? 'success' : 'error');
       resendTimer = 60;
       const btn = this;
       const iv = setInterval(() => {
@@ -1163,7 +1163,7 @@
           : code === 'auth/user-not-found'
             ? 'Account not found. Please create a new account.'
           : code === 'auth/too-many-requests'
-            ? 'Too many attempts — wait a minute, or use Forgot password.'
+            ? 'Too many attempts, wait a minute, or use Forgot password.'
             : 'Sign-in failed. Please try again.', 'error');
         return;
       }
@@ -1202,7 +1202,7 @@
       } catch (err) {
         const code = err && err.code || '';
         if (code === 'auth/email-already-in-use') {
-          setMsg('signup-msg', 'That account already exists — use Sign In (or Forgot password).', 'error');
+          setMsg('signup-msg', 'That account already exists, use Sign In (or Forgot password).', 'error');
         } else if (code === 'auth/weak-password') {
           setMsg('signup-msg', 'Please choose a stronger password.', 'error');
         } else {
@@ -1234,13 +1234,13 @@
         return;
       }
       if (preferredEmail.toLowerCase().endsWith('@ucsb.edu')) {
-        setMsg('nm-msg', 'Please use a non-UCSB email — your UCSB address expires after graduation.', 'error');
+        setMsg('nm-msg', 'Please use a non-UCSB email, your UCSB address expires after graduation.', 'error');
         return;
       }
       const btn = this.querySelector('button[type="submit"]');
       btn.disabled = true; btn.textContent = 'Saving…';
 
-      // Guard: re-check Firebase — they may have already registered (e.g. slow network on first check)
+      // Guard: re-check Firebase, they may have already registered (e.g. slow network on first check)
       const existing = await getFirebaseMember(currentEmail);
       if (existing) {
         const member = buildMemberProfile({
@@ -1320,7 +1320,7 @@
       const learnEl     = document.getElementById('cp-learn');
       const goalEl      = document.getElementById('cp-goal');
 
-      // Text fields are required when shown — don't let a blank save through,
+      // Text fields are required when shown, don't let a blank save through,
       // or the member gets re-prompted on every future sign-in.
       for (const [el, label] of [
         [nameEl, 'your full name'], [subjectEl, 'your area of interest'],

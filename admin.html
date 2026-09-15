@@ -396,7 +396,7 @@
           </a>
           <a href="https://app.brevo.com/statistics/email" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:1px solid rgba(100,180,255,0.35);color:rgba(100,180,255,0.9);text-decoration:none;font-size:0.88rem;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(100,180,255,0.1)'" onmouseout="this.style.background='transparent'">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
-            Brevo — Email Stats
+            Brevo, Email Stats
           </a>
         </div>
       </div>
@@ -437,7 +437,7 @@
         <div class="section-body">
           <p style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin:0 0 18px;line-height:1.5">
             Generates a meeting deck on any topic using current, sourced information.
-            Decks open in the browser — arrow keys to present, F for fullscreen.
+            Decks open in the browser, arrow keys to present, F for fullscreen.
           </p>
 
           <div style="display:flex;flex-direction:column;gap:12px;max-width:680px;margin-bottom:16px">
@@ -447,7 +447,7 @@
             </select>
             <input type="text" id="deck-topic" maxlength="120" placeholder="Type your topic"
               style="display:none;width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem" />
-            <textarea id="deck-guidance" rows="2" maxlength="1000" placeholder="Optional guidance — audience level, angle, anything to emphasise…"
+            <textarea id="deck-guidance" rows="2" maxlength="1000" placeholder="Optional guidance, audience level, angle, anything to emphasise…"
               style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem;font-family:inherit;resize:vertical"></textarea>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <button type="button" id="deck-generate" class="reset-pwd-btn" style="font-size:0.88rem;padding:10px 20px;border-color:rgba(196,164,72,0.45);color:#D4B55E;">Generate deck</button>
@@ -460,7 +460,7 @@
           <div id="deck-refine" style="display:none;margin-top:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:18px;max-width:680px">
             <div style="font-weight:700;margin-bottom:4px">Refine: <span id="refine-title"></span></div>
             <p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0 0 10px">
-              Tell the AI what to change — it revises the deck in place and bumps the version.
+              Tell the AI what to change, it revises the deck in place and bumps the version.
             </p>
             <textarea id="refine-instruction" rows="3" maxlength="1000"
               placeholder="e.g. Make slide 3 simpler, add a slide on the Fed's response, shorten the discussion questions…"
@@ -537,7 +537,7 @@
         <h2>Email All Members</h2>
         <div class="section-body">
           <p style="color:rgba(255,255,255,0.55);font-size:0.88rem;margin:0 0 18px;line-height:1.5">
-            Sends one email to every member, individually — nobody sees anyone else's address.
+            Sends one email to every member, individually, nobody sees anyone else's address.
             Check the recipient count before sending; there is no undo.
           </p>
 
@@ -669,7 +669,7 @@
       </div>
     </div>
 
-    <footer class="footer">Admin access — UCSB Applied Economics Club</footer>
+    <footer class="footer">Admin access, UCSB Applied Economics Club</footer>
   </main>
 
   <script>
@@ -744,7 +744,7 @@
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function eKey(email) { return email.replace(/[.@#$[\]/]/g, '_'); }
 
-    // Verify admin status against Firebase — always authoritative
+    // Verify admin status against Firebase, always authoritative
     async function getIsAdmin(session) {
       if (!session || !session.email) return false;
       if (session.email === ADMIN_EMAIL) return true;   // owner is always admin
@@ -907,7 +907,7 @@
       const raw = await fbGet('members');
       if (!raw) { container.innerHTML = '<p class="empty-state">No registered members yet.</p>'; return; }
 
-      // Deduplicate by UCSB email — keep the record with the earlier joinedAt (the original)
+      // Deduplicate by UCSB email, keep the record with the earlier joinedAt (the original)
       const emailMap = new Map();
       Object.values(raw).filter(m => m && m.name && m.email).forEach(m => {
         const prev = emailMap.get(m.email);
@@ -1091,7 +1091,7 @@
         return {
           name:  member ? member.name  : '(Unknown)',
           email: member ? member.email : k.replace(/_at_/g,'@').replace(/_dot_/g,'.'),
-          topic: v.topic || '—',
+          topic: v.topic || ', ',
           ts:    v.ts    || 0
         };
       }).sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -1102,7 +1102,7 @@
       const tbody = document.createElement('tbody');
       entries.forEach(e => {
         const tr = document.createElement('tr');
-        const timeStr = e.ts ? new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+        const timeStr = e.ts ? new Date(e.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : ', ';
         tr.innerHTML =
           '<td><div class="vr-name">' + escapeHtml(e.name) + '</div>' +
               '<div class="vr-email">' + escapeHtml(e.email) + '</div></td>' +
@@ -1208,7 +1208,7 @@
             this.disabled = true; this.textContent = 'Approving…';
             await approveSubmission(sub);
             await loadSubmissions();
-            setMsg(`Approved: ${sub.name || sub.email} — ${sub.moduleName}`);
+            setMsg(`Approved: ${sub.name || sub.email}, ${sub.moduleName}`);
           });
           row.querySelector('.reject-sub-btn').addEventListener('click', async function() {
             const note = prompt('Rejection note for ' + (sub.name || sub.email) + ' (optional):') ?? '';
@@ -1216,7 +1216,7 @@
             this.disabled = true; this.textContent = 'Rejecting…';
             await rejectSubmission(sub, note);
             await loadSubmissions();
-            setMsg(`Returned for revision: ${sub.name || sub.email} — ${sub.moduleName}`);
+            setMsg(`Returned for revision: ${sub.name || sub.email}, ${sub.moduleName}`);
           });
         }
         container.appendChild(row);
@@ -1257,7 +1257,7 @@
       renderPendingTopics(rawPending);
       renderCustomTopics(topics);
 
-      // Activity log — sort newest first
+      // Activity log, sort newest first
       const actEntries = rawActivity
         ? Object.values(rawActivity).sort((a,b) => (b.at||0)-(a.at||0))
         : [];
@@ -1274,7 +1274,7 @@
       setMsg('Working…');
       await action();
       await refresh();
-      setMsg(`Done — ${label}.`);
+      setMsg(`Done, ${label}.`);
     }
 
     // ── Vote Window ───────────────────────────────────────────
@@ -1289,7 +1289,7 @@
         const fmt = ts => new Date(ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
         currentEl.textContent = `Current window: ${fmt(vw.open)} → ${fmt(vw.close)}`;
       } else {
-        currentEl.textContent = 'No window set — voting is always open.';
+        currentEl.textContent = 'No window set, voting is always open.';
       }
     }
 
@@ -1297,7 +1297,7 @@
     async function saveSnapshot() {
       const counts = await fbGet('vote-counts');
       if (!counts) { setMsg('No vote data to snapshot.', true); return; }
-      const label = prompt('Label for this snapshot (e.g. "Spring 2026 — Week 3"):');
+      const label = prompt('Label for this snapshot (e.g. "Spring 2026, Week 3"):');
       if (!label) return;
       await fetch(`${DB_URL}/vote-history.json`, { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ label, counts, savedAt: Date.now() }) });
@@ -1396,7 +1396,7 @@
       await fbDelete('vote-window');
       document.getElementById('vw-open').value = '';
       document.getElementById('vw-close').value = '';
-      document.getElementById('vw-current').textContent = 'No window set — voting is always open.';
+      document.getElementById('vw-current').textContent = 'No window set, voting is always open.';
       document.getElementById('vw-status').textContent = 'Cleared.';
       setTimeout(() => document.getElementById('vw-status').textContent = '', 2000);
     });
@@ -1517,7 +1517,7 @@
       initMemberSearch();
       document.getElementById('admin-sub').textContent = `Signed in as ${session.email}`;
 
-      // Show Members nav link — admin is always signed in
+      // Show Members nav link, admin is always signed in
       const ml = document.getElementById('members-nav-link');
       if (ml) ml.style.display = 'inline-flex';
       const msgL = document.getElementById('messages-nav-link');
@@ -1528,7 +1528,7 @@
       await renderAdminMembers();
 
       if (!FB_READY) {
-        setMsg('Firebase not configured — set DB_URL in admin.html and vote.html to enable live data.', true);
+        setMsg('Firebase not configured, set DB_URL in admin.html and vote.html to enable live data.', true);
       }
 
       await refresh();
@@ -1543,7 +1543,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const st = document.getElementById('scan-status');
-        scanBtn.disabled = true; st.textContent = 'Scanning current news — 20-40 seconds…';
+        scanBtn.disabled = true; st.textContent = 'Scanning current news, 20-40 seconds…';
         try {
           const r = await fetch(FN_BASE + '/scanTopicsNow', {
             method: 'POST',
@@ -1553,7 +1553,7 @@
           if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
-            st.textContent = 'Proposed ' + d.proposed + ' topics — review below.';
+            st.textContent = 'Proposed ' + d.proposed + ' topics, review below.';
             if (typeof refresh === 'function') await refresh();
           }
         } catch (e) { st.textContent = 'Could not reach the scanner.'; }
@@ -1594,7 +1594,7 @@
         const raw = await fbGet('decks');
         const decks = raw ? Object.entries(raw).map(([k, v]) => ({ id: k, ...v }))
                               .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)) : [];
-        if (!decks.length) { listEl.innerHTML = '<p class="empty-state">No decks yet — generate one above.</p>'; return; }
+        if (!decks.length) { listEl.innerHTML = '<p class="empty-state">No decks yet, generate one above.</p>'; return; }
         listEl.innerHTML = '';
         decks.forEach(d => {
           const row = document.createElement('div');
@@ -1680,7 +1680,7 @@
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const label = btn ? btn.textContent : '';
         if (btn) { btn.disabled = true; btn.textContent = 'Building…'; }
-        setMsg('Building a deck for "' + name + '" — 30-60 seconds…');
+        setMsg('Building a deck for "' + name + '", 30-60 seconds…');
         try {
           const r = await fetch(FN_BASE + '/generateDeck', {
             method: 'POST',
@@ -1707,7 +1707,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('deck-generate');
-        btn.disabled = true; st.textContent = 'Researching and building — 30-60 seconds…';
+        btn.disabled = true; st.textContent = 'Researching and building, 30-60 seconds…';
         try {
           const r = await fetch(FN_BASE + '/generateDeck', {
             method: 'POST',
@@ -1718,7 +1718,7 @@
           if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
-            st.textContent = 'Done — "' + d.title + '", ' + d.slides + ' slides.';
+            st.textContent = 'Done, "' + d.title + '", ' + d.slides + ' slides.';
             document.getElementById('deck-topic').value = '';
             document.getElementById('deck-topic').style.display = 'none';
             const pk = document.getElementById('deck-topic-pick'); if (pk) pk.value = '';
@@ -1740,7 +1740,7 @@
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('refine-send');
-        btn.disabled = true; st.textContent = 'Revising — 20-40 seconds…';
+        btn.disabled = true; st.textContent = 'Revising, 20-40 seconds…';
         try {
           const r = await fetch(FN_BASE + '/refineDeck', {
             method: 'POST',
@@ -1769,7 +1769,7 @@
         const raw = await fbGet('flyers');
         const flyers = raw ? Object.entries(raw).map(([k, v]) => ({ id: k, ...v }))
                                .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)) : [];
-        if (!flyers.length) { flyerList.innerHTML = '<p class="empty-state">No flyers yet — generate one above.</p>'; return; }
+        if (!flyers.length) { flyerList.innerHTML = '<p class="empty-state">No flyers yet, generate one above.</p>'; return; }
         flyerList.innerHTML = '';
         flyers.forEach(f => {
           const row = document.createElement('div');
@@ -1822,10 +1822,10 @@
       if (flyerGen) flyerGen.addEventListener('click', async () => {
         const details = document.getElementById('flyer-details').value.trim();
         const st = document.getElementById('flyer-status');
-        if (!details) { st.textContent = 'Add the facts first — when, where, what.'; return; }
+        if (!details) { st.textContent = 'Add the facts first, when, where, what.'; return; }
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
-        flyerGen.disabled = true; st.textContent = 'Writing copy — 15-30 seconds…';
+        flyerGen.disabled = true; st.textContent = 'Writing copy, 15-30 seconds…';
         try {
           const r = await fetch(FN_BASE + '/generateFlyer', {
             method: 'POST',
@@ -1841,7 +1841,7 @@
           if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
-            st.textContent = 'Done — "' + d.headline + '". Preview it below.';
+            st.textContent = 'Done, "' + d.headline + '". Preview it below.';
             document.getElementById('flyer-details').value = '';
             await loadFlyers();
           }
@@ -1861,7 +1861,7 @@
         if (!instruction) { st.textContent = 'Describe the change first.'; return; }
         const hdrs = await adminHeaders();
         if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
-        fRefSend.disabled = true; st.textContent = 'Revising — 15-30 seconds…';
+        fRefSend.disabled = true; st.textContent = 'Revising, 15-30 seconds…';
         try {
           const r = await fetch(FN_BASE + '/refineFlyer', {
             method: 'POST',
@@ -1938,7 +1938,7 @@
         sendBtn.disabled = true;
         const label = sendBtn.innerHTML;
         sendBtn.textContent = 'Sending…';
-        say('Sending — this can take a moment for a large list.', 'info');
+        say('Sending, this can take a moment for a large list.', 'info');
 
         try {
           const res = await fetch(BROADCAST_URL, {
@@ -1949,7 +1949,7 @@
           const data = await res.json().catch(() => ({}));
 
           if (res.status === 403 || res.status === 401) { say(data.error || 'Not authorised - sign in as an admin.', 'error'); }
-          else if (res.status === 429) say(data.error || 'Sent too recently — wait a minute.', 'error');
+          else if (res.status === 429) say(data.error || 'Sent too recently, wait a minute.', 'error');
           else if (!res.ok)            say(data.error || `Failed (${res.status}).`, 'error');
           else {
             let t = `Sent to ${data.sent} member${data.sent === 1 ? '' : 's'}.`;

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   UCSB AEC — shared authentication layer (Firebase Auth, compat SDK)
+   UCSB AEC, shared authentication layer (Firebase Auth, compat SDK)
 
    Loaded on every member page, before the page's own scripts. Three jobs:
 

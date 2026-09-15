@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Members | UCSB Applied Economics Club</title>
-  <meta name="description" content="The UCSB Applied Economics Club member directory — verified profiles, current goals, and shared updates among members and alumni." />
+  <meta name="description" content="The UCSB Applied Economics Club member directory, verified profiles, current goals, and shared updates among members and alumni." />
   <meta name="theme-color" content="#090F1A" />
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
@@ -124,7 +124,7 @@
     .messages-section h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .messages-card { background: rgba(7,22,48,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 24px 28px; box-shadow: 0 18px 50px rgba(0,0,0,0.14); }
     .message-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
-    .message-feed:empty::after { content: 'No messages yet — say hello!'; color:rgba(255,255,255,0.48); font-size: 0.9rem; padding: 16px 0; display: block; text-align: center; }
+    .message-feed:empty::after { content: 'No messages yet, say hello!'; color:rgba(255,255,255,0.48); font-size: 0.9rem; padding: 16px 0; display: block; text-align: center; }
     .message-item { display: flex; gap: 12px; padding: 13px 15px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
     .message-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(196,164,72,0.18); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
     .message-body { flex: 1; min-width: 0; }
@@ -261,7 +261,7 @@
         <div class="hero-block-text">
           <span class="hero-eyebrow">Club Directory</span>
           <h1>Members</h1>
-          <p>Verified members of UCSB Applied Economics Club. Click "Edit my card" to update your profile — changes sync instantly across all devices.</p>
+          <p>Verified members of UCSB Applied Economics Club. Click "Edit my card" to update your profile, changes sync instantly across all devices.</p>
         </div>
         <div class="member-count-badge">
           <strong id="member-count">&#8212;</strong>
@@ -326,7 +326,7 @@
       const feed = document.getElementById('message-feed');
       feed.innerHTML = '';
       if (!messages.length) {
-        feed.innerHTML = '<div style="color:rgba(255,255,255,0.48);font-size:0.9rem;text-align:center;padding:20px 0;">No messages yet — say hello!</div>';
+        feed.innerHTML = '<div style="color:rgba(255,255,255,0.48);font-size:0.9rem;text-align:center;padding:20px 0;">No messages yet, say hello!</div>';
         return;
       }
       messages.forEach(msg => {

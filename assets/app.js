@@ -1,5 +1,5 @@
 /* ==========================================================================
-   UCSB Applied Economics Club — shared client script
+   UCSB Applied Economics Club, shared client script
    - Session-aware nav (no flash; runs ASAP in <head>)
    - Scroll-shadow on topbar
    - Reveal-on-scroll observer
@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  // --- 1. Auth state — must run BEFORE first paint to avoid flash ---------
+  // --- 1. Auth state, must run BEFORE first paint to avoid flash ---------
   function readSession() {
     try {
       var raw = JSON.parse(localStorage.getItem('aec-session') || 'null');
@@ -33,7 +33,7 @@
     }
   }
   // Run as early as possible. If <body> isn't there yet, retry on
-  // DOMContentLoaded — but try synchronously first.
+  // DOMContentLoaded, but try synchronously first.
   if (document.body) applyAuthClass();
   else document.addEventListener('DOMContentLoaded', applyAuthClass);
 

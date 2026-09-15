@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
-  <title>Presentation — UCSB AEC</title>
+  <title>Presentation, UCSB AEC</title>
   <style>
     :root {
       --bg:#090F1A; --surface:#0E1829; --navy:#162438;
@@ -109,7 +109,7 @@
           <div class="l">${esc(x.label)}</div></div>`).join('')}</div>`;
       if (t === 'quote') return `
         <blockquote>&ldquo;${esc(s.text || '')}&rdquo;</blockquote>
-        ${s.attribution ? `<p class="attr">— ${esc(s.attribution)}</p>` : ''}`;
+        ${s.attribution ? `<p class="attr">, ${esc(s.attribution)}</p>` : ''}`;
       if (t === 'sources') return `
         <h2>Sources</h2>
         <div class="srcs">${(s.links||[]).map(l=>{
@@ -135,7 +135,7 @@
       catch (e) { /* handled below */ }
       if (!deck || !Array.isArray(deck.slides)) { state.textContent = 'Deck not found.'; return; }
 
-      document.title = deck.title + ' — UCSB AEC';
+      document.title = deck.title + ', UCSB AEC';
       const stage = document.getElementById('stage');
       stage.innerHTML = deck.slides.map(s => `<section class="slide">${slideHtml(s, deck)}</section>`).join('');
       total = deck.slides.length;
@@ -150,7 +150,7 @@
           document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
         }
       });
-      // tap / click advances (left third goes back) — for presenting from a phone
+      // tap / click advances (left third goes back), for presenting from a phone
       stage.addEventListener('click', e => {
         if (e.target.closest('a')) return;
         (e.clientX < innerWidth / 3) ? show(idx - 1) : show(idx + 1);

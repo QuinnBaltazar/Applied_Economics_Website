@@ -649,7 +649,7 @@
     <section class="hero-block">
       <span class="hero-eyebrow">Topic Vote</span>
       <h1 class="hero-title">Shape the next session</h1>
-      <p class="hero-copy">Every member gets one vote. Select the topic you want the club to cover next — your choice directly determines our next lecture and the industry speaker we bring in.</p>
+      <p class="hero-copy">Every member gets one vote. Select the topic you want the club to cover next, your choice directly determines our next lecture and the industry speaker we bring in.</p>
     </section>
 
     <div class="gold-divider"></div>
@@ -1058,7 +1058,7 @@
         }
       }
 
-      // Not signed in — show auth gate, hide form, still show counts
+      // Not signed in, show auth gate, hide form, still show counts
       if (!session) {
         document.getElementById('auth-gate-vote').style.display = 'flex';
         document.getElementById('vote-form').style.display = 'none';
@@ -1104,7 +1104,7 @@
           const [newTopics, newVote] = await Promise.all([loadCustomTopics(), getUserVote(session)]);
           renderCustomTopics(newTopics, session, newVote);
           wireOtherToggle();
-          showMessage(`Topic submitted — pending admin approval before it appears on the vote page.`);
+          showMessage(`Topic submitted, pending admin approval before it appears on the vote page.`);
         } else {
           await incrementCount(topic, voteWeight);
           await saveUserVote(session, topic);
@@ -1114,7 +1114,7 @@
           }
           updateResults(await loadCounts());
           const weightNote = voteWeight > 1 ? ` Your ${totalCredits} track credits applied a ${voteWeight}× weight.` : '';
-          showMessage(`Thanks — your vote for "${topic}" has been recorded.${weightNote}`);
+          showMessage(`Thanks, your vote for "${topic}" has been recorded.${weightNote}`);
         }
         lockForm();
       });

@@ -415,7 +415,7 @@
       const r = { ...m };
       // Only preferredEmail is needed here (for email notifications).
       // Phone is deliberately NOT decrypted on this page so it never enters
-      // page memory — DMs have no reason to expose a member's number.
+      // page memory, DMs have no reason to expose a member's number.
       for (const f of ['preferredEmail']) if (r[f]) r[f] = await decField(r[f]);
       return r;
     }
@@ -516,7 +516,7 @@
         });
       } else {
         // Mark as read. Clearing emailReminderAt too resets the reminder clock,
-        // so the next unread message can trigger a fresh reminder — otherwise
+        // so the next unread message can trigger a fresh reminder, otherwise
         // a member would only ever be reminded once per conversation.
         await fbSet('dms/'+cid+'/meta/unread_'+eKey(mySession.email), 0);
         await fbSet('dms/'+cid+'/meta/emailReminderAt_'+eKey(mySession.email), null);
@@ -571,7 +571,7 @@
       const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
       feed.innerHTML = '';
       if (!msgs.length) {
-        feed.innerHTML = '<div class="thread-no-msgs">No messages yet — say hello!</div>';
+        feed.innerHTML = '<div class="thread-no-msgs">No messages yet, say hello!</div>';
       } else {
         msgs.forEach(msg => {
           const isMine = msg.from === mySession.email;
@@ -639,7 +639,7 @@
       await refreshThread();
       await refreshInbox();
 
-      // Fire notifications in background — don't await so UI stays snappy
+      // Fire notifications in background, don't await so UI stays snappy
       if (partnerEmail) {
         const partnerName = meta && meta.names ? (meta.names[eKey(partnerEmail)] || partnerEmail) : partnerEmail;
         notifyRecipient(partnerEmail, partnerName, body, meta);

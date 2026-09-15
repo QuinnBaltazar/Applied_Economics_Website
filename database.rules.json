@@ -28,6 +28,7 @@
 
     "submissions": {
       ".read": "auth != null",
+      ".write": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true",
       "$k": {
         ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')"
       }
@@ -35,6 +36,7 @@
 
     "vote-records": {
       ".read": "auth != null",
+      ".write": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true",
       "$k": {
         ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')"
       }

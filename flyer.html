@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
-  <title>Flyer — UCSB AEC</title>
+  <title>Flyer, UCSB AEC</title>
   <style>
     :root {
       --bg:#090F1A; --navy:#162438; --gold:#C4A448; --gold-lt:#D4B55E;
@@ -297,7 +297,7 @@
                      : (f.template === 'story' ? 'story' : 'bold');
       const styles = ['bold','classic','grid'];
       const style = styles.includes(qs.get('style')) ? qs.get('style') : (f.style || 'bold');
-      document.title = f.headline + ' — UCSB AEC flyer';
+      document.title = f.headline + ', UCSB AEC flyer';
       stage.innerHTML = render(f, template + (style !== 'bold' ? ' style-' + style : ''));
 
       const other = template === 'bold' ? 'story' : 'bold';
