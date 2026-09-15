@@ -801,7 +801,7 @@ function sanitizeDeck(deck, topic, sources) {
 }
 
 exports.generateDeck = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,   // add BRAVE_API_KEY here only if you enable Brave
+  { region: 'us-central1', secrets: [GEMINI_API_KEY, BRAVE_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
@@ -1010,6 +1010,26 @@ async function wikiResearch(topic) {
   return out;
 }
 
+// Fetch a web page and reduce it to clean readable text (paragraphs preferred).
+// Runs server-side during deck generation; capped and fail-soft.
+async function fetchPageText(url, maxLen) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; AEC-club/1.0; +https://ucsbaec.com)' }, redirect: 'follow', signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return '';
+    if (!/text\/html|text\/plain/i.test(res.headers.get('content-type') || '')) return '';
+    let html = (await res.text()).slice(0, 400000);
+    html = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ')
+               .replace(/<(nav|header|footer|aside|form)[\s\S]*?<\/\1>/gi, ' ');
+    const paras = (html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || []).map(x => x.replace(/<[^>]+>/g, ' '));
+    let text = (paras.length >= 3 ? paras.join(' ') : html.replace(/<[^>]+>/g, ' '));
+    text = text.replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
+    return text.slice(0, maxLen || 4500);
+  } catch (e) { return ''; }
+}
+
 // Brave web search (only if a key is configured).
 async function braveSearch(topic) {
   const out = { chunks: [], sources: [] };
@@ -1031,6 +1051,15 @@ async function braveSearch(topic) {
         if (r.url) out.sources.push({ title: (r.title || r.url).slice(0, 100), url: r.url });
       }
     }
+    // Pull the actual article text from the top results (the real quality lever).
+    const top = results.filter(r => r.url).slice(0, 3);
+    const bodies = await Promise.all(top.map(r => fetchPageText(r.url, 4500)));
+    top.forEach((r, i) => {
+      const body = bodies[i];
+      if (body && body.length > 250) {
+        out.chunks.push({ source: (r.profile && r.profile.name ? r.profile.name : 'Web') + ' (article)', text: body, url: r.url });
+      }
+    });
   } catch (e) { console.warn('brave search failed:', e.message); }
   return out;
 }
@@ -1082,7 +1111,7 @@ async function buildResearch(topic, opts) {
   // rank by relevance, keep the strongest, cap total size
   chunks = chunks.map(c => ({ ...c, _r: relevanceScore(c.text, topic) }))
     .sort((a, b) => b._r - a._r);
-  const kept = []; let budget = 5000;
+  const kept = []; let budget = 18000;
   for (const c of chunks) {
     if (budget <= 0) break;
     kept.push(c); budget -= c.text.length;
