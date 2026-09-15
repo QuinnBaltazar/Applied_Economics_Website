@@ -18,16 +18,38 @@
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
     }
     .stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+
+    /* Background motif: faint ghost monogram + rising chart line, on every slide */
+    .bg-motif { position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+    .bg-monogram { position:absolute; right:-3vw; top:-6vh; font-family:Georgia,serif;
+      font-weight:700; font-size:62vh; line-height:1; color:transparent;
+      -webkit-text-stroke:2px rgba(196,164,72,0.05); user-select:none; }
+    .bg-chart { position:absolute; left:0; bottom:0; width:100%; height:34vh; opacity:.5; }
+
     .slide {
+      position:relative; z-index:1;
       width:min(92vw,1100px); max-height:88vh; padding:min(6vh,56px) min(5vw,64px);
-      display:none; flex-direction:column; justify-content:center; gap:26px;
-      animation:in .35s ease;
+      display:none; flex-direction:column; justify-content:center; gap:24px;
     }
     .slide.on { display:flex; }
-    @keyframes in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+    /* Staggered entrance: each direct child rises in, one after another */
+    .slide.on > * { opacity:0; animation:riseIn .5s cubic-bezier(.2,.7,.2,1) forwards; }
+    .slide.on > *:nth-child(1){ animation-delay:.05s; }
+    .slide.on > *:nth-child(2){ animation-delay:.15s; }
+    .slide.on > *:nth-child(3){ animation-delay:.25s; }
+    .slide.on > *:nth-child(4){ animation-delay:.34s; }
+    .slide.on > *:nth-child(5){ animation-delay:.42s; }
+    .slide.on > *:nth-child(6){ animation-delay:.50s; }
+    @keyframes riseIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
 
     .eyebrow { color:var(--gold); font-size:clamp(12px,1.3vw,15px); font-weight:700;
                letter-spacing:.16em; text-transform:uppercase; }
+    /* Animated gold underline that grows under headings */
+    h1, h2 { position:relative; padding-bottom:.24em; }
+    h1::after, h2::after { content:""; position:absolute; left:0; bottom:0; height:4px;
+      width:0; background:linear-gradient(90deg,var(--gold),transparent); border-radius:2px;
+      animation:grow .7s .35s cubic-bezier(.2,.7,.2,1) forwards; }
+    @keyframes grow { to { width:clamp(90px,22%,220px); } }
     h1 { font-size:clamp(34px,5.4vw,64px); line-height:1.08; letter-spacing:-0.02em; }
     h2 { font-size:clamp(24px,3.4vw,40px); line-height:1.15; letter-spacing:-0.015em; }
     .sub { color:var(--muted); font-size:clamp(16px,1.9vw,22px); max-width:48ch; line-height:1.5; }
@@ -50,7 +72,8 @@
 
     .stats { display:flex; gap:26px; flex-wrap:wrap; }
     .stat { flex:1 1 180px; background:var(--gold-dim); border:1px solid rgba(196,164,72,.25);
-            border-radius:18px; padding:26px 22px; }
+            border-radius:18px; padding:26px 22px; transition:transform .3s, box-shadow .3s; }
+    .stat:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(0,0,0,.35); }
     .stat .v { color:var(--gold-lt); font-size:clamp(30px,4vw,52px); font-weight:800; letter-spacing:-0.02em; }
     .stat .l { color:var(--muted); font-size:clamp(13px,1.4vw,16px); margin-top:6px; line-height:1.4; }
 
@@ -70,12 +93,24 @@
     .state { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
              color:var(--muted); font-size:17px; text-align:center; padding:20px; }
     a:focus-visible, [tabindex]:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
-    @media (prefers-reduced-motion: reduce) { .slide { animation:none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .slide.on > * { opacity:1; animation:none; }
+      h1::after, h2::after { width:clamp(90px,22%,220px); animation:none; }
+    }
     @media (max-width:700px){ .cols { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <div class="bar" id="bar"></div>
+  <div class="bg-motif" aria-hidden="true">
+    <div class="bg-monogram">AE</div>
+    <svg class="bg-chart" viewBox="0 0 1200 240" preserveAspectRatio="none">
+      <path d="M0,210 L150,180 L300,192 L450,140 L600,158 L800,96 L1000,110 L1200,40"
+            fill="none" stroke="rgba(196,164,72,0.35)" stroke-width="3"/>
+      <path d="M0,210 L150,180 L300,192 L450,140 L600,158 L800,96 L1000,110 L1200,40 L1200,240 L0,240 Z"
+            fill="rgba(196,164,72,0.05)"/>
+    </svg>
+  </div>
   <div class="stage" id="stage"><div class="state" id="state">Loading deck…</div></div>
   <div class="hud">
     <span class="brand">UCSB Applied Economics Club</span>
@@ -120,11 +155,33 @@
       return `<h2>${esc(s.heading || '')}</h2>`;   // unknown type: degrade gracefully
     }
 
+    function countUp(el) {
+      const raw = el.getAttribute('data-v') || el.textContent;
+      const m = String(raw).match(/^(\D*)([\d,.]+)(.*)$/);   // prefix, number, suffix ($, %, etc.)
+      if (!m) return;
+      const pre = m[1], suf = m[3], target = parseFloat(m[2].replace(/,/g, ''));
+      if (!isFinite(target)) return;
+      const dec = (m[2].split('.')[1] || '').length;
+      const t0 = performance.now(), dur = 700;
+      (function step(t) {
+        const k = Math.min(1, (t - t0) / dur);
+        const val = (target * (1 - Math.pow(1 - k, 3)));
+        el.textContent = pre + val.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suf;
+        if (k < 1) requestAnimationFrame(step);
+        else el.textContent = pre + m[2] + suf;
+      })(t0);
+    }
     function show(i) {
       idx = Math.max(0, Math.min(total - 1, i));
       document.querySelectorAll('.slide').forEach((el, n) => el.classList.toggle('on', n === idx));
       document.getElementById('pos').textContent = (idx + 1) + ' / ' + total;
       document.getElementById('bar').style.width = ((idx + 1) / total * 100) + '%';
+      // Animate any stat numbers on the newly shown slide.
+      const active = document.querySelectorAll('.slide')[idx];
+      if (active) active.querySelectorAll('.stat .v').forEach(v => {
+        if (!v.getAttribute('data-v')) v.setAttribute('data-v', v.textContent);
+        countUp(v);
+      });
     }
 
     async function boot() {
