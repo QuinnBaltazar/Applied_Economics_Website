@@ -497,6 +497,13 @@
             </div>
           </div>
           <iframe id="deck-preview-frame" title="Deck preview" style="flex:1;border:0;width:100%;background:#090F1A"></iframe>
+          <div id="pv-refine" style="display:none;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)">
+            <input id="pv-refine-input" type="text" maxlength="1000"
+              placeholder="Tell the AI what to change, e.g. add a slide on risk management, simplify slide 4&hellip;"
+              style="flex:1;min-width:0;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.88rem;font-family:inherit" />
+            <button type="button" id="pv-refine-send" class="reset-pwd-btn" style="font-size:0.85rem;padding:9px 16px;white-space:nowrap">Apply</button>
+            <span id="pv-refine-status" style="font-size:0.82rem;color:rgba(255,255,255,0.5);white-space:nowrap"></span>
+          </div>
         </div>
       </div>
 
@@ -1638,11 +1645,17 @@
         frame.src = url;
         // Focus the iframe once it loads so its arrow-key / click navigation works.
         frame.onload = () => { try { frame.contentWindow.focus(); } catch (e) {} };
+        pvDeckId = null;
+        document.getElementById('pv-refine').style.display = 'none';
+        document.getElementById('pv-refine-status').textContent = '';
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
       }
+      let pvDeckId = null;
       function openDeckPreview(id, title) {
         openPreviewUrl('present.html?id=' + encodeURIComponent(id), title);
+        pvDeckId = id;
+        document.getElementById('pv-refine').style.display = 'flex';
       }
       function closeDeckPreview() {
         const modal = document.getElementById('deck-preview-modal');
@@ -1796,6 +1809,40 @@
           }
         } catch (e) { st.textContent = 'Could not reach the generator.'; }
         finally { btn.disabled = false; }
+      });
+
+      async function pvRefineSend() {
+        if (!pvDeckId) return;
+        const input = document.getElementById('pv-refine-input');
+        const st = document.getElementById('pv-refine-status');
+        const instruction = input.value.trim();
+        if (!instruction) { st.textContent = 'Describe the change first.'; return; }
+        const hdrs = await adminHeaders();
+        if (!hdrs) { st.textContent = 'Sign in as an admin first.'; return; }
+        const btn = document.getElementById('pv-refine-send');
+        btn.disabled = true; input.disabled = true;
+        st.innerHTML = aiLoad('Revising');
+        try {
+          const r = await fetch(FN_BASE + '/refineDeck', {
+            method: 'POST', headers: hdrs,
+            body: JSON.stringify({ id: pvDeckId, instruction })
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { st.textContent = d.error || ('Failed (' + r.status + ').'); }
+          else {
+            st.textContent = 'Updated to v' + d.version + '.';
+            input.value = '';
+            const frame = document.getElementById('deck-preview-frame');
+            frame.src = 'present.html?id=' + encodeURIComponent(pvDeckId) + '&v=' + Date.now();
+            await loadDecks();
+          }
+        } catch (e) { st.textContent = 'Could not reach the refiner.'; }
+        finally { btn.disabled = false; input.disabled = false; }
+      }
+      document.getElementById('pv-refine-send').addEventListener('click', pvRefineSend);
+      document.getElementById('pv-refine-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); pvRefineSend(); }
+        e.stopPropagation();   // typing must not drive the slides or close the modal
       });
 
       document.getElementById('refine-cancel').addEventListener('click', () => {
