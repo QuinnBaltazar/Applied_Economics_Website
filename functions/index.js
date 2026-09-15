@@ -29,7 +29,11 @@ setGlobalOptions({ region: 'us-central1' });
 const BREVO_API_KEY = defineSecret('BREVO_API_KEY');
 
 // Must be a sender address verified in your Brevo account, or sends fail.
-const SENDER_EMAIL = 'noreply@ucsbaec.com';
+// Using a personal Gmail for now. Gmail's DMARC policy means Brevo sends this
+// "on behalf of" the address, so some clients show a "via brevo" note and it is
+// more likely to land in spam. Switching to noreply@ucsbaec.com once the domain
+// is verified in Brevo fixes both.
+const SENDER_EMAIL = 'quinnbaltazar@gmail.com';
 const SENDER_NAME  = 'UCSB Applied Economics Club';
 const SITE_URL     = 'https://www.ucsbaec.com';
 
