@@ -796,18 +796,29 @@
         document.getElementById(s).classList.toggle('hidden', s !== id);
       });
     }
+    // Every field the sign-up form collects. Members who joined before a
+    // field existed are prompted to fill it in on their next sign-in.
+    const PROFILE_FIELDS = [
+      'name', 'gradYear', 'preferredEmail', 'phone', 'subject', 'learn', 'goal', 'field'
+    ];
     function getMissingFields(member) {
-      const missing = [];
-      if (!member.gradYear) missing.push('gradYear');
-      if (!member.preferredEmail) missing.push('preferredEmail');
-      if (!member.phone) missing.push('phone');
-      return missing;
+      return PROFILE_FIELDS.filter(f => {
+        const v = member[f];
+        return v === undefined || v === null || String(v).trim() === '';
+      });
     }
     function showCompleteProfileStep(member) {
       const missing = getMissingFields(member);
       if (!missing.length) { showStep('step-welcome'); return; }
       const container = document.getElementById('complete-profile-fields');
       container.innerHTML = '';
+      if (missing.includes('name')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-name">Full Name <span class="req">*</span></label>' +
+            '<input type="text" id="cp-name" class="auth-input" placeholder="Your full name" maxlength="80" />' +
+          '</div>');
+      }
       if (missing.includes('gradYear')) {
         container.insertAdjacentHTML('beforeend',
           '<div class="field-group">' +
@@ -835,6 +846,34 @@
             '<label class="field-label" for="cp-phone">Phone Number <span class="opt">(optional)</span></label>' +
             '<input type="tel" id="cp-phone" class="auth-input" placeholder="e.g. (805) 555-0123" maxlength="20" />' +
             '<span class="field-hint">For SMS alerts when you have unread messages waiting more than a day.</span>' +
+          '</div>');
+      }
+      if (missing.includes('subject')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-subject">Area of Interest <span class="req">*</span></label>' +
+            '<input type="text" id="cp-subject" class="auth-input" placeholder="e.g. Finance, Macroeconomics, Policy…" maxlength="80" />' +
+          '</div>');
+      }
+      if (missing.includes('field')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-field">Target Field or Firm <span class="req">*</span></label>' +
+            '<input type="text" id="cp-field" class="auth-input" placeholder="e.g. Goldman Sachs, consulting, public policy…" maxlength="100" />' +
+          '</div>');
+      }
+      if (missing.includes('learn')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-learn">What do you want to learn? <span class="req">*</span></label>' +
+            '<textarea id="cp-learn" class="auth-textarea" placeholder="Topics, skills, or concepts you\'re hoping to develop through the club." maxlength="400" rows="3"></textarea>' +
+          '</div>');
+      }
+      if (missing.includes('goal')) {
+        container.insertAdjacentHTML('beforeend',
+          '<div class="field-group">' +
+            '<label class="field-label" for="cp-goal">What are you hoping to get out of AEC? <span class="req">*</span></label>' +
+            '<textarea id="cp-goal" class="auth-textarea" placeholder="Networking, research experience, career prep, community…" maxlength="400" rows="3"></textarea>' +
           '</div>');
       }
       document.getElementById('complete-profile-msg').textContent = '';
@@ -1171,6 +1210,25 @@
       const gradYearEl  = document.getElementById('cp-gradyear');
       const emailEl     = document.getElementById('cp-email');
       const phoneEl     = document.getElementById('cp-phone');
+      const nameEl      = document.getElementById('cp-name');
+      const subjectEl   = document.getElementById('cp-subject');
+      const fieldEl     = document.getElementById('cp-field');
+      const learnEl     = document.getElementById('cp-learn');
+      const goalEl      = document.getElementById('cp-goal');
+
+      // Text fields are required when shown — don't let a blank save through,
+      // or the member gets re-prompted on every future sign-in.
+      for (const [el, label] of [
+        [nameEl, 'your full name'], [subjectEl, 'your area of interest'],
+        [fieldEl, 'your target field or firm'], [learnEl, 'what you want to learn'],
+        [goalEl, 'what you want from AEC']
+      ]) {
+        if (el && !el.value.trim()) {
+          msgEl.textContent = 'Please enter ' + label + '.';
+          msgEl.className = 'auth-msg error';
+          return;
+        }
+      }
 
       if (gradYearEl && !gradYearEl.value) {
         msgEl.textContent = 'Please select a graduation year.';
@@ -1191,6 +1249,11 @@
       if (gradYearEl && gradYearEl.value) fresh.gradYear = gradYearEl.value;
       if (emailEl && emailEl.value.trim()) fresh.preferredEmail = emailEl.value.trim();
       if (phoneEl && phoneEl.value.trim()) fresh.phone = phoneEl.value.trim();
+      if (nameEl    && nameEl.value.trim())    fresh.name    = nameEl.value.trim();
+      if (subjectEl && subjectEl.value.trim()) fresh.subject = subjectEl.value.trim();
+      if (fieldEl   && fieldEl.value.trim())   fresh.field   = fieldEl.value.trim();
+      if (learnEl   && learnEl.value.trim())   fresh.learn   = learnEl.value.trim();
+      if (goalEl    && goalEl.value.trim())    fresh.goal    = goalEl.value.trim();
 
       await saveFirebaseMember(fresh);
       setSession(fresh);
