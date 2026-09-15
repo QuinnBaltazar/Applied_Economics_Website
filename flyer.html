@@ -20,7 +20,7 @@
     .toolbar {
       position:fixed; top:14px; right:16px; display:flex; gap:10px; z-index:10;
     }
-    .toolbar button, .toolbar a {
+    .toolbar button, .toolbar a { font-family:inherit;
       background:rgba(9,15,26,0.9); color:#fff; border:1px solid rgba(196,164,72,0.5);
       border-radius:999px; padding:9px 18px; font:600 13px/1 inherit; cursor:pointer;
       text-decoration:none;
@@ -201,10 +201,13 @@
       @page { size:letter; margin:0; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
   <div class="toolbar">
     <button id="btn-print">Print / Save PDF</button>
+    <button id="btn-image">Save image</button>
+    <a id="btn-instagram" href="#" style="display:none">Post to Instagram</a>
     <a id="btn-other" href="#">Switch format</a>
   </div>
   <div class="edit-panel">
@@ -309,7 +312,46 @@
         a.href = `flyer.html?id=${encodeURIComponent(id)}&template=${template}&style=${st}`;
         bar.appendChild(a);
       });
-      document.getElementById('btn-print').addEventListener('click', () => print());
+      // Print: focus first so it works even when opened from the admin modal.
+      document.getElementById('btn-print').addEventListener('click', function () {
+        try { window.focus(); } catch (e) {}
+        window.print();
+      });
+
+      // Save image: render the flyer to a PNG the user can post or send.
+      // This is the path for Instagram, stories can only be posted from the
+      // phone's own app, no website can post for you, so we hand you the image.
+      document.getElementById('btn-image').addEventListener('click', async function () {
+        const node = document.getElementById('flyer');
+        if (!node || typeof html2canvas === 'undefined') { alert('Image export unavailable, use Print / Save PDF instead.'); return; }
+        this.textContent = 'Rendering...'; this.disabled = true;
+        try {
+          const prevTransform = node.style.transform, prevMargin = node.style.margin;
+          node.style.transform = 'none'; node.style.margin = '0';   // export at full size
+          const canvas = await html2canvas(node, { useCORS: true, backgroundColor: null, scale: 2 });
+          node.style.transform = prevTransform; node.style.margin = prevMargin;
+          const a = document.createElement('a');
+          a.href = canvas.toDataURL('image/png');
+          a.download = 'aec-flyer-' + template + '.png';
+          a.click();
+        } catch (e) {
+          alert('Could not render the image, use Print / Save PDF instead.');
+        }
+        this.textContent = 'Save image'; this.disabled = false;
+      });
+
+      // Instagram (story format only): open the app/site so you can post the
+      // saved image as a story. Deep-links to the app on mobile.
+      if (template === 'story') {
+        const ig = document.getElementById('btn-instagram');
+        ig.style.display = '';
+        ig.addEventListener('click', function (e) {
+          e.preventDefault();
+          alert('Save the image first (Save image button), then Instagram opens, tap the + to add it to your story.');
+          const isMobile = /iphone|ipad|android/i.test(navigator.userAgent);
+          window.open(isMobile ? 'instagram://story-camera' : 'https://www.instagram.com/', '_blank');
+        });
+      }
 
       // ── Edit mode (?edit=1): contenteditable text + design panel + Save ──
       if (qs.get('edit') === '1') {
