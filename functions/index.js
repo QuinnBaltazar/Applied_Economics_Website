@@ -28,12 +28,6 @@ admin.initializeApp();
 setGlobalOptions({ region: 'us-central1' });
 
 const BREVO_API_KEY  = defineSecret('BREVO_API_KEY');
-// Passphrase the admin types in admin.html to authorise a broadcast.
-// admin.html's own admin check is client-side only, so it cannot protect an
-// HTTP endpoint — anyone can call the URL directly. This shared secret is the
-// stopgap until the site moves to Firebase Auth (see migration/RUNBOOK.md),
-// at which point this should become a proper auth-token check.
-const BROADCAST_KEY = defineSecret('BROADCAST_KEY');
 
 // Must be a sender address verified in your Brevo account, or sends fail.
 // Using a personal Gmail for now. Gmail's DMARC policy means Brevo sends this
@@ -259,20 +253,13 @@ exports.sendUnreadEmailReminders = onSchedule(
 exports.sendBroadcast = onRequest(
   {
     region: 'us-central1',
-    secrets: [BREVO_API_KEY, BROADCAST_KEY],
+    secrets: [BREVO_API_KEY],
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com']
   },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
 
-    // Constant-time-ish comparison; reject before doing any work.
-    const provided = String(req.get('x-broadcast-key') || '');
-    const expected = BROADCAST_KEY.value();
-    if (!provided || provided.length !== expected.length || provided !== expected) {
-      console.warn('broadcast rejected: bad key from', req.ip);
-      res.status(403).json({ error: 'Not authorised' });
-      return;
-    }
+    if (!(await requireAdmin(req, res))) return;
 
     const subject = String((req.body && req.body.subject) || '').trim();
     const bodyText = String((req.body && req.body.body) || '').trim();
@@ -351,23 +338,17 @@ exports.sendBroadcast = onRequest(
 
 // ── Admin: tell a member their password was cleared ─────────────────────────
 // POST { email }  with header  x-broadcast-key: <passphrase>
-// Same passphrase as sendBroadcast; see the note on BROADCAST_KEY above.
+// Admin-token gated like everything else.
 exports.sendPasswordResetNotice = onRequest(
   {
     region: 'us-central1',
-    secrets: [BREVO_API_KEY, BROADCAST_KEY],
+    secrets: [BREVO_API_KEY],
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com']
   },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
 
-    const provided = String(req.get('x-broadcast-key') || '');
-    const expected = BROADCAST_KEY.value();
-    if (!provided || provided.length !== expected.length || provided !== expected) {
-      console.warn('reset notice rejected: bad key from', req.ip);
-      res.status(403).json({ error: 'Not authorised' });
-      return;
-    }
+    if (!(await requireAdmin(req, res))) return;
 
     const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     if (!email || !email.includes('@')) {
@@ -598,14 +579,32 @@ function friendlyAiError(e) {
   return m.slice(0, 200);
 }
 
-function requireKey(req, res) {
-  const provided = String(req.get('x-broadcast-key') || '');
-  const expected = BROADCAST_KEY.value();
-  if (!provided || provided.length !== expected.length || provided !== expected) {
-    res.status(403).json({ error: 'Not authorised' });
-    return false;
+// The club owner is always an admin, even if the database record is missing.
+const OWNER_EMAIL = 'quinnbaltazar@ucsb.edu';
+
+// Verifies a Firebase ID token from "Authorization: Bearer <token>" and
+// checks the caller's member record for isAdmin. This replaces the shared
+// passphrase: identity is cryptographic (Google-signed token, spoofable by
+// nobody), and the admin flag lives in a database node clients can no
+// longer write. Returns the caller's email, or null after responding 403.
+async function requireAdmin(req, res) {
+  try {
+    const m = String(req.get('authorization') || '').match(/^Bearer\s+(.+)$/i);
+    if (!m) { res.status(401).json({ error: 'Sign in required' }); return null; }
+    const decoded = await admin.auth().verifyIdToken(m[1]);
+    const email = String(decoded.email || '').toLowerCase();
+    if (!email.endsWith('@ucsb.edu')) {
+      res.status(403).json({ error: 'UCSB account required' }); return null;
+    }
+    if (email === OWNER_EMAIL) return email;
+    const rec = (await admin.database().ref('members/' + eKey(email)).get()).val();
+    if (rec && rec.isAdmin === true) return email;
+    res.status(403).json({ error: 'Admin access required' });
+    return null;
+  } catch (e) {
+    res.status(401).json({ error: 'Session expired - reload and sign in again' });
+    return null;
   }
-  return true;
 }
 
 // ── Topic scanner ───────────────────────────────────────────────────────────
@@ -680,11 +679,11 @@ exports.scanTopicsDaily = onSchedule(
 
 // "Scan now" button in admin.
 exports.scanTopicsNow = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY],
+  { region: 'us-central1', secrets: [GEMINI_API_KEY],
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
     try { res.json(await runTopicScan()); }
     catch (e) { console.error('scan failed:', e.message); res.status(502).json({ error: friendlyAiError(e) }); }
@@ -751,11 +750,11 @@ function sanitizeDeck(deck, topic, sources) {
 }
 
 exports.generateDeck = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
 
     const topic = String((req.body && req.body.topic) || '').trim();
     const guidance = String((req.body && req.body.guidance) || '').trim().slice(0, 1000);
@@ -801,11 +800,11 @@ exports.generateDeck = onRequest(
 
 // ── Deck refinement — the "prompt window" in admin ──────────────────────────
 exports.refineDeck = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
 
     const id = String((req.body && req.body.id) || '').trim();
     const instruction = String((req.body && req.body.instruction) || '').trim().slice(0, 1000);
@@ -872,11 +871,10 @@ Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":
 // decks is write:false at the rules level, so deletion has to come through
 // here (Admin SDK bypasses rules). Passphrase-gated like the rest.
 exports.deleteDeck = onRequest(
-  { region: 'us-central1', secrets: [BROADCAST_KEY],
-    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  { region: 'us-central1',     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
     const id = String((req.body && req.body.id) || '').trim();
     if (!id) { res.status(400).json({ error: 'id is required' }); return; }
     const ref = admin.database().ref('decks/' + id);
@@ -908,11 +906,11 @@ Voice: confident, concrete, student-to-student. Name real things (tracks, voting
 // which is also why it stays on-brand. Facts (dates, rooms, links) come from
 // the admin and must be used verbatim; the model only writes around them.
 exports.generateFlyer = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
 
     const purpose = String((req.body && req.body.purpose) || 'Recruiting').trim().slice(0, 60);
     const details = String((req.body && req.body.details) || '').trim().slice(0, 1200);
@@ -969,11 +967,11 @@ Reply with ONLY JSON:
 );
 
 exports.refineFlyer = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY, BROADCAST_KEY], timeoutSeconds: 120,
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 120,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
     const id = String((req.body && req.body.id) || '').trim();
     const instruction = String((req.body && req.body.instruction) || '').trim().slice(0, 600);
     if (!id || !instruction) { res.status(400).json({ error: 'id and instruction are required' }); return; }
@@ -1018,11 +1016,10 @@ Reply with ONLY the full revised JSON.`;
 );
 
 exports.deleteFlyer = onRequest(
-  { region: 'us-central1', secrets: [BROADCAST_KEY],
-    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  { region: 'us-central1',     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
     const id = String((req.body && req.body.id) || '').trim();
     if (!id) { res.status(400).json({ error: 'id is required' }); return; }
     const ref = admin.database().ref('flyers/' + id);
@@ -1036,11 +1033,10 @@ exports.deleteFlyer = onRequest(
 // The edit mode in flyer.html collects the fields and saves them here
 // verbatim. Whitelisted and length-capped; bumps version like a refine.
 exports.updateFlyer = onRequest(
-  { region: 'us-central1', secrets: [BROADCAST_KEY],
-    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  { region: 'us-central1',     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
-    if (!requireKey(req, res)) return;
+    if (!(await requireAdmin(req, res))) return;
     const id = String((req.body && req.body.id) || '').trim();
     const f = (req.body && req.body.fields) || {};
     if (!id) { res.status(400).json({ error: 'id is required' }); return; }
@@ -1072,5 +1068,43 @@ exports.updateFlyer = onRequest(
     upd.updatedAt = Date.now();
     await ref.update(upd);
     res.json({ id, version: upd.version });
+  }
+);
+
+// ── Admin: manage member roles and removal ──────────────────────────────────
+// Direct client writes to members are locked now (and isAdmin was never safe
+// to leave client-writable), so promote/demote/remove go through here.
+exports.adminMember = onRequest(
+  { region: 'us-central1',
+    cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
+    const caller = await requireAdmin(req, res);
+    if (!caller) return;
+
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+    const action = String((req.body && req.body.action) || '');
+    if (!email || !['promote', 'demote', 'remove'].includes(action)) {
+      res.status(400).json({ error: 'email and a valid action are required' }); return;
+    }
+    if (email === OWNER_EMAIL && action !== 'promote') {
+      res.status(400).json({ error: 'The owner account cannot be demoted or removed' }); return;
+    }
+    if (email === caller && action === 'demote') {
+      res.status(400).json({ error: 'You cannot demote yourself' }); return;
+    }
+
+    const ref = admin.database().ref('members/' + eKey(email));
+    if (!(await ref.get()).exists()) { res.status(404).json({ error: 'No member with that email' }); return; }
+
+    if (action === 'remove') {
+      await ref.remove();
+      try { await admin.auth().deleteUser((await admin.auth().getUserByEmail(email)).uid); }
+      catch (e) { /* no auth account - record-only member */ }
+    } else {
+      await ref.update({ isAdmin: action === 'promote' });
+    }
+    console.log(`adminMember: ${caller} -> ${action} ${eKey(email)}`);
+    res.json({ ok: true, action, email });
   }
 );

@@ -223,6 +223,9 @@
     </div>
   </div>
   <div id="stage"><div style="color:rgba(255,255,255,0.6)">Loading flyer…</div></div>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="assets/auth.js"></script>
   <script>
     const DB = 'https://applied-economics-club-default-rtdb.firebaseio.com';
     const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -367,8 +370,8 @@
         });
 
         saveBtn.addEventListener('click', async () => {
-          const key = prompt('Broadcast passphrase to save:');
-          if (!key) return;
+          const tok = window.AECAuth ? await AECAuth.token() : null;
+          if (!tok) { alert('Sign in with your admin account first (signin.html), then come back.'); return; }
           const get = f2 => { const el = document.querySelector('[data-f="' + f2 + '"]'); return el ? el.innerText.trim() : ''; };
           const fields = {
             headline: get('headline'), subhead: get('subhead'), hook: get('hook'),
@@ -382,11 +385,11 @@
           try {
             const r = await fetch('https://us-central1-applied-economics-club.cloudfunctions.net/updateFlyer', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
               body: JSON.stringify({ id, fields })
             });
             const d = await r.json().catch(() => ({}));
-            if (r.status === 403) alert('Passphrase rejected.');
+            if (r.status === 403 || r.status === 401) alert(d.error || 'Not authorised - sign in as an admin.');
             else if (!r.ok) alert(d.error || 'Save failed (' + r.status + ').');
             else { dirty = false; saveBtn.textContent = 'Saved ✓ (v' + d.version + ')'; }
           } catch (e) { alert('Could not reach the server.'); }

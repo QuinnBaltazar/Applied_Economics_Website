@@ -1,20 +1,57 @@
 {
   "rules": {
-    "vote-counts":   { ".read": true, ".write": true },
-    "vote-records":  { ".read": true, ".write": true },
-    "vote-window":   { ".read": true, ".write": true },
-    "custom-topics": { ".read": true, ".write": true },
-    "pending-topics":{ ".read": true,  ".write": true },
-    "members":       { ".read": true, ".write": true },
-    "messages":      { ".read": true, ".write": true },
-    "dms":           { ".read": true, ".write": true },
-    "activity":      { ".read": true,  ".write": true },
-    "notifications": { ".read": false, ".write": true },
-    "track-progress":{ ".read": true,  ".write": true },
+    "_readme": {
+      ".read": false, ".write": false
+    },
+
+    "members": {
+      ".read": "auth != null",
+      "$k": {
+        ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')",
+        ".validate": "!newData.hasChild('password') && ((!newData.hasChild('isAdmin') && !data.hasChild('isAdmin')) || newData.child('isAdmin').val() === data.child('isAdmin').val() || (!data.child('isAdmin').exists() && newData.child('isAdmin').val() === false))"
+      }
+    },
+
+    "dms": {
+      "$conv": {
+        ".read": "auth != null && $conv.contains(auth.token.email.replace('.','_').replace('@','_'))",
+        ".write": "auth != null && $conv.contains(auth.token.email.replace('.','_').replace('@','_'))"
+      }
+    },
+
+    "track-progress": {
+      "$k": {
+        ".read": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')",
+        ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')"
+      }
+    },
+
+    "submissions": {
+      ".read": "auth != null",
+      "$k": {
+        ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')"
+      }
+    },
+
+    "vote-records": {
+      ".read": "auth != null",
+      "$k": {
+        ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')"
+      }
+    },
+
+    "messages":      { ".read": "auth != null", ".write": "auth != null" },
+    "vote-counts":   { ".read": "auth != null", ".write": "auth != null" },
+    "vote-window":   { ".read": "auth != null", ".write": "auth != null" },
+    "vote-history":  { ".read": "auth != null", ".write": "auth != null" },
+    "custom-topics": { ".read": "auth != null", ".write": "auth != null" },
+    "pending-topics":{ ".read": "auth != null", ".write": "auth != null" },
+    "activity":      { ".read": "auth != null", ".write": "auth != null" },
+    "notifications": { ".read": false,          ".write": "auth != null" },
+
     "decks":         { ".read": true,  ".write": false },
     "flyers":        { ".read": true,  ".write": false },
     "ai-usage":      { ".read": false, ".write": false },
-    "vote-history":  { ".read": true,  ".write": true },
-    "submissions":   { ".read": true,  ".write": true }
+    "admin":         { ".read": false, ".write": false }
   }
 }

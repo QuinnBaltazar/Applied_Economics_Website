@@ -36,7 +36,7 @@ const hexToBuf = (h) =>
     if (!buf) { skipped.push([key, 'no usable password hash — will need reset']); continue; }
 
     users.push({
-      uid: key.slice(0, 128),
+      uid: key.slice(0, 128),   // convenient, but nothing depends on uid anymore
       email,
       emailVerified: false,
       displayName: (m && m.name) || undefined,

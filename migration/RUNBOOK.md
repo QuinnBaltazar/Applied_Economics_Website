@@ -1,123 +1,59 @@
-# Securing the AEC database
+# Auth cutover — the runbook
 
-## Why this is needed
+The branch `auth-migration` IS the migration. One coordinated cutover:
 
-`database.rules.json` currently sets `".read": true, ".write": true` on `members`,
-`messages`, and `dms`. Verified live from a signed-out browser:
+## 1. Import existing members into Firebase Auth (FIRST — before pushing)
 
-- every member record is readable **and writable** by anyone
-- passwords are unsalted SHA-256 in that readable table
-- phone numbers are AES-encrypted with a key hardcoded in public JS
-  (`aec-ucsb-priv-2025`), so the encryption protects nothing
-- all DM threads are readable
-
-This cannot be fixed by tightening rules alone. The rules are open *because* the
-client has no credentials to present — auth is `localStorage` only. Lock the rules
-down before the client can authenticate and the site stops working.
-
-## Order of operations
-
-Steps 1-2 are safe and independent. Do not start step 4 until step 3 is done.
-
-### 1. Rotate your own password  ← do this first, it costs nothing
-
-Your hash has been publicly readable. Change it on the site, and anywhere you
-reused it.
-
-### 2. Ship the safe fixes  (branch: `security-fixes`)
-
-- `database.rules.json` — adds `track-progress`, which was missing, so
-  `syncProgressToFirebase()` at `track.html:1458` has been failing silently
-  (verified: 401). Module progress currently lives only in localStorage.
-- `functions/index.js` — SMS links pointed at
-  `quinnbaltazar.github.io/...`; now `www.ucsbaec.com`.
-
-```bash
-firebase deploy --only database          # rules
-firebase deploy --only functions         # SMS URL fix
-```
-
-Neither changes auth. Nothing breaks.
-
-### 3. Add Firebase Auth to the client
-
-Email/Password is already enabled on the project. Each page currently talks to
-RTDB over raw REST with no token — roughly 99 call sites across 7 pages. Two
-options:
-
-**a. Minimal** — keep the REST calls, append `?auth=<idToken>` from
-`firebase.auth().currentUser.getIdToken()`. Smaller diff, easy to review.
-
-**b. Proper** — load `firebase-database-compat.js` and use the SDK. Real-time
-listeners, automatic token refresh. Better long-term.
-
-Either way, `assets/app.js` becomes the single place that reads auth state,
-replacing the `aec-session` localStorage read.
-
-Convert and test one page at a time. Suggested order, least to most risky:
-`topics.html` → `board.html` → `track.html` → `vote.html` → `members.html` →
-`messages.html` → `admin.html` → `signin.html`.
-
-### 4. Import existing members, then lock the rules
+Members keep their current passwords (SHA-256 hashes import natively).
 
 ```bash
 cd migration && npm i firebase-admin
+# service account: Firebase console -> Project settings -> Service accounts
+#   -> Generate new private key -> save the json OUTSIDE the repo
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-node import-members.js --dry-run     # check the counts first
+node import-members.js --dry-run     # read the counts + skips first
 node import-members.js
 ```
 
-Existing SHA-256 hashes import directly into Firebase Auth, so **members keep
-their current passwords** — no forced reset. Anyone whose hash is missing or
-malformed gets listed and needs a reset link.
+Anyone listed as skipped (plaintext or missing password) signs in via
+"Forgot password" — Firebase emails them a secure reset link.
 
-Once every page authenticates and the import is verified:
+## 2. Ship everything at once
 
 ```bash
-cp database.rules.secure.json database.rules.json
-firebase deploy --only database
+git push origin main
+firebase deploy --only database,functions
 ```
 
-### 5. Rotate the phone encryption key
+Push and deploy back-to-back: the locked rules and the token-attaching
+pages must land together. In the minute between, signed-out visitors see
+empty lists — fine at club scale.
 
-`aec-ucsb-priv-2025` is in public git history and cannot be un-leaked. After
-step 4, `members/$uid/phone` is owner-only, so the key stops being the thing
-protecting it — but re-encrypt under a new key held only in function config,
-and treat every phone number stored before that as compromised.
+## 3. Tell members one thing
 
-## Verifying it worked
+"Sign in again at ucsbaec.com/signin.html — same email, same password."
+Old localStorage sessions are decorative now; a real sign-in mints the
+token everything else uses.
 
-From a signed-out browser console, each of these should return 401:
+## 4. What changed, security-wise
 
-```js
-const DB="https://applied-economics-club-default-rtdb.firebaseio.com";
-for (const p of ["members","dms","messages","track-progress"]) {
-  console.log(p, (await fetch(`${DB}/${p}.json?shallow=true`)).status);
-}
-```
+- Identity = Google-signed ID token, verified by rules and by functions.
+  localStorage forgery changes pixels only.
+- Passwords: Firebase Auth only. The member record cannot even contain a
+  password field (rules validate it away). Resets are Firebase links.
+- isAdmin: immutable to its owner at rules level; changed only via the
+  adminMember function, which requires a verified admin token.
+- members/dms/progress/submissions/votes: signed-in members only; own-key
+  writes bound to the token email. Outsiders: no read, no write.
+- decks/flyers stay world-readable (public present/flyer pages) and
+  functions-write-only. The admin passphrase is gone everywhere.
 
-Today they return 200.
+## Known v1 boundaries (deliberate)
 
-
----
-
-## Unread-message emails
-
-`functions/index.js` runs `sendUnreadEmailReminders` hourly. If a DM has gone
-unread for 24 hours it emails the recipient, at most once per conversation per
-day, and never about their own message. Members opt out by setting
-`emailReminders: false` on their member record.
-
-Twilio/SMS was removed. The per-message cost was negligible, but US A2P 10DLC
-registration is ~$10-15/month regardless of volume, plus number rental — a fixed
-cost for a channel email already covers.
-
-Setup:
-
-1. Create a free Brevo account and verify a sender address.
-2. Settings -> SMTP & API -> create an API key.
-3. `firebase functions:secrets:set BREVO_API_KEY`
-4. Set `SENDER_EMAIL` in `functions/index.js` to the verified address.
-5. `firebase deploy --only functions`
-
-Brevo's free tier is 300 emails/day, well beyond club volume.
+- Member-vs-member tamper on shared nodes (vote-counts, topics, message
+  board) is possible — bounded to signed-in @ucsb.edu members and logged
+  in activity. Locking those to admin-only writes means routing normal
+  member actions through functions; do later if it ever matters.
+- Phone ciphertext is readable by signed-in members (rules cascade); the
+  decrypt key is still client-side. Narrowed from world -> members. Full
+  fix = server-side re-encryption; queued behind real-world need.

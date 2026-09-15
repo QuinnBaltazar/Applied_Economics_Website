@@ -9,6 +9,9 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <link rel="stylesheet" href="assets/styles.css" />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="assets/auth.js"></script>
   <script src="assets/app.js" defer></script>
   <style>
     :root {
@@ -558,17 +561,6 @@
             </div>
           </div>
 
-          <div style="margin-bottom:18px">
-            <label class="field-label" for="bc-key"
-              style="display:block;font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:6px">Broadcast passphrase</label>
-            <input type="password" id="bc-key" autocomplete="off" placeholder="Required to authorise sending"
-              style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);
-                     background:rgba(255,255,255,0.04);color:#fff;font-size:0.92rem" />
-            <span style="display:block;font-size:0.75rem;color:rgba(255,255,255,0.48);margin-top:5px">
-              Set with <code>firebase functions:secrets:set BROADCAST_KEY</code>. Never stored in the page.
-            </span>
-          </div>
-
           <div id="bc-preview" style="display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
                border-radius:10px;padding:16px;margin-bottom:16px">
             <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.52);margin-bottom:8px">Preview</div>
@@ -716,42 +708,24 @@
     // ── Cloud Function endpoints ──────────────────────────────
     const FN_BASE = 'https://us-central1-applied-economics-club.cloudfunctions.net';
 
-    // The broadcast passphrase is asked for once per tab. sessionStorage (not
-    // localStorage) so it survives reloads but dies with the tab — a shared
-    // computer in the library doesn't keep it. A rejected key is forgotten so
-    // the next attempt re-prompts instead of failing silently forever.
-    let _broadcastKey = null;
-    try { _broadcastKey = sessionStorage.getItem('aec-bkey') || null; } catch (e) {}
-    function getBroadcastKey(reason) {
-      if (_broadcastKey) return _broadcastKey;
-      const entered = window.prompt(reason || 'Enter the broadcast passphrase:');
-      if (entered) {
-        _broadcastKey = entered;
-        try { sessionStorage.setItem('aec-bkey', entered); } catch (e) {}
-      }
-      return _broadcastKey;
+    // Admin actions are authorised by the signed-in admin's Firebase ID
+    // token - verified server-side, unforgeable, no passphrase, no prompts.
+    async function adminHeaders() {
+      const t = window.AECAuth ? await AECAuth.token() : null;
+      if (!t) return null;
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t };
     }
-    function forgetBroadcastKey() {
-      _broadcastKey = null;
-      try { sessionStorage.removeItem('aec-bkey'); } catch (e) {}
+    function needSignIn(el) {
+      const m = 'Sign in with your admin account first (signin.html).';
+      if (el && 'textContent' in el) el.textContent = m; else alert(m);
+      return null;
     }
 
-    // Emails the member to say an admin cleared their password.
-    async function sendPasswordResetEmail(email, name) {
-      const key = getBroadcastKey('Passphrase required to email ' + name + ' about the reset:');
-      if (!key) return false;
-      try {
-        const r = await fetch(FN_BASE + '/sendPasswordResetNotice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
-          body: JSON.stringify({ email })
-        });
-        if (r.status === 403) { forgetBroadcastKey(); return false; }
-        return r.ok;
-      } catch (e) {
-        console.error('reset notice failed:', e);
-        return false;
-      }
+    // Sends the member a Firebase password-reset link - the secure, standard
+    // flow. Admins never touch or clear anyone's credential.
+    async function sendPasswordResetEmail(email) {
+      try { await firebase.auth().sendPasswordResetEmail(email); return true; }
+      catch (e) { console.error('reset email failed:', e); return false; }
     }
 
     window.addEventListener('scroll', function() {
@@ -1002,8 +976,14 @@
           toggleBtn.textContent = isAdminMember ? 'Revoke Admin' : 'Make Admin';
           toggleBtn.addEventListener('click', async () => {
             if (!confirm((isAdminMember ? 'Revoke admin access for ' : 'Grant admin access to ') + member.name + '?')) return;
-            const updated = Object.assign({}, member, { isAdmin: !isAdminMember });
-            await fbSet('members/' + eKey(member.email), updated);
+            const hdrs = await adminHeaders();
+            if (!hdrs) { needSignIn(null); return; }
+            const r = await fetch(FN_BASE + '/adminMember', {
+              method: 'POST', headers: hdrs,
+              body: JSON.stringify({ email: member.email, action: isAdminMember ? 'demote' : 'promote' })
+            }).catch(() => null);
+            const d = r ? await r.json().catch(() => ({})) : {};
+            if (!r || !r.ok) { setMsg(d.error || 'Could not update admin status.'); return; }
             updateSessionAdmin(member.email, !isAdminMember);
             setMsg('Updated admin status for ' + member.name + '.');
             await renderAdminMembers();
@@ -1014,11 +994,9 @@
           resetPwdBtn.className = 'reset-pwd-btn';
           resetPwdBtn.textContent = 'Reset Password';
           resetPwdBtn.addEventListener('click', async () => {
-            if (!confirm('Reset password for ' + member.name + '? They will need to re-verify via email to log back in.')) return;
-            const updated = Object.assign({}, member, { password: null });
-            await fbSet('members/' + eKey(member.email), updated);
-            const emailSent = await sendPasswordResetEmail(member.email, member.name);
-            setMsg('Password cleared for ' + member.name + '.' + (emailSent ? ' Notification email sent.' : ' Could not send the notification — tell them directly.'));
+            if (!confirm('Email ' + member.name + ' a secure password-reset link?')) return;
+            const emailSent = await sendPasswordResetEmail(member.email);
+            setMsg(emailSent ? 'Reset link emailed to ' + member.name + '.' : 'Could not send the reset email.');
           });
           actions.appendChild(resetPwdBtn);
 
@@ -1026,8 +1004,15 @@
           removeBtn.className = 'remove-member-btn';
           removeBtn.textContent = 'Remove';
           removeBtn.addEventListener('click', async () => {
-            if (!confirm('Permanently remove ' + member.name + ' from the members list?')) return;
-            await fbDelete('members/' + eKey(member.email));
+            if (!confirm('Permanently remove ' + member.name + '? This also deletes their sign-in account.')) return;
+            const hdrs = await adminHeaders();
+            if (!hdrs) { needSignIn(null); return; }
+            const r = await fetch(FN_BASE + '/adminMember', {
+              method: 'POST', headers: hdrs,
+              body: JSON.stringify({ email: member.email, action: 'remove' })
+            }).catch(() => null);
+            const d = r ? await r.json().catch(() => ({})) : {};
+            if (!r || !r.ok) { setMsg(d.error || 'Could not remove the member.'); return; }
             setMsg(member.name + ' removed.');
             await renderAdminMembers();
           });
@@ -1555,17 +1540,17 @@
     (function initAI() {
       const scanBtn = document.getElementById('btn-scan-topics');
       if (scanBtn) scanBtn.addEventListener('click', async () => {
-        const key = getBroadcastKey('Passphrase required to run the topic scan:');
-        if (!key) return;
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const st = document.getElementById('scan-status');
         scanBtn.disabled = true; st.textContent = 'Scanning current news — 20-40 seconds…';
         try {
           const r = await fetch(FN_BASE + '/scanTopicsNow', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key }
+            headers: hdrs
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Proposed ' + d.proposed + ' topics — review below.';
@@ -1639,14 +1624,14 @@
           });
           row.querySelector('.deck-del-btn').addEventListener('click', async function () {
             if (!confirm('Delete deck "' + (d.title || d.topic) + '"? This cannot be undone.')) return;
-            const key = getBroadcastKey('Passphrase required to delete the deck:');
-            if (!key) return;
+            const hdrs = await adminHeaders();
+            if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
             const r = await fetch(FN_BASE + '/deleteDeck', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+              headers: hdrs,
               body: JSON.stringify({ id: d.id })
             }).catch(() => null);
-            if (r && r.status === 403) { forgetBroadcastKey(); alert('Passphrase rejected.'); return; }
+            if (r && r.status === 403) { alert('Passphrase rejected.'); return; }
             if (r && r.ok) await loadDecks();
             else alert('Delete failed.');
           });
@@ -1691,19 +1676,19 @@
       // One-click deck from a topic row (Topics tab). Exposed for the
       // pending/approved renderers, which live outside this closure.
       window.aecMakeDeck = async function (name, desc, btn) {
-        const key = getBroadcastKey('Passphrase required to generate a deck for "' + name + '":');
-        if (!key) return;
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const label = btn ? btn.textContent : '';
         if (btn) { btn.disabled = true; btn.textContent = 'Building…'; }
         setMsg('Building a deck for "' + name + '" — 30-60 seconds…');
         try {
           const r = await fetch(FN_BASE + '/generateDeck', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            headers: hdrs,
             body: JSON.stringify({ topic: name, guidance: desc ? 'Board topic description: ' + desc : '' })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { forgetBroadcastKey(); setMsg('Passphrase rejected.'); }
+          if (r.status === 403) { setMsg('Passphrase rejected.'); }
           else if (!r.ok) setMsg(d.error || ('Deck generation failed (' + r.status + ').'));
           else {
             await loadDecks();
@@ -1719,18 +1704,18 @@
         const guidance = document.getElementById('deck-guidance').value.trim();
         const st = document.getElementById('deck-status');
         if (!topic) { st.textContent = 'Choose a topic from the dropdown, or pick \u201CType my own\u201D.'; return; }
-        const key = getBroadcastKey('Passphrase required to generate a deck:');
-        if (!key) return;
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('deck-generate');
         btn.disabled = true; st.textContent = 'Researching and building — 30-60 seconds…';
         try {
           const r = await fetch(FN_BASE + '/generateDeck', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            headers: hdrs,
             body: JSON.stringify({ topic, guidance })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Done — "' + d.title + '", ' + d.slides + ' slides.';
@@ -1752,18 +1737,18 @@
         const instruction = document.getElementById('refine-instruction').value.trim();
         const st = document.getElementById('refine-status');
         if (!instruction) { st.textContent = 'Describe the change first.'; return; }
-        const key = getBroadcastKey('Passphrase required to refine the deck:');
-        if (!key) return;
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const btn = document.getElementById('refine-send');
         btn.disabled = true; st.textContent = 'Revising — 20-40 seconds…';
         try {
           const r = await fetch(FN_BASE + '/refineDeck', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            headers: hdrs,
             body: JSON.stringify({ id: refining.id, instruction })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Updated to v' + d.version + '.';
@@ -1819,14 +1804,14 @@
           });
           row.querySelector('.flyer-del-btn').addEventListener('click', async function () {
             if (!confirm('Delete flyer "' + (f.headline || f.purpose) + '"?')) return;
-            const key = getBroadcastKey('Passphrase required to delete the flyer:');
-            if (!key) return;
+            const hdrs = await adminHeaders();
+            if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
             const r = await fetch(FN_BASE + '/deleteFlyer', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+              headers: hdrs,
               body: JSON.stringify({ id: f.id })
             }).catch(() => null);
-            if (r && r.status === 403) { forgetBroadcastKey(); alert('Passphrase rejected.'); return; }
+            if (r && r.status === 403) { alert('Passphrase rejected.'); return; }
             if (r && r.ok) await loadFlyers(); else alert('Delete failed.');
           });
           flyerList.appendChild(row);
@@ -1838,13 +1823,13 @@
         const details = document.getElementById('flyer-details').value.trim();
         const st = document.getElementById('flyer-status');
         if (!details) { st.textContent = 'Add the facts first — when, where, what.'; return; }
-        const key = getBroadcastKey('Passphrase required to generate a flyer:');
-        if (!key) return;
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         flyerGen.disabled = true; st.textContent = 'Writing copy — 15-30 seconds…';
         try {
           const r = await fetch(FN_BASE + '/generateFlyer', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            headers: hdrs,
             body: JSON.stringify({
               purpose: document.getElementById('flyer-purpose').value,
               template: document.getElementById('flyer-template').value,
@@ -1853,7 +1838,7 @@
             })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Done — "' + d.headline + '". Preview it below.';
@@ -1874,17 +1859,17 @@
         const instruction = document.getElementById('flyer-refine-instruction').value.trim();
         const st = document.getElementById('flyer-refine-status');
         if (!instruction) { st.textContent = 'Describe the change first.'; return; }
-        const key = getBroadcastKey('Passphrase required to refine the flyer:');
-        if (!key) return;
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         fRefSend.disabled = true; st.textContent = 'Revising — 15-30 seconds…';
         try {
           const r = await fetch(FN_BASE + '/refineFlyer', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            headers: hdrs,
             body: JSON.stringify({ id: refiningFlyer.id, instruction })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { forgetBroadcastKey(); st.textContent = 'Passphrase rejected.'; }
+          if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
             st.textContent = 'Updated to v' + d.version + '.';
@@ -1908,7 +1893,6 @@
 
       const subjectEl = document.getElementById('bc-subject');
       const bodyEl    = document.getElementById('bc-body');
-      const keyEl     = document.getElementById('bc-key');
       const sendBtn   = document.getElementById('bc-send');
       const previewBtn= document.getElementById('bc-preview-btn');
       const msgEl     = document.getElementById('bc-msg');
@@ -1942,11 +1926,11 @@
       sendBtn.addEventListener('click', async () => {
         const subject = subjectEl.value.trim();
         const body    = bodyEl.value.trim();
-        const key     = keyEl.value;
 
         if (!subject) { say('Add a subject line.', 'error'); return; }
         if (!body)    { say('Add a message.', 'error'); return; }
-        if (!key)     { say('Enter the broadcast passphrase.', 'error'); return; }
+        const hdrs = await adminHeaders();
+        if (!hdrs) { say('Sign in with your admin account first.', 'error'); return; }
 
         const n = recipEl.textContent;
         if (!confirm(`Send "${subject}" to ${n} members?\n\nThis cannot be undone.`)) return;
@@ -1959,12 +1943,12 @@
         try {
           const res = await fetch(BROADCAST_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-broadcast-key': key },
+            headers: hdrs,
             body: JSON.stringify({ subject, body })
           });
           const data = await res.json().catch(() => ({}));
 
-          if (res.status === 403)      { forgetBroadcastKey(); say('Passphrase rejected.', 'error'); }
+          if (res.status === 403 || res.status === 401) { say(data.error || 'Not authorised - sign in as an admin.', 'error'); }
           else if (res.status === 429) say(data.error || 'Sent too recently — wait a minute.', 'error');
           else if (!res.ok)            say(data.error || `Failed (${res.status}).`, 'error');
           else {
@@ -1973,9 +1957,7 @@
             if (data.skipped) t += ` ${data.skipped} skipped (no usable address).`;
             say(t, data.failed ? 'error' : 'ok');
             if (!data.failed) { subjectEl.value = ''; bodyEl.value = ''; countEl.textContent = '0'; }
-            _broadcastKey = key;
-            try { sessionStorage.setItem('aec-bkey', key); } catch (e) {}
-            keyEl.value = '';
+
           }
         } catch (err) {
           say('Could not reach the server. Is sendBroadcast deployed?', 'error');
