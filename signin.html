@@ -554,6 +554,27 @@
               </span>
             </div>
           </div>
+          <div style="margin:18px 0 4px;padding:16px;border:1px solid rgba(196,164,72,0.25);border-radius:12px;text-align:left;">
+            <div style="font-weight:700;font-size:0.92rem;margin-bottom:4px;">Land something big?</div>
+            <p style="color:rgba(255,255,255,0.5);font-size:0.78rem;margin:0 0 12px;line-height:1.5;">
+              Internship, offer, or a campus org role. The board reviews it, then it can feature on the homepage.</p>
+            <div style="display:flex;flex-direction:column;gap:9px;">
+              <input type="text" id="pl-name" maxlength="60" placeholder="Firm or organization, e.g. Goldman Sachs"
+                style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.88rem" />
+              <select id="pl-type" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.88rem">
+                <option value="internship">Internship</option>
+                <option value="fulltime">Full-time offer</option>
+                <option value="org">Campus organization</option>
+              </select>
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:rgba(255,255,255,0.6);cursor:pointer;">
+                <input type="checkbox" id="pl-public" style="accent-color:#C4A448" /> OK to show my name with it
+              </label>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <button type="button" id="pl-submit" class="secondary-btn" style="padding:9px 18px;font-size:0.85rem;">Submit for review</button>
+                <span id="pl-msg" style="font-size:0.78rem;color:rgba(255,255,255,0.5);"></span>
+              </div>
+            </div>
+          </div>
           <div class="welcome-actions">
             <a href="members.html" class="auth-btn" style="text-decoration:none;">View Members</a>
             <button type="button" id="signout-btn" class="secondary-btn">Sign Out</button>
@@ -1377,6 +1398,25 @@
       const box = document.getElementById('p-reminders');
       if (box) box.addEventListener('change', function () { saveRemindersPref(this.checked); });
     })();
+
+    document.getElementById('pl-submit').addEventListener('click', async function() {
+      const name = document.getElementById('pl-name').value.trim();
+      const msg = document.getElementById('pl-msg');
+      if (!name) { msg.textContent = 'Name the firm or org first.'; return; }
+      const session = getSession();
+      if (!session) { msg.textContent = 'Sign in first.'; return; }
+      this.disabled = true; msg.textContent = 'Submitting…';
+      try {
+        await fbPost('placement-pending', {
+          name, type: document.getElementById('pl-type').value,
+          publicName: document.getElementById('pl-public').checked,
+          member: session.name || session.email, email: session.email, at: Date.now()
+        });
+        msg.textContent = 'Sent to the board for review.';
+        document.getElementById('pl-name').value = '';
+      } catch (e) { msg.textContent = 'Could not submit, try again.'; }
+      this.disabled = false;
+    });
 
     document.getElementById('signout-btn').addEventListener('click', function() {
       if (window.AECAuth) AECAuth.signOut();

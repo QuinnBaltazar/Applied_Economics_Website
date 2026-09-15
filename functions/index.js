@@ -890,6 +890,20 @@ exports.deleteDeck = onRequest(
 // Injected into every flyer and deck prompt so the model writes from real
 // identity instead of guessing. Edit freely - this is the one place the
 // club describes itself to the AI.
+async function clubBriefLive() {
+  // Approved placements make the strongest recruiting copy there is, so the
+  // model gets them as facts it may cite. Curated by the board, never invented.
+  try {
+    const raw = (await admin.database().ref('placements').get()).val() || {};
+    const firms = [...new Set(Object.values(raw)
+      .filter(x => x && x.name && x.type !== 'org').map(x => x.name.trim()))];
+    if (firms.length) {
+      return CLUB_BRIEF + `\nVerified member placements you may cite: ${firms.join(', ')}.`;
+    }
+  } catch (e) { /* brief without placements */ }
+  return CLUB_BRIEF;
+}
+
 const CLUB_BRIEF = `ABOUT THE CLUB (use this to inform everything you write):
 UCSB Applied Economics Club (ucsbaec.com). Undergraduate club at UC Santa Barbara, open to all majors.
 What makes it different: members VOTE each week on what the club covers next - the agenda is member-driven, not board-driven.
@@ -921,7 +935,7 @@ exports.generateFlyer = onRequest(
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
     const prompt =
-`${CLUB_BRIEF}
+`${await clubBriefLive()}
 
 Write copy for a ${purpose} flyer for this club.
 
@@ -983,7 +997,7 @@ exports.refineFlyer = onRequest(
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
 
     const prompt =
-`${CLUB_BRIEF}
+`${await clubBriefLive()}
 
 Current flyer copy for this club (JSON):
 ${JSON.stringify({ headline: flyer.headline, subhead: flyer.subhead, hook: flyer.hook, bullets: flyer.bullets || [], cta: flyer.cta, footer: flyer.footer })}

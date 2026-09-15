@@ -582,6 +582,25 @@
       </div>
 
       <div class="admin-section" data-panel="panel-members">
+        <h2>Placements <span id="pl-pending-badge" style="display:none;background:rgba(255,160,50,0.2);color:rgba(255,160,50,0.9);border-radius:999px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:8px;vertical-align:middle;"></span></h2>
+        <div class="section-body">
+          <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0 0 14px;line-height:1.5;">
+            Approved entries show on the public homepage. Keep the bar high, this strip is the club's front window.</p>
+          <div id="pl-pending-list"></div>
+          <div style="margin:16px 0 8px;font-weight:700;font-size:0.9rem;">Live on homepage</div>
+          <div id="pl-live-list"></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px;align-items:center;">
+            <input type="text" id="pl-add-name" maxlength="60" placeholder="Add directly: firm or org"
+              style="flex:2;min-width:180px;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.85rem" />
+            <select id="pl-add-type" style="flex:1;min-width:130px;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font-size:0.85rem">
+              <option value="internship">Internship</option><option value="fulltime">Full-time</option><option value="org">Campus org</option>
+            </select>
+            <button type="button" id="pl-add-btn" class="reset-pwd-btn" style="font-size:0.84rem;padding:9px 16px;">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-section" data-panel="panel-members">
         <h2>Members</h2>
         <div class="member-search-wrap">
           <input type="search" class="member-search-input" id="admin-member-search" placeholder="Filter by name, email, or interest…" />
@@ -1884,6 +1903,70 @@
 
       loadDecks();
     })();
+
+    // ── Placements curation ───────────────────────────────────────────────────
+    async function renderPlacements() {
+      const pend = document.getElementById('pl-pending-list');
+      const live = document.getElementById('pl-live-list');
+      if (!pend) return;
+      const [pRaw, lRaw] = await Promise.all([fbGet('placement-pending'), fbGet('placements')]);
+      const pending = pRaw ? Object.entries(pRaw).map(([k,v]) => ({key:k, ...v})) : [];
+      const badge = document.getElementById('pl-pending-badge');
+      badge.style.display = pending.length ? 'inline' : 'none';
+      badge.textContent = pending.length;
+
+      pend.innerHTML = pending.length ? '' : '<p class="empty-state">Nothing awaiting review.</p>';
+      pending.sort((a,b)=>(a.at||0)-(b.at||0)).forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'topic-row';
+        row.innerHTML =
+          '<div class="topic-row-info"><div class="topic-row-name">' + escapeHtml(t.name||'') +
+          ' <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.06em;">' + escapeHtml(t.type||'') + '</span></div>' +
+          '<div class="topic-row-meta">' + escapeHtml(t.member||t.email||'') + (t.publicName ? ' , name OK to show' : ' , keep name private') + '</div></div>' +
+          '<button class="reset-pwd-btn pl-approve" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);">Approve</button>' +
+          '<button class="delete-topic-btn pl-reject" style="margin-left:6px;">Reject</button>';
+        row.querySelector('.pl-approve').addEventListener('click', async () => {
+          await fbPost('placements', { name:t.name, type:t.type||'internship',
+            member:t.member||'', publicName:!!t.publicName, approvedAt:Date.now() });
+          await fbDelete('placement-pending/' + t.key);
+          setMsg('"' + t.name + '" is now on the homepage.');
+          renderPlacements();
+        });
+        row.querySelector('.pl-reject').addEventListener('click', async () => {
+          await fbDelete('placement-pending/' + t.key);
+          renderPlacements();
+        });
+        pend.appendChild(row);
+      });
+
+      const approved = lRaw ? Object.entries(lRaw).map(([k,v]) => ({key:k, ...v})) : [];
+      live.innerHTML = approved.length ? '' : '<p class="empty-state">Nothing live yet.</p>';
+      approved.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'topic-row';
+        row.innerHTML =
+          '<div class="topic-row-info"><div class="topic-row-name">' + escapeHtml(t.name||'') +
+          ' <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;">' + escapeHtml(t.type||'') + '</span></div>' +
+          '<div class="topic-row-meta">' + escapeHtml(t.publicName && t.member ? t.member : 'name not shown') + '</div></div>' +
+          '<button class="delete-topic-btn pl-del">Remove</button>';
+        row.querySelector('.pl-del').addEventListener('click', async () => {
+          if (!confirm('Remove "' + t.name + '" from the homepage?')) return;
+          await fbDelete('placements/' + t.key);
+          renderPlacements();
+        });
+        live.appendChild(row);
+      });
+    }
+    const plAdd = document.getElementById('pl-add-btn');
+    if (plAdd) plAdd.addEventListener('click', async () => {
+      const name = document.getElementById('pl-add-name').value.trim();
+      if (!name) return;
+      await fbPost('placements', { name, type: document.getElementById('pl-add-type').value,
+        member:'', publicName:false, approvedAt:Date.now() });
+      document.getElementById('pl-add-name').value = '';
+      renderPlacements();
+    });
+    renderPlacements();
 
     // ── Email All Members ─────────────────────────────────────────────────────
     // The passphrase is verified server-side. admin.html's own admin check is

@@ -51,6 +51,9 @@
     "activity":      { ".read": "auth != null", ".write": "auth != null" },
     "notifications": { ".read": false,          ".write": "auth != null" },
 
+    "placements":        { ".read": true, ".write": "auth != null && root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true" },
+    "placement-pending": { ".read": "auth != null", ".write": "auth != null" },
+
     "decks":         { ".read": true,  ".write": false },
     "flyers":        { ".read": true,  ".write": false },
     "ai-usage":      { ".read": false, ".write": false },

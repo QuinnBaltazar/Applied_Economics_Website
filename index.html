@@ -374,6 +374,16 @@
     <div class="gold-divider"></div>
 
     <!-- ── MISSION ── -->
+    <section id="placements-section" class="reveal" style="display:none;padding:72px 24px 8px;max-width:1080px;margin:0 auto;text-align:center;">
+      <span style="color:var(--gold);font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:13px;">Placements &amp; Affiliations</span>
+      <h2 id="placements-headline" style="margin:14px auto 8px;font-size:clamp(26px,3.4vw,40px);letter-spacing:-0.02em;max-width:22ch;"></h2>
+      <p style="color:var(--muted);max-width:52ch;margin:0 auto 30px;font-size:15px;line-height:1.6;">
+        Where our members have earned seats, verified by the board.
+      </p>
+      <div id="placements-strip" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;"></div>
+      <div id="placements-orgs" style="margin-top:22px;color:var(--muted);font-size:14px;"></div>
+    </section>
+
     <section class="mission-section reveal">
       <span class="mission-label">Our Mission</span>
       <h2>Theory grounded in practice.</h2>
@@ -421,5 +431,59 @@
   </main>
 
   <!-- Common page behavior (nav, reveal, scroll, auth) lives in assets/app.js -->
+  <script>
+    // Placements strip: reads the board-curated public list. The section
+    // stays hidden until at least one approved entry exists.
+    (async function loadPlacements() {
+      try {
+        const r = await fetch('https://applied-economics-club-default-rtdb.firebaseio.com/placements.json');
+        if (!r.ok) return;
+        const raw = await r.json();
+        if (!raw) return;
+        const items = Object.values(raw).filter(x => x && x.name);
+        if (!items.length) return;
+
+        const rank = { fulltime: 0, internship: 1, org: 2 };
+        const firms = {}, orgs = {};
+        items.forEach(x => {
+          const bucket = x.type === 'org' ? orgs : firms;
+          const k = x.name.trim();
+          bucket[k] = bucket[k] || { n: 0, type: x.type || 'internship', people: [] };
+          bucket[k].n++;
+          if (x.publicName && x.member) bucket[k].people.push(x.member);
+          if (x.type === 'fulltime') bucket[k].type = 'fulltime';
+        });
+
+        const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const strip = document.getElementById('placements-strip');
+        Object.entries(firms)
+          .sort((a,b) => (rank[a[1].type]-rank[b[1].type]) || (b[1].n-a[1].n) || a[0].localeCompare(b[0]))
+          .forEach(([name, d]) => {
+            const chip = document.createElement('div');
+            chip.style.cssText = 'border:1px solid rgba(196,164,72,0.5);background:rgba(196,164,72,0.07);' +
+              'border-radius:12px;padding:14px 22px;font-weight:800;letter-spacing:.06em;' +
+              'text-transform:uppercase;font-size:15px;color:#D4B55E;';
+            chip.innerHTML = esc(name) + (d.n > 1 ? ' <span style="opacity:.65;font-size:12px;">\u00D7' + d.n + '</span>' : '') +
+              (d.type === 'internship' ? ' <span style="display:block;font-size:10px;letter-spacing:.14em;opacity:.55;margin-top:3px;">INTERNSHIP</span>'
+                                       : ' <span style="display:block;font-size:10px;letter-spacing:.14em;opacity:.55;margin-top:3px;">FULL-TIME</span>');
+            if (d.people.length) chip.title = d.people.join(', ');
+            strip.appendChild(chip);
+          });
+
+        const firmCount = Object.keys(firms).length;
+        const memberCount = items.filter(x => x.type !== 'org').length;
+        document.getElementById('placements-headline').textContent =
+          firmCount ? memberCount + ' member' + (memberCount===1?'':'s') + ' placed at ' + firmCount + ' top firm' + (firmCount===1?'':'s')
+                    : 'Our members, across campus';
+
+        const orgNames = Object.entries(orgs).sort((a,b)=>b[1].n-a[1].n).map(([n,d]) => esc(n) + (d.n>1 ? ' \u00D7' + d.n : ''));
+        if (orgNames.length) {
+          document.getElementById('placements-orgs').innerHTML =
+            'Also active in: <span style="color:rgba(255,255,255,0.85);font-weight:600;">' + orgNames.join(' \u00B7 ') + '</span>';
+        }
+        document.getElementById('placements-section').style.display = 'block';
+      } catch (e) { /* section stays hidden */ }
+    })();
+  </script>
 </body>
 </html>
