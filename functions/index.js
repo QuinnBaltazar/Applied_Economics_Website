@@ -428,7 +428,9 @@ exports.sendPasswordResetNotice = onRequest(
    ════════════════════════════════════════════════════════════════════════ */
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// gemini-2.5-flash was retired for new API users (404: "no longer available
+// to new users"); the error message names this as the replacement.
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 // Hard daily cap across ALL AI calls. The free tier allows far more; this is
 // a circuit breaker so a bug or abuse can't hammer the API.
