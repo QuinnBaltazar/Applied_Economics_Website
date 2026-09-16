@@ -1645,18 +1645,30 @@
         frame.src = url;
         // Focus the iframe once it loads so its arrow-key / click navigation works.
         frame.onload = () => { try { frame.contentWindow.focus(); } catch (e) {} };
-        pvDeckId = null;
+        pvDeckId = null; pvKind = null; pvReloadUrl = null;
+        document.getElementById('pv-refine-input').placeholder =
+          'Tell the AI what to change, e.g. add a slide on risk management, simplify slide 4\u2026';
         document.getElementById('pv-refine').style.display = 'none';
         document.getElementById('pv-refine-status').textContent = '';
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
       }
-      let pvDeckId = null;
+      let pvDeckId = null, pvKind = null, pvReloadUrl = null;
       function openDeckPreview(id, title) {
         openPreviewUrl('present.html?id=' + encodeURIComponent(id), title);
-        pvDeckId = id;
+        pvDeckId = id; pvKind = 'deck';
+        pvReloadUrl = () => 'present.html?id=' + encodeURIComponent(id) + '&v=' + Date.now();
         document.getElementById('pv-refine').style.display = 'flex';
       }
+      // Flyer rows call this so the same bar refines flyers in preview too.
+      window.openFlyerRefinePreview = function (id, url, title) {
+        openPreviewUrl(url, title);
+        pvDeckId = id; pvKind = 'flyer';
+        pvReloadUrl = () => url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now();
+        document.getElementById('pv-refine').style.display = 'flex';
+        document.getElementById('pv-refine-input').placeholder =
+          'Tell the AI what to change on this flyer, e.g. bolder headline, mention the pizza\u2026';
+      };
       function closeDeckPreview() {
         const modal = document.getElementById('deck-preview-modal');
         modal.style.display = 'none';
@@ -1823,18 +1835,20 @@
         btn.disabled = true; input.disabled = true;
         st.innerHTML = aiLoad('Revising');
         try {
-          const r = await fetch(FN_BASE + '/refineDeck', {
+          const ep = pvKind === 'flyer' ? '/refineFlyer' : '/refineDeck';
+          const r = await fetch(FN_BASE + ep, {
             method: 'POST', headers: hdrs,
             body: JSON.stringify({ id: pvDeckId, instruction })
           });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) { st.textContent = d.error || ('Failed (' + r.status + ').'); }
           else {
-            st.textContent = 'Updated to v' + d.version + '.';
+            st.textContent = d.version ? ('Updated to v' + d.version + '.') : 'Updated.';
             input.value = '';
             const frame = document.getElementById('deck-preview-frame');
-            frame.src = 'present.html?id=' + encodeURIComponent(pvDeckId) + '&v=' + Date.now();
-            await loadDecks();
+            if (pvReloadUrl) frame.src = pvReloadUrl();
+            if (pvKind === 'flyer' && typeof loadFlyers === 'function') await loadFlyers();
+            else await loadDecks();
           }
         } catch (e) { st.textContent = 'Could not reach the refiner.'; }
         finally { btn.disabled = false; input.disabled = false; }
@@ -1910,7 +1924,7 @@
             '<button class="delete-topic-btn flyer-del-btn" style="margin-left:6px;">Delete</button>';
 
           row.querySelector('.flyer-preview-btn').addEventListener('click', () =>
-            openPreviewUrl(url, f.headline || 'Flyer'));
+            window.openFlyerRefinePreview(f.id, url, f.headline || 'Flyer'));
           row.querySelector('.flyer-refine-btn').addEventListener('click', () => {
             refiningFlyer = f;
             document.getElementById('flyer-refine-title').textContent = f.headline || f.purpose;
