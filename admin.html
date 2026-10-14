@@ -838,6 +838,10 @@
       if (!FB_READY) return false;
       try { return (await fetch(`${DB_URL}/${p}.json`,{ method:'DELETE' })).ok; } catch { return false; }
     }
+    async function fbPost(p, d) {
+      if (!FB_READY) return false;
+      try { return (await fetch(`${DB_URL}/${p}.json`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) })).ok; } catch { return false; }
+    }
 
     // ── UI helpers ────────────────────────────────────────────
     function setMsg(text, isError = false) {
@@ -2097,8 +2101,9 @@
           '<button class="reset-pwd-btn pl-approve" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);">Approve</button>' +
           '<button class="delete-topic-btn pl-reject" style="margin-left:6px;">Reject</button>';
         row.querySelector('.pl-approve').addEventListener('click', async () => {
-          await fbPost('placements', { name:t.name, type:t.type||'internship',
+          const ok = await fbPost('placements', { name:t.name, type:t.type||'internship',
             member:t.member||'', publicName:!!t.publicName, approvedAt:Date.now() });
+          if (!ok) { setMsg('Could not publish "' + t.name + '". Are you signed in as an admin?', true); return; }
           await fbDelete('placement-pending/' + t.key);
           setMsg('"' + t.name + '" is now on the homepage.');
           renderPlacements();
@@ -2132,8 +2137,9 @@
     if (plAdd) plAdd.addEventListener('click', async () => {
       const name = document.getElementById('pl-add-name').value.trim();
       if (!name) return;
-      await fbPost('placements', { name, type: document.getElementById('pl-add-type').value,
+      const ok = await fbPost('placements', { name, type: document.getElementById('pl-add-type').value,
         member:'', publicName:false, approvedAt:Date.now() });
+      if (!ok) { setMsg('Could not add "' + name + '". Are you signed in as an admin?', true); return; }
       document.getElementById('pl-add-name').value = '';
       renderPlacements();
     });
