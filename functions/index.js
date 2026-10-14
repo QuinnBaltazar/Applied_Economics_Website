@@ -768,13 +768,16 @@ function deckPrompt(topic, guidance, research, brief) {
   const imgs = research.imageList
     ? `\nAVAILABLE IMAGES (real, free, licensed — reference by number with "imageRef", never invent a URL):\n${research.imageList}\n`
     : '';
+  const data = research.dataList
+    ? `\nREAL DATA SERIES (from FRED, St. Louis Fed; the ONLY numbers a "chart" slide may plot, copied exactly, with note "Source: FRED, <series id>"):\n${research.dataList}\n`
+    : '';
   return `${brief || CLUB_BRIEF}
 
 You are preparing a presentation for this club's weekly meeting (~30 undergrads, mixed experience).
 
 Topic: ${topic}
 ${guidance ? `Presenter guidance to follow: ${guidance}` : ''}
-${ctx}${imgs}
+${ctx}${data}${imgs}
 
 Build a 8-11 slide deck as JSON. Slide types available:
 ${DECK_SCHEMA}
@@ -789,16 +792,17 @@ RIGOR (this is a finance club; members will notice hand-waving):
 - When you give an example, label it plainly ("For example, hypothetically...")
   so it reads as illustration, not a sourced fact.
 - NEVER invent market data, prices, percentages, dates, or firm-specific claims.
-  If a real figure is not in the headlines above and not stable common knowledge,
-  frame it qualitatively instead.
+  Every dollar or percent figure on a slide must come from the RESEARCH or
+  REAL DATA SERIES above; if it is not there, frame it qualitatively instead.
+  A deck with three sourced numbers beats one with twenty plausible ones.
 - If you are not confident something is established and correct, leave it out.
   A shorter, correct deck beats a longer, plausible-sounding one.
 
 VISUALS (use them, a finance deck should not be all text):
-- Use a "chart" slide when you have at least two REAL data points (from the
-  headlines above or stable common knowledge). Its numbers must be real; if you
-  do not have real figures, do NOT fabricate a chart, use a "cycle" or "stat"
-  instead. Add note:"illustrative" only if the shape is conceptual.
+- Use a "chart" slide when REAL DATA SERIES are provided above: plot those
+  points exactly (label = the month shown, value = the number shown) and set
+  note to "Source: FRED, <series id>". If no data series is provided, do NOT
+  fabricate a chart; use a "cycle" or "stat" slide instead.
 - "cycle" stage names must be 1-2 words each (e.g. "Accumulation"), never
   parenthetical explanations; put explanation in the notes or a bullets slide.
   Chart point labels max 12 characters.
@@ -878,12 +882,26 @@ exports.generateDeck = onRequest(
     try {
       // Research the topic: Wikipedia + Brave web search + RSS news, ranked and
       // trimmed, plus real free licensed images the model can place in slides.
-      const research = await buildResearch(topic, { news: true });
+      const research = await buildResearch(topic, { news: true, guidance });
       const cites = research.cites || [];
       const imgs = research.images || [];
 
-      const { text } = await callGemini(deckPrompt(topic, guidance, research, await clubBrain()), false);
-      const parsed = extractJson(text);
+      // One generation, and one retry if the deck carries figures that are
+      // not in its research. The retry names the offending figures so the
+      // model drops or re-sources them instead of guessing again.
+      const basePrompt = deckPrompt(topic, guidance, research, await clubBrain());
+      let parsed = null, bad = [];
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const p = bad.length
+          ? basePrompt + `\n\nYour previous deck used these figures, which are NOT in the research above: ${bad.join('; ')}. Remove them or replace them with sourced figures. Everything else may stay.`
+          : basePrompt;
+        const { text } = await callGemini(p, false);
+        parsed = extractJson(text);
+        bad = checkDeckFigures(parsed, research);
+        if (!bad.length) break;
+        console.warn(`deck attempt ${attempt}: unsupported figures:`, bad.join(' | '));
+      }
+      if (bad.length) parsed.unsupportedFigures = bad;   // kept for the admin to see
 
       // Map cited refs -> real sources; map imageRef -> a real fetched image.
       const cited = new Set();
@@ -905,6 +923,7 @@ exports.generateDeck = onRequest(
       }
       const sources = [...cited].map(c => ({ title: String(c.title).slice(0, 120), url: c.url }));
       const deck = sanitizeDeck(parsed, topic, sources);
+      if (parsed.unsupportedFigures) deck.unsupportedFigures = parsed.unsupportedFigures;
       const ref = await admin.database().ref('decks').push({
         ...deck,
         version: 1,
@@ -912,7 +931,7 @@ exports.generateDeck = onRequest(
         updatedAt: Date.now()
       });
       console.log(`deck generated: ${ref.key} "${deck.title}" (${deck.slides.length} slides)`);
-      res.json({ id: ref.key, title: deck.title, slides: deck.slides.length });
+      res.json({ id: ref.key, title: deck.title, slides: deck.slides.length, unsupportedFigures: deck.unsupportedFigures || [] });
     } catch (e) {
       console.error('deck generation failed:', e.message);
       res.status(502).json({ error: friendlyAiError(e) });
@@ -1213,19 +1232,84 @@ async function commonsImages(topic) {
   return out;
 }
 
+// FRED (St. Louis Fed) serves any series as CSV with no API key. When a
+// topic touches macro data, the deck gets the real last N observations to
+// chart, instead of being told "do not invent numbers" and then having
+// nothing to show. Keywords are matched against the topic and guidance.
+const FRED_SERIES = [
+  { id: 'FEDFUNDS',   label: 'Effective federal funds rate (%)',        keys: ['fed', 'rate cut', 'rate hike', 'fomc', 'monetary', 'interest rate', 'powell', 'federal funds'] },
+  { id: 'CPIAUCSL',   label: 'CPI, all items (index, 1982-84=100)',      keys: ['inflation', 'cpi', 'prices', 'cost of living'], pct: true },
+  { id: 'UNRATE',     label: 'Unemployment rate (%)',                    keys: ['unemployment', 'jobs', 'labor', 'labour', 'payroll', 'hiring', 'layoff'] },
+  { id: 'T10Y2Y',     label: '10-year minus 2-year Treasury spread (%)', keys: ['yield curve', 'inversion', 'inverted', 'recession', 'treasury', 'bond'] },
+  { id: 'DGS10',      label: '10-year Treasury yield (%)',               keys: ['10-year', 'ten-year', 'yield', 'treasury', 'bond', 'mortgage'] },
+  { id: 'GDPC1',      label: 'Real GDP (billions of 2017 dollars, SAAR)', keys: ['gdp', 'growth', 'recession', 'output', 'economy'], pct: true },
+  { id: 'MORTGAGE30US', label: '30-year fixed mortgage rate (%)',        keys: ['mortgage', 'housing', 'home', 'real estate'] },
+  { id: 'SP500',      label: 'S&P 500 index level',                      keys: ['s&p', 'sp500', 'stock market', 'equities', 'stocks', 'valuation', 'bull', 'bear'], pct: true },
+  { id: 'DCOILWTICO', label: 'WTI crude oil ($ per barrel)',             keys: ['oil', 'crude', 'energy', 'opec', 'gas prices'] },
+  { id: 'M2SL',       label: 'M2 money supply ($ billions)',             keys: ['money supply', 'm2', 'liquidity', 'quantitative'] },
+  { id: 'DTWEXBGS',   label: 'Trade-weighted US dollar index',           keys: ['dollar', 'currency', 'forex', 'fx', 'exchange rate', 'tariff', 'trade'] },
+  { id: 'PSAVERT',    label: 'Personal saving rate (%)',                 keys: ['consumer', 'saving', 'spending', 'household'] }
+];
+
+async function fredSeries(id, n) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 7000);
+    const res = await fetch('https://fred.stlouisfed.org/graph/fredgraph.csv?id=' + encodeURIComponent(id),
+      { headers: { 'user-agent': 'AEC club site (ucsbaec.com)' }, signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return [];
+    const rows = (await res.text()).trim().split('\n').slice(1)
+      .map(l => l.split(','))
+      .filter(c => c.length >= 2 && /^\d{4}-\d{2}-\d{2}$/.test(c[0]) && c[1] !== '.' && !isNaN(Number(c[1])))
+      .map(c => ({ date: c[0], value: Number(c[1]) }));
+    return rows.slice(-n);
+  } catch (e) { console.warn('fred failed:', id, e.message); return []; }
+}
+
+async function fredResearch(topicText) {
+  const t = String(topicText || '').toLowerCase();
+  const hits = FRED_SERIES.filter(s => s.keys.some(k => t.includes(k))).slice(0, 2);
+  if (!hits.length) return { chunks: [], sources: [], dataList: '' };
+  const out = { chunks: [], sources: [], dataList: '' };
+  const blocks = [];
+  for (const s of hits) {
+    const pts = await fredSeries(s.id, 8);
+    if (pts.length < 3) continue;
+    // Index-type series read better as year-over-year change than raw levels.
+    let shown = pts;
+    if (s.pct) {
+      const all = await fredSeries(s.id, 20);
+      shown = all.slice(12).map((p, i) => ({ date: p.date, value: Number(((p.value / all[i].value - 1) * 100).toFixed(1)) }));
+      if (shown.length < 3) shown = pts;
+    }
+    const label = s.pct && shown !== pts ? s.label.replace(/\(.*\)/, '(% change, year over year)') : s.label;
+    const line = shown.map(p => `${p.date.slice(0, 7)}: ${p.value}`).join(', ');
+    blocks.push(`Series ${s.id}, ${label}: ${line}`);
+    out.chunks.push({ source: 'FRED ' + s.id, text: `${label}. Latest observations: ${line}`, url: 'https://fred.stlouisfed.org/series/' + s.id });
+    out.sources.push({ title: 'FRED: ' + label, url: 'https://fred.stlouisfed.org/series/' + s.id });
+  }
+  out.dataList = blocks.join('\n');
+  return out;
+}
+
 // Combine sources, rank by relevance, trim to a budget. Returns a context
 // string, an indexed image list, and a source list.
 async function buildResearch(topic, opts) {
   opts = opts || {};
-  const [wiki, brave] = await Promise.all([wikiResearch(topic), braveSearch(topic)]);
+  const [wiki, brave, fred] = await Promise.all([
+    wikiResearch(topic), braveSearch(topic), fredResearch(topic + ' ' + (opts.guidance || ''))
+  ]);
   const news = opts.news ? (await fetchHeadlines(8)).map(h => ({
     source: h.source, text: (h.title + (h.desc ? ' , ' + h.desc : '')).slice(0, 300), url: h.url,
     _src: { title: h.source + ': ' + h.title, url: h.url }
   })) : [];
 
-  let chunks = [...wiki.chunks, ...brave.chunks, ...news];
+  // FRED data goes first: it is small, exact, and the one thing a chart
+  // slide may draw numbers from.
+  let chunks = [...fred.chunks.map(c => ({ ...c, _pin: true })), ...wiki.chunks, ...brave.chunks, ...news];
   // rank by relevance, keep the strongest, cap total size
-  chunks = chunks.map(c => ({ ...c, _r: relevanceScore(c.text, topic) }))
+  chunks = chunks.map(c => ({ ...c, _r: c._pin ? 1e6 : relevanceScore(c.text, topic) }))
     .sort((a, b) => b._r - a._r);
   const kept = []; let budget = 18000;
   for (const c of chunks) {
@@ -1244,10 +1328,32 @@ async function buildResearch(topic, opts) {
     ? images.map((im, i) => `Image ${i + 1}: ${im.caption} — ${im.source}${im.license ? ' [' + im.license + ']' : ''}`).join('\n')
     : '';
 
-  const sources = [...wiki.sources, ...brave.sources,
+  const sources = [...fred.sources, ...wiki.sources, ...brave.sources,
     ...news.map(n => n._src)].filter(Boolean).slice(0, 10);
 
-  return { context, cites, imageList, images, sources, has: kept.length > 0 };
+  return { context, cites, imageList, images, sources, dataList: fred.dataList, has: kept.length > 0 };
+}
+
+// Programmatic figure check for decks, same idea as the flyer guard: every
+// dollar or percent figure on a slide must appear somewhere in the research
+// the model was given. Catches the classic failure mode, a confident
+// "capex rose 34%" with no source behind it.
+function checkDeckFigures(deck, research) {
+  const pool = String((research && research.context) || '') + ' ' + String((research && research.dataList) || '');
+  const poolNums = new Set((pool.match(/\d+(?:\.\d+)?/g) || []).map(n => String(Number(n))));
+  const unsupported = new Set();
+  const scan = v => {
+    if (typeof v === 'string') {
+      for (const m of v.matchAll(/\$\s?(\d+(?:[\d,]*\.?\d*))(?:\s?(?:[kmbt]\b|billion|million|trillion))?|(\d+(?:\.\d+)?)\s?%/gi)) {
+        const raw = (m[1] || m[2]).replace(/,/g, '');
+        const n = String(Number(raw));
+        if (!poolNums.has(n)) unsupported.add(m[0].trim());
+      }
+    } else if (Array.isArray(v)) v.forEach(scan);
+    else if (v && typeof v === 'object') Object.entries(v).forEach(([k, x]) => { if (k !== 'notes' && k !== 'src') scan(x); });
+  };
+  (deck.slides || []).forEach(s => { if (s && s.type !== 'sources') scan(s); });
+  return [...unsupported].slice(0, 8);
 }
 
 // ── Flyers ──────────────────────────────────────────────────────────────────
@@ -1342,6 +1448,14 @@ Facts from the organiser - use every date, time, room and link EXACTLY as writte
 ${details}
 
 Make the copy highlight what the club actually IS (the voting mechanic, the career tracks, the speakers) - not generic club-fair filler.
+
+How to write it:
+- Lead with the most concrete thing in the facts. If there is free food, a named speaker, a firm, or a deadline, that is the headline or the hook, not "Join AEC".
+- Headlines are specific and a little surprising. Good: "Chipotle, pizza, and a vote on what we study next". "30 bowls. First come, first served." "Hear from Goldman, then decide what we cover". Bad: "Join the Applied Economics Club!" "Fun, food, and finance!" "Level up your career".
+- Bullets are things a student GETS, in their words: "Vote on next week's topic", "Build a DCF, not just read about one", "Speakers from UAS, IC, and DIG". Not "Networking opportunities".
+- The CTA says exactly when and where, then one verb: "Wed 10/21, 7 PM, Buchanan 1910. Just show up."
+- Numbers from the facts stay numbers (7 PM, 30 bowls, 10/21); do not spell them out or round them.
+- One idea per line. If a line needs a comma to work, it is probably two lines.
 
 Reply with ONLY JSON:
 {

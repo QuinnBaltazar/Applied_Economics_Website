@@ -1791,7 +1791,10 @@
           else {
             await loadDecks();
             switchTab('panel-decks');
-            setMsg('Deck ready: "' + d.title + '" (' + d.slides + ' slides). Present or refine it below.');
+            setMsg('Deck ready: "' + d.title + '" (' + d.slides + ' slides). Present or refine it below.' +
+              (d.unsupportedFigures && d.unsupportedFigures.length
+                ? ' Check these figures first, they were not in the research: ' + d.unsupportedFigures.join(', ') + '.'
+                : ''));
           }
         } catch (e) { setMsg('Could not reach the deck generator.'); }
         finally { if (btn) { btn.disabled = false; btn.textContent = label; } }
@@ -1816,7 +1819,10 @@
           if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
           else if (!r.ok) st.textContent = d.error || ('Failed (' + r.status + ').');
           else {
-            st.textContent = 'Done, "' + d.title + '", ' + d.slides + ' slides.';
+            st.textContent = 'Done, "' + d.title + '", ' + d.slides + ' slides.' +
+              (d.unsupportedFigures && d.unsupportedFigures.length
+                ? ' Check these figures before presenting, they were not in the research: ' + d.unsupportedFigures.join(', ') + '.'
+                : '');
             document.getElementById('deck-topic').value = '';
             document.getElementById('deck-topic').style.display = 'none';
             const pk = document.getElementById('deck-topic-pick'); if (pk) pk.value = '';
