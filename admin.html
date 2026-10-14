@@ -432,7 +432,8 @@
         <h2>Pending Topics <span id="pending-badge" style="display:none;background:rgba(255,160,50,0.2);color:rgba(255,160,50,0.9);border-radius:999px;padding:2px 10px;font-size:0.72rem;font-weight:700;margin-left:8px;vertical-align:middle;"></span></h2>
         <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <button type="button" id="btn-scan-topics" class="reset-pwd-btn" style="font-size:0.85rem;padding:8px 18px;">Scan news for topics now</button>
-          <span id="scan-status" style="font-size:0.82rem;color:rgba(255,255,255,0.5);"></span>
+          <input type="text" id="scan-focus" maxlength="200" placeholder="Optional focus, e.g. rates, AI capex, labor market" style="flex:1;min-width:220px;font-size:0.85rem;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;">
+          <span id="scan-status" style="font-size:0.82rem;color:rgba(255,255,255,0.5);flex-basis:100%;"></span>
         </div>
         <div id="pending-topics-list"></div>
       </div>
@@ -1617,14 +1618,17 @@
     (function initAI() {
       const scanBtn = document.getElementById('btn-scan-topics');
       if (scanBtn) scanBtn.addEventListener('click', async () => {
-        const hdrs = await adminHeaders();
-        if (!hdrs) { needSignIn(typeof st !== 'undefined' ? st : null); return; }
         const st = document.getElementById('scan-status');
+        const hdrs = await adminHeaders();
+        if (!hdrs) { needSignIn(st); return; }
+        const focusEl = document.getElementById('scan-focus');
+        const focus = focusEl ? focusEl.value.trim() : '';
         scanBtn.disabled = true; st.innerHTML = aiLoad('Scanning current news, 20-40 seconds');
         try {
           const r = await fetch(FN_BASE + '/scanTopicsNow', {
             method: 'POST',
-            headers: hdrs
+            headers: hdrs,
+            body: JSON.stringify({ focus })
           });
           const d = await r.json().catch(() => ({}));
           if (r.status === 403) { st.textContent = d.error || 'Not authorised - are you signed in as an admin?'; }
@@ -1729,7 +1733,7 @@
               headers: hdrs,
               body: JSON.stringify({ id: d.id })
             }).catch(() => null);
-            if (r && r.status === 403) { alert('Passphrase rejected.'); return; }
+            if (r && r.status === 403) { alert('Not authorised. Sign in as an admin first.'); return; }
             if (r && r.ok) await loadDecks();
             else alert('Delete failed.');
           });
@@ -1786,7 +1790,7 @@
             body: JSON.stringify({ topic: name, guidance: desc ? 'Board topic description: ' + desc : '' })
           });
           const d = await r.json().catch(() => ({}));
-          if (r.status === 403) { setMsg('Passphrase rejected.'); }
+          if (r.status === 403) { setMsg(d.error || 'Not authorised. Sign in as an admin first.', true); }
           else if (!r.ok) setMsg(d.error || ('Deck generation failed (' + r.status + ').'));
           else {
             await loadDecks();
@@ -1945,7 +1949,7 @@
               headers: hdrs,
               body: JSON.stringify({ id: f.id })
             }).catch(() => null);
-            if (r && r.status === 403) { alert('Passphrase rejected.'); return; }
+            if (r && r.status === 403) { alert('Not authorised. Sign in as an admin first.'); return; }
             if (r && r.ok) await loadFlyers(); else alert('Delete failed.');
           });
           flyerList.appendChild(row);
