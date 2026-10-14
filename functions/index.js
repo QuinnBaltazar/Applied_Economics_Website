@@ -433,9 +433,12 @@ const BULK_CHAIN    = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini
 const USE_SEARCH_GROUNDING = false;
 
 const NEWS_FEEDS = [
-  { name: 'CNBC',        url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
-  { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
-  { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' }
+  { name: 'CNBC',          url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+  { name: 'MarketWatch',   url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+  { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
+  { name: 'WSJ Markets',   url: 'https://feeds.a.dj.com/rss/RSSMarketsMain.xml' },
+  { name: 'NYT Business',  url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml' },
+  { name: 'Federal Reserve', url: 'https://www.federalreserve.gov/feeds/press_all.xml' }
 ];
 
 function stripXml(t) {
@@ -449,13 +452,19 @@ function stripXml(t) {
 
 // Pull recent items from the finance feeds. Tiny regex parse, no deps.
 async function fetchHeadlines(maxPerFeed = 10) {
-  const items = [];
-  for (const feed of NEWS_FEEDS) {
+  // Feeds are fetched in parallel with a timeout each, so one slow site
+  // cannot stall the scan. Near-duplicate titles across outlets are dropped.
+  const perFeed = await Promise.all(NEWS_FEEDS.map(async feed => {
+    const out = [];
     try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 7000);
       const res = await fetch(feed.url, {
-        headers: { 'user-agent': 'Mozilla/5.0 (AEC club site; contact ucsbaec.com)' }
+        headers: { 'user-agent': 'Mozilla/5.0 (AEC club site; contact ucsbaec.com)' },
+        signal: ctrl.signal
       });
-      if (!res.ok) continue;
+      clearTimeout(timer);
+      if (!res.ok) return out;
       const xml = await res.text();
       for (const m of xml.matchAll(/<item[\s>][\s\S]*?<\/item>/g)) {
         const block = m[0];
@@ -465,15 +474,22 @@ async function fetchHeadlines(maxPerFeed = 10) {
         };
         const title = grab('title'), link = grab('link');
         if (!title || !/^https?:\/\//i.test(link)) continue;
-        items.push({
+        out.push({
           source: feed.name, title: title.slice(0, 160),
           url: link, desc: grab('description').slice(0, 240)
         });
-        if (items.filter(i => i.source === feed.name).length >= maxPerFeed) break;
+        if (out.length >= maxPerFeed) break;
       }
     } catch (e) {
       console.warn('feed failed:', feed.name, e.message);
     }
+    return out;
+  }));
+  const seen = new Set(), items = [];
+  for (const h of perFeed.flat()) {
+    const key = h.title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).slice(0, 8).join(' ');
+    if (seen.has(key)) continue;
+    seen.add(key); items.push(h);
   }
   return items;
 }
@@ -576,8 +592,12 @@ function extractJson(text) {
   const raw = fenced ? fenced[1] : text;
   const start = raw.search(/[[{]/);
   if (start === -1) throw new Error('no JSON in model output');
+  // Only closing brackets can end a JSON value, so walk those from the end
+  // instead of trying every character (a long deck made that take seconds).
   for (let end = raw.length; end > start; end--) {
-    try { return JSON.parse(raw.slice(start, end)); } catch { /* trim and retry */ }
+    const ch = raw[end - 1];
+    if (ch !== '}' && ch !== ']') continue;
+    try { return JSON.parse(raw.slice(start, end)); } catch { /* keep walking */ }
   }
   throw new Error('unparseable JSON in model output');
 }
@@ -625,8 +645,9 @@ async function requireAdmin(req, res) {
 }
 
 // ── Topic scanner ───────────────────────────────────────────────────────────
-async function runTopicScan() {
+async function runTopicScan(focus) {
   const db = admin.database();
+  focus = String(focus || '').trim().slice(0, 200);
 
   // Everything already on or proposed for the board, so we never re-propose.
   const [counts, custom, pending, decks] = await Promise.all([
@@ -639,22 +660,33 @@ async function runTopicScan() {
     ...Object.values(decks.val() || {}).map(d => d && d.title)   // just-presented sessions
   ].filter(Boolean);
 
-  const headlines = await fetchHeadlines(10);
+  let headlines = await fetchHeadlines(10);
   if (headlines.length < 5) {
     throw new Error(`only ${headlines.length} headlines fetched - refusing to scan without real sources`);
   }
+  // With a focus, headlines that mention it float to the top so the model
+  // sees them first; nothing is dropped, so an off-focus scan still works.
+  if (focus) {
+    headlines = headlines
+      .map(h => ({ ...h, _r: relevanceScore(h.title + ' ' + h.desc, focus) }))
+      .sort((a, b) => b._r - a._r);
+  }
+  headlines = headlines.slice(0, 40);
 
   const prompt =
-`You help a university Applied Economics Club pick weekly discussion topics that members vote on.
+`${await clubBrain()}
+
+You help this club pick weekly discussion topics that members vote on.
 
 Below are today's real finance/markets headlines, numbered. Propose exactly 5 discussion topics grounded in them.
-
+${focus ? `\nThe board asked for topics focused on: ${focus}. Prefer headlines that fit; if none fit well, say so by returning fewer topics.\n` : ''}
 HEADLINES:
 ${numberedHeadlines(headlines)}
 
 Rules:
 - Every topic must be based on one or more of the numbered headlines. Include their numbers in "refs".
-- Each topic needs: "name" (max 60 chars, punchy, board-ready), "desc" (2 sentences: what happened and why it matters), "refs" (array of headline numbers used).
+- Each topic needs: "name" (max 60 chars, punchy, board-ready), "desc" (2 to 3 sentences: what happened, why it matters, and the economics concept it lets us teach, e.g. yield curve, moral hazard, elasticity), "refs" (array of headline numbers used).
+- Pick a MIX: not five topics about the same story. Favor stories a student can argue two sides of over pure data releases.
 - Never use em dashes in any text; use commas or periods.
 - Do NOT propose anything similar to these existing topics: ${existing.join('; ') || '(none)'}
 - Do not invent facts beyond the headlines. If fewer than 5 topics are well-supported, return fewer.
@@ -678,33 +710,27 @@ Reply with ONLY a JSON array: [{"name":"...","desc":"...","refs":[1,2]}]`;
       desc: String(t.desc).slice(0, 500),
       createdBy: 'AI scanner',
       ai: true,
+      focus: focus || null,
       sources: refs.slice(0, 4).map(h => ({ title: `${h.source}: ${h.title}`.slice(0, 120), url: h.url })),
       createdAt: Date.now()
     });
     added++;
   }
-  console.log(`topic scan: proposed ${added} from ${headlines.length} headlines`);
+  console.log(`topic scan: proposed ${added} from ${headlines.length} headlines${focus ? ` (focus: ${focus})` : ''}`);
   return { proposed: added, headlines: headlines.length };
 }
 
-// Daily at 07:00 Pacific, proposals are waiting when an admin checks in.
-exports.scanTopicsDaily = onSchedule(
-  { schedule: 'every day 07:00', timeZone: 'America/Los_Angeles', region: 'us-central1', secrets: [GEMINI_API_KEY] },
-  async () => {
-    if (!(await aiBudgetOk())) { console.warn('AI daily cap reached'); return; }
-    try { await runTopicScan(); } catch (e) { console.error('daily scan failed:', e.message); }
-  }
-);
-
-// "Scan now" button in admin.
+// The scanner runs only from the "Scan now" button in admin. There is no
+// scheduled run: the board decides when it wants fresh proposals, and the
+// free-tier AI budget is not spent on days nobody is looking.
 exports.scanTopicsNow = onRequest(
-  { region: 'us-central1', secrets: [GEMINI_API_KEY],
+  { region: 'us-central1', secrets: [GEMINI_API_KEY], timeoutSeconds: 90,
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com'] },
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
     if (!(await requireAdmin(req, res))) return;
     if (!(await aiBudgetOk())) { res.status(429).json({ error: 'Daily AI budget reached' }); return; }
-    try { res.json(await runTopicScan()); }
+    try { res.json(await runTopicScan(req.body && req.body.focus)); }
     catch (e) { console.error('scan failed:', e.message); res.status(502).json({ error: friendlyAiError(e) }); }
   }
 );
@@ -936,6 +962,19 @@ Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":
       }
       // Keep the outgoing version so a bad revision right before a meeting is
       // recoverable (decks/{id}/history/{version}). Bounded to the last 5.
+      // Same hygiene as generation: no model-invented images (an "image"
+      // slide must carry a real url from the original deck), no stray
+      // internal fields, and the sources slide survives unless the
+      // instruction removed it on purpose.
+      const prevSources = (deck.slides || []).find(s => s && s.type === 'sources');
+      let slides = revised.slides.filter(s => s && s.type).map(s => {
+        const c = { ...s }; delete c.refs; delete c.imageRef; delete c._drop; return c;
+      }).filter(s => s.type !== 'image' || /^https?:\/\//.test(String(s.url || '')));
+      if (prevSources && !slides.some(s => s.type === 'sources') && !/source/i.test(instruction)) {
+        slides.push(prevSources);
+      }
+      if (!slides.length) throw new Error('revision returned no slides');
+
       const v = deck.version || 1;
       await ref.child('history/' + v).set({
         title: deck.title || '', subtitle: deck.subtitle || '',
@@ -949,13 +988,13 @@ Reply with ONLY the full revised JSON: {"title":"...","subtitle":"...","slides":
       await ref.update({
         title: String(revised.title || deck.title).slice(0, 120),
         subtitle: String(revised.subtitle || deck.subtitle || '').slice(0, 160),
-        slides: revised.slides.slice(0, 16),
+        slides: slides.slice(0, 16),
         version: (deck.version || 1) + 1,
         updatedAt: Date.now(),
         lastInstruction: instruction
       });
       console.log(`deck ${id} refined -> v${(deck.version || 1) + 1}`);
-      res.json({ id, version: (deck.version || 1) + 1, slides: revised.slides.length });
+      res.json({ id, version: (deck.version || 1) + 1, slides: slides.length });
     } catch (e) {
       console.error('refine failed:', e.message);
       res.status(502).json({ error: friendlyAiError(e) });
@@ -1240,12 +1279,19 @@ function checkFlyerCopy(c, details) {
   });
 
   const all = JSON.stringify(c).toLowerCase();
-  // every organizer token containing a digit (dates, times, rooms) must appear
+  // Every organizer fact with a digit (dates, times, rooms) must appear. A
+  // token passes if it appears verbatim OR every number inside it appears
+  // somewhere, so "7-8 PM" is satisfied by "7 to 8 PM" and "10/21" by
+  // "October 21". The model is free to rephrase; it is not free to drop or
+  // change a number.
+  const copyNums = new Set((all.match(/\d+/g) || []));
   for (const tok of String(details).split(/[\s,]+/)) {
     const t = tok.replace(/^[^\w]+/, '').replace(/[^\w:]+$/, '');
-    if (t.length >= 2 && /\d/.test(t) && !all.includes(t.toLowerCase())) {
-      problems.push(`organizer fact "${t}" is missing from the copy`);
-    }
+    if (t.length < 2 || !/\d/.test(t)) continue;
+    if (all.includes(t.toLowerCase())) continue;
+    const nums = t.match(/\d+/g) || [];
+    if (nums.every(n => copyNums.has(n) || copyNums.has(String(Number(n))))) continue;
+    problems.push(`organizer fact "${t}" is missing from the copy`);
   }
   if (all.includes('\u2014')) problems.push('remove em dashes, use commas');
   for (const bad of ['join our community', 'fun and exciting', '!!']) {
