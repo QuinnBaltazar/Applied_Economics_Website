@@ -1305,7 +1305,8 @@
       const trackData = await fbGet(`track-progress/${key}`) || {};
       const arr = Array.isArray(trackData[sub.trackId]) ? [...trackData[sub.trackId]] : Array(5).fill(false);
       arr[parseInt(sub.idx, 10)] = true;
-      await fbSet(`track-progress/${key}/${sub.trackId}`, arr);
+      const ok = await fbSet(`track-progress/${key}/${sub.trackId}`, arr);
+      if (!ok) setMsg('Approved, but the credit could not be written to ' + sub.email + '. Deploy the latest database rules (firebase deploy --only database).', true);
       // Log activity
       await fetch(`${DB_URL}/activity.json`, { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ email: sub.email, name: sub.name||'', type: 'module_approved',

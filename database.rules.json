@@ -21,8 +21,8 @@
 
     "track-progress": {
       "$k": {
-        ".read": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')",
-        ".write": "auth != null && $k === auth.token.email.replace('.','_').replace('@','_')"
+        ".read": "auth != null && ($k === auth.token.email.replace('.','_').replace('@','_') || root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true)",
+        ".write": "auth != null && ($k === auth.token.email.replace('.','_').replace('@','_') || root.child('members').child(auth.token.email.replace('.','_').replace('@','_')).child('isAdmin').val() === true)"
       }
     },
 
