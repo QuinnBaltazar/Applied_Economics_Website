@@ -489,15 +489,7 @@
             </div>
             <div class="field-group">
               <label class="field-label" for="nm-gradyear">Graduation Year <span class="req">*</span></label>
-              <select id="nm-gradyear" class="auth-input">
-                <option value="">Select year…</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-                <option value="2029">2029</option>
-                <option value="Alumni">Alumni</option>
-              </select>
+              <select id="nm-gradyear" class="auth-input"></select>
               <span class="field-hint">Helps us know when your UCSB email expires so we keep your personal email up to date.</span>
             </div>
             <div class="field-group">
@@ -659,6 +651,16 @@
     const EMAILJS_READY = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
     const ADMIN_EMAIL   = 'quinnbaltazar@ucsb.edu';
     const DB_URL        = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+
+    // Grad year options: this year through five years out, so incoming freshmen
+    // always have their class year, plus Alumni.
+    function gradYearOptions() {
+      const y = new Date().getFullYear();
+      let html = '<option value="">Select year…</option>';
+      for (let i = 0; i <= 5; i++) html += '<option value="' + (y + i) + '">' + (y + i) + '</option>';
+      return html + '<option value="Alumni">Alumni</option>';
+    }
+    document.getElementById('nm-gradyear').innerHTML = gradYearOptions();
 
     if (EMAILJS_READY) emailjs.init(EMAILJS_PUBLIC_KEY);
 
@@ -870,12 +872,7 @@
         container.insertAdjacentHTML('beforeend',
           '<div class="field-group">' +
             '<label class="field-label" for="cp-gradyear">Graduation Year <span class="req">*</span></label>' +
-            '<select id="cp-gradyear" class="auth-input">' +
-              '<option value="">Select year…</option>' +
-              '<option value="2025">2025</option><option value="2026">2026</option>' +
-              '<option value="2027">2027</option><option value="2028">2028</option>' +
-              '<option value="2029">2029</option><option value="Alumni">Alumni</option>' +
-            '</select>' +
+            '<select id="cp-gradyear" class="auth-input">' + gradYearOptions() + '</select>' +
             '<span class="field-hint">Helps us know when your UCSB email expires.</span>' +
           '</div>');
       }
