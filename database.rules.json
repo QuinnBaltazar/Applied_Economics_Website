@@ -15,7 +15,8 @@
     "dms": {
       ".read": "auth != null",
       "$conv": {
-        ".write": "auth != null && $conv.contains(auth.token.email.replace('.','_').replace('@','_'))"
+        ".write": "auth != null && $conv.contains(auth.token.email.replace('.','_').replace('@','_'))",
+        "messages": { ".indexOn": ["at"] }
       }
     },
 
