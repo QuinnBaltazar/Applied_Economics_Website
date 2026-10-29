@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>Messages | UCSB Applied Economics Club</title>
   <meta name="description" content="Direct messages between UCSB Applied Economics Club members." />
   <meta name="theme-color" content="#090F1A" />
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <link rel="stylesheet" href="assets/styles.css" />
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="assets/auth.js"></script>
   <script src="assets/app.js" defer></script>
@@ -27,6 +27,8 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); line-height: 1.6; }
+    /* dvh tracks the on-screen keyboard on phones so the compose bar stays visible. */
+    @supports (height: 100dvh) { html, body { height: 100dvh; } }
 
     /* ── NAV ── */
     .topbar {
@@ -84,196 +86,123 @@
     .auth-gate-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
 
     /* ── DM LAYOUT ── */
-    .dm-outer { flex: 1; overflow: hidden; padding: 16px 24px 24px; }
+    .dm-outer { flex: 1; min-height: 0; overflow: hidden; padding: 16px 24px 24px; }
     .dm-wrap {
-      height: 100%;
-      display: flex;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      height: 100%; display: flex; border-radius: 20px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 60px rgba(0,0,0,0.3);
     }
 
     /* ── INBOX PANEL ── */
     .inbox-panel {
-      width: 300px;
-      flex-shrink: 0;
-      border-right: 1px solid rgba(255,255,255,0.08);
-      display: flex;
-      flex-direction: column;
-      background: var(--surface);
-      overflow: hidden;
+      width: 300px; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex; flex-direction: column; background: var(--surface); overflow: hidden;
     }
-    .inbox-header {
-      padding: 20px 20px 14px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      flex-shrink: 0;
-      letter-spacing: -0.01em;
-    }
-    .inbox-search-wrap {
-      padding: 12px 12px 8px;
-      position: relative;
-      flex-shrink: 0;
-    }
+    .inbox-header { padding: 20px 20px 14px; font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; letter-spacing: -0.01em; }
+    .inbox-search-wrap { padding: 12px 12px 8px; position: relative; flex-shrink: 0; }
     .inbox-search {
-      width: 100%;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px;
-      color: #fff;
-      padding: 9px 12px;
-      font: inherit;
-      font-size: 0.88rem;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; color: #fff; padding: 9px 12px; font: inherit; font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s; -webkit-appearance: none;
     }
     .inbox-search:focus { border-color: var(--accent); }
     .inbox-search::placeholder { color: rgba(255,255,255,0.3); }
     .member-suggestions {
-      display: none;
-      position: absolute;
-      top: calc(100% - 4px);
-      left: 12px; right: 12px;
-      background: #0c1628;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      overflow: hidden;
-      z-index: 20;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+      display: none; position: absolute; top: calc(100% - 4px); left: 12px; right: 12px;
+      background: #0c1628; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+      overflow: hidden; z-index: 20; box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+      max-height: 60vh; overflow-y: auto;
     }
-    .suggest-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; cursor: pointer; transition: background 0.15s;
-    }
+    .suggest-label { padding: 9px 14px 4px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(196,164,72,0.8); font-weight: 700; }
+    .suggest-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer; transition: background 0.15s; }
     .suggest-item:hover { background: rgba(255,255,255,0.06); }
-    .suggest-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: rgba(196,164,72,0.18); color: var(--accent);
-      font-weight: 700; font-size: 0.78rem;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .suggest-name { font-size: 0.9rem; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .suggest-subject { font-size: 0.74rem; color:rgba(255,255,255,0.5); flex-shrink: 0; }
-    .conv-list { flex: 1; overflow-y: auto; }
+    .suggest-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(196,164,72,0.18); color: var(--accent); font-weight: 700; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .suggest-info { flex: 1; min-width: 0; }
+    .suggest-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .suggest-sub { font-size: 0.74rem; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .suggest-empty { padding: 14px; font-size: 0.84rem; color: rgba(255,255,255,0.45); text-align: center; }
+    .conv-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .conv-list::-webkit-scrollbar { width: 4px; }
     .conv-list::-webkit-scrollbar-track { background: transparent; }
     .conv-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-    .conv-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 16px; cursor: pointer; transition: background 0.15s;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
+    .conv-item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255,255,255,0.04); }
     .conv-item:hover { background: rgba(255,255,255,0.04); }
     .conv-item.active { background: rgba(196,164,72,0.08); border-right: 2px solid var(--accent); }
-    .conv-avatar {
-      width: 42px; height: 42px; border-radius: 50%;
-      background: rgba(196,164,72,0.18); color: var(--accent);
-      font-weight: 700; font-size: 0.88rem;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
+    .conv-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(196,164,72,0.18); color: var(--accent); font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .conv-info { flex: 1; min-width: 0; }
     .conv-name-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
     .conv-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .conv-time { font-size: 0.7rem; color:rgba(255,255,255,0.48); flex-shrink: 0; }
+    .conv-time { font-size: 0.7rem; color: rgba(255,255,255,0.48); flex-shrink: 0; }
     .conv-preview-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
-    .conv-preview { font-size: 0.79rem; color:rgba(255,255,255,0.52); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-preview { font-size: 0.79rem; color: rgba(255,255,255,0.52); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .conv-name.unread { font-weight: 800; color: #fff; }
     .conv-preview.unread { color: rgba(255,255,255,0.75); }
-    .conv-preview-you { color: rgba(196,164,72,0.7); font-style: normal; }
-    .unread-badge {
-      background: var(--accent); color: #031a40;
-      font-size: 0.66rem; font-weight: 800;
-      border-radius: 999px; padding: 2px 7px; flex-shrink: 0;
-    }
-    .conv-empty { padding: 36px 20px; text-align: center; color:rgba(255,255,255,0.48); font-size: 0.87rem; line-height: 1.7; }
+    .conv-preview-you { color: rgba(196,164,72,0.7); }
+    .unread-badge { background: var(--accent); color: #031a40; font-size: 0.66rem; font-weight: 800; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+    .conv-empty { padding: 36px 20px; text-align: center; color: rgba(255,255,255,0.48); font-size: 0.87rem; line-height: 1.7; }
 
     /* ── THREAD PANEL ── */
-    .thread-panel {
-      flex: 1; display: flex; flex-direction: column;
-      background: rgba(7,22,48,0.97); min-width: 0;
+    .thread-panel { flex: 1; display: flex; flex-direction: column; background: rgba(7,22,48,0.97); min-width: 0; }
+    .thread-empty { flex: 1; overflow-y: auto; padding: 36px 40px; }
+    .thread-empty h3 { font-size: 1.15rem; letter-spacing: -0.01em; margin-bottom: 4px; }
+    .thread-empty > p { font-size: 0.88rem; color: rgba(255,255,255,0.5); margin-bottom: 22px; }
+    .people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .person-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+      padding: 16px; cursor: pointer; transition: transform 0.2s, border-color 0.2s, background 0.2s;
+      animation: cardIn 0.4s cubic-bezier(0.4,0,0.2,1) both;
     }
-    .thread-empty {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      color: rgba(255,255,255,0.28); text-align: center; padding: 40px;
-    }
-    .thread-empty-icon { font-size: 2.8rem; margin-bottom: 16px; opacity: 0.45; }
-    .thread-empty p { font-size: 0.92rem; line-height: 1.75; max-width: 260px; }
+    .person-card:hover { transform: translateY(-3px); border-color: rgba(196,164,72,0.4); background: rgba(196,164,72,0.06); }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .person-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .person-name { font-weight: 700; font-size: 0.92rem; line-height: 1.3; }
+    .person-year { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+    .person-field { font-size: 0.8rem; color: rgba(255,255,255,0.7); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .person-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .tag { font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; background: rgba(196,164,72,0.12); color: var(--accent-soft); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .thread-active { display: none; flex-direction: column; flex: 1; min-height: 0; }
-    .thread-header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.07);
-      flex-shrink: 0; background: rgba(7,22,48,0.99);
-    }
-    .back-btn {
-      display: none; background: none; border: none; color: rgba(255,255,255,0.55);
-      font-size: 1.2rem; cursor: pointer; padding: 4px 8px;
-      border-radius: 8px; transition: background 0.15s; flex-shrink: 0; line-height: 1;
-    }
-    .back-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    .thread-header-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(196,164,72,0.18); color: var(--accent);
-      font-weight: 700; font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .thread-header-name { font-weight: 700; font-size: 1rem; }
-    .thread-messages {
-      flex: 1; overflow-y: auto;
-      padding: 20px; display: flex; flex-direction: column; gap: 2px;
-    }
+    .thread-header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; background: rgba(7,22,48,0.99); }
+    .back-btn { display: none; background: none; border: none; color: var(--accent); font-size: 1.35rem; cursor: pointer; padding: 4px 8px; border-radius: 8px; flex-shrink: 0; line-height: 1; }
+    .thread-header-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(196,164,72,0.18); color: var(--accent); font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .thread-header-name { font-weight: 700; font-size: 1rem; line-height: 1.3; }
+    .thread-header-sub { font-size: 0.74rem; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
+    .thread-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 20px; display: flex; flex-direction: column; }
     .thread-messages::-webkit-scrollbar { width: 4px; }
     .thread-messages::-webkit-scrollbar-track { background: transparent; }
     .thread-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-    .thread-no-msgs {
-      text-align: center; color: rgba(255,255,255,0.28);
-      font-size: 0.88rem; padding: 48px 0; align-self: center;
-    }
-    .msg-row { display: flex; margin-bottom: 3px; }
+    .thread-no-msgs { text-align: center; color: rgba(255,255,255,0.28); font-size: 0.88rem; padding: 48px 0; align-self: center; }
+    .msg-sep { text-align: center; font-size: 0.68rem; color: rgba(255,255,255,0.35); margin: 14px 0 8px; }
+    .msg-row { display: flex; margin-bottom: 2px; }
     .msg-row.mine { justify-content: flex-end; }
     .msg-row.theirs { justify-content: flex-start; }
-    /* Group bubbles: if same sender in sequence, reduce gap */
-    .msg-row + .msg-row.mine,
-    .msg-row + .msg-row.theirs { margin-bottom: 1px; }
-    .msg-bubble {
-      max-width: 68%; padding: 9px 14px; border-radius: 18px;
-    }
-    .msg-bubble.mine {
-      background: rgba(196,164,72,0.14); border: 1px solid rgba(196,164,72,0.22);
-      border-bottom-right-radius: 4px;
-    }
-    .msg-bubble.theirs {
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-      border-bottom-left-radius: 4px;
-    }
-    .msg-text { font-size: 0.92rem; color: rgba(255,255,255,0.9); line-height: 1.55; word-break: break-word; white-space: pre-wrap; }
-    .msg-time { font-size: 0.67rem; color: rgba(255,255,255,0.26); margin-top: 4px; }
-    .msg-row.mine .msg-time { text-align: right; }
+    .msg-row.gap { margin-top: 8px; }
+    .msg-bubble { max-width: 72%; padding: 8px 14px; border-radius: 18px; animation: bubbleIn 0.18s ease-out both; }
+    @keyframes bubbleIn { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .msg-bubble.mine { background: var(--accent); color: #0b1424; border-bottom-right-radius: 5px; }
+    .msg-bubble.theirs { background: rgba(255,255,255,0.1); color: #fff; border-bottom-left-radius: 5px; }
+    .msg-row.mine.last .msg-bubble { border-bottom-right-radius: 18px; }
+    .msg-row.theirs.last .msg-bubble { border-bottom-left-radius: 18px; }
+    .msg-row.pending .msg-bubble { opacity: 0.6; }
+    .msg-text { font-size: 0.94rem; line-height: 1.45; word-break: break-word; white-space: pre-wrap; }
     .thread-compose {
-      display: flex; gap: 10px; align-items: flex-end;
-      padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.07);
-      background: rgba(7,22,48,0.99); flex-shrink: 0;
+      display: flex; gap: 8px; align-items: flex-end; padding: 10px 16px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(255,255,255,0.07); background: rgba(7,22,48,0.99); flex-shrink: 0;
     }
     .compose-input {
-      flex: 1; background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.14); border-radius: 14px;
-      color: #fff; padding: 11px 15px; font: inherit; font-size: 0.93rem;
-      resize: none; outline: none; transition: border-color 0.2s;
-      min-height: 44px; max-height: 120px; overflow-y: auto; line-height: 1.5;
+      flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 20px;
+      color: #fff; padding: 10px 15px; font: inherit; font-size: 0.94rem; resize: none; outline: none;
+      transition: border-color 0.2s, height 0.12s ease-out; min-height: 42px; max-height: 140px; overflow-y: auto; line-height: 1.45;
+      -webkit-appearance: none;
     }
     .compose-input::placeholder { color: rgba(255,255,255,0.3); }
     .compose-input:focus { border-color: var(--accent); }
     .compose-send {
-      padding: 11px 22px; border-radius: 999px; border: none;
-      background: var(--accent); color: #031a40;
-      font-weight: 700; font-size: 0.92rem; font-family: inherit;
-      cursor: pointer; transition: transform 0.2s, filter 0.2s;
-      white-space: nowrap; flex-shrink: 0;
+      width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--accent); color: #0b1424;
+      font-size: 1.2rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s, opacity 0.15s; flex-shrink: 0;
     }
-    .compose-send:hover { transform: translateY(-2px); filter: brightness(1.06); }
-    .compose-send:disabled { opacity: 0.6; transform: none; cursor: default; }
+    .compose-send:hover { transform: scale(1.06); }
+    .compose-send:disabled { opacity: 0.35; transform: none; cursor: default; }
 
     /* ── MOBILE ── */
     @media (max-width: 640px) {
@@ -284,8 +213,12 @@
       .dm-wrap.thread-open .inbox-panel { display: none; }
       .dm-wrap.thread-open .thread-panel { display: flex; }
       .back-btn { display: flex; align-items: center; justify-content: center; }
-      .thread-messages { padding: 14px; }
-      .thread-compose { padding: 10px 14px; }
+      .thread-messages { padding: 12px 12px; }
+      .thread-compose { padding: 8px 10px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+      .msg-bubble { max-width: 82%; }
+      /* 16px stops iOS from zooming the page when a field is focused. */
+      .compose-input, .inbox-search { font-size: 16px; }
+      .thread-empty { padding: 20px 16px; }
     }
   </style>
 </head>
@@ -329,7 +262,7 @@
           <div class="inbox-panel">
             <div class="inbox-header">Messages</div>
             <div class="inbox-search-wrap">
-              <input type="search" class="inbox-search" id="inbox-search" placeholder="Find a member to message&hellip;" autocomplete="off" />
+              <input type="search" class="inbox-search" id="inbox-search" placeholder="Search by name, interest, or industry&hellip;" autocomplete="off" />
               <div class="member-suggestions" id="member-suggestions"></div>
             </div>
             <div class="conv-list" id="conv-list">
@@ -343,15 +276,16 @@
           <!-- Right: Thread -->
           <div class="thread-panel">
             <div class="thread-empty" id="thread-empty">
-              <div class="thread-empty-icon">&#128172;</div>
-              <p>Select a conversation or search for a member above to start one.</p>
+              <h3>People to meet</h3>
+              <p>Members whose interests line up with yours. Tap one to say hi.</p>
+              <div class="people-grid" id="people-grid"></div>
             </div>
             <div class="thread-active" id="thread-active">
               <div class="thread-header" id="thread-header"></div>
               <div class="thread-messages" id="thread-messages"></div>
               <div class="thread-compose">
-                <textarea class="compose-input" id="compose-input" placeholder="Send a message&hellip;" rows="1" maxlength="2000"></textarea>
-                <button class="compose-send" id="compose-send">Send</button>
+                <textarea class="compose-input" id="compose-input" placeholder="iMessage-style: Enter sends, Shift+Enter for a new line" rows="1" maxlength="2000" enterkeyhint="send"></textarea>
+                <button class="compose-send" id="compose-send" aria-label="Send" disabled>&#8593;</button>
               </div>
             </div>
           </div>
@@ -362,208 +296,181 @@
   </main>
 
   <script>
-    const DB_URL               = 'https://applied-economics-club-default-rtdb.firebaseio.com';
-    const ADMIN_EMAIL          = 'quinnbaltazar@ucsb.edu';
+    const DB_URL      = 'https://applied-economics-club-default-rtdb.firebaseio.com';
+    const ADMIN_EMAIL = 'quinnbaltazar@ucsb.edu';
+    const THREAD_POLL_MS = 4000;
+    const INBOX_POLL_MS  = 15000;
+    const PAGE_SIZE      = 60;      // messages loaded when a thread opens
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    function eKey(e) { return String(e).replace(/[.@#$[\]/]/g,'_'); }
-    function convId(a, b) { return [eKey(a), eKey(b)].sort().join('__'); }
-    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function initials(name) { return (name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase(); }
+    const eKey    = e => String(e).replace(/[.@#$[\]/]/g, '_');
+    const convId  = (a, b) => [eKey(a), eKey(b)].sort().join('__');
+    const esc     = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const initials = n => (n || '?').trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
     function fmtTime(ts) {
       if (!ts) return '';
       const d = new Date(ts), now = new Date(), diff = Date.now() - ts;
-      if (diff < 86400000 && d.getDate() === now.getDate()) return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-      if (diff < 7*86400000) return d.toLocaleDateString('en-US',{weekday:'short'});
-      return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      if (diff < 86400000 && d.getDate() === now.getDate()) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      if (diff < 7 * 86400000) return d.toLocaleDateString('en-US', { weekday: 'short' });
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
-    function fmtFull(ts) {
-      if (!ts) return '';
-      return new Date(ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    function fmtSep(ts) {
+      const d = new Date(ts), now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      if (sameDay) return 'Today ' + time;
+      if (Date.now() - ts < 7 * 86400000) return d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + time;
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + time;
     }
 
-    // ── Firebase REST ─────────────────────────────────────────────────────────
-    async function fbGet(p) { try { const r=await fetch(`${DB_URL}/${p}.json`); return r.ok?r.json():null; } catch { return null; } }
-    async function fbSet(p,d) { try { await fetch(`${DB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); } catch {} }
-    async function fbPost(p,d) { try { const r=await fetch(`${DB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok?r.json():null; } catch { return null; } }
-
-    // ── AES-GCM decryption (read PII fields) ─────────────────────────────────
-    const _KP = 'aec-ucsb-priv-2025';
-    let _ck = null;
-    async function _getCK() {
-      if (_ck) return _ck;
-      const enc = new TextEncoder();
-      const raw = await crypto.subtle.importKey('raw', enc.encode(_KP), 'PBKDF2', false, ['deriveKey']);
-      _ck = await crypto.subtle.deriveKey(
-        { name:'PBKDF2', salt:enc.encode('aec-salt-v1'), iterations:100000, hash:'SHA-256' },
-        raw, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
-      );
-      return _ck;
+    // ── Firebase REST (auth.js appends the id token to every call) ────────────
+    async function fbGet(p, q) {
+      // null = node is empty, undefined = request failed
+      try { const r = await fetch(`${DB_URL}/${p}.json${q ? '?' + q : ''}`); return r.ok ? r.json() : undefined; }
+      catch { return undefined; }
     }
-    async function decField(v) {
-      if (!v || !String(v).startsWith('enc:')) return v;
-      try {
-        const [,ivHex,b64] = v.split(':');
-        const iv  = new Uint8Array(ivHex.match(/.{2}/g).map(h=>parseInt(h,16)));
-        const ct  = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
-        const pt  = await crypto.subtle.decrypt({name:'AES-GCM',iv}, await _getCK(), ct);
-        return new TextDecoder().decode(pt);
-      } catch { return v; }
-    }
-    async function decMember(m) {
-      if (!m) return m;
-      const r = { ...m };
-      // Only preferredEmail is needed here (for email notifications).
-      // Phone is deliberately NOT decrypted on this page so it never enters
-      // page memory, DMs have no reason to expose a member's number.
-      for (const f of ['preferredEmail']) if (r[f]) r[f] = await decField(r[f]);
-      return r;
-    }
-    async function getDecryptedMember(email) {
-      const raw = await fbGet('members/' + eKey(email));
-      return raw ? decMember(raw) : null;
-    }
+    async function fbSet(p, d)   { try { await fetch(`${DB_URL}/${p}.json`, { method: 'PUT',   headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); } catch {} }
+    async function fbPatch(p, d) { try { await fetch(`${DB_URL}/${p}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); } catch {} }
+    async function fbPost(p, d)  { try { const r = await fetch(`${DB_URL}/${p}.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }); return r.ok ? r.json() : null; } catch { return null; } }
+    const q = (o) => Object.entries(o).map(([k, v]) => k + '=' + encodeURIComponent(JSON.stringify(v))).join('&');
 
     // ── Session ───────────────────────────────────────────────────────────────
-    const SESSION_TTL = 30*24*60*60*1000;
-    function getSession() { try{const s=JSON.parse(localStorage.getItem('aec-session'));if(!s)return null;if(s.loginAt&&Date.now()-s.loginAt>SESSION_TTL){localStorage.removeItem('aec-session');return null;}return s;}catch{return null;} }
-    function isAdminSess(s) { return s&&(s.email===ADMIN_EMAIL||s.isAdmin===true); }
+    const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
+    function getSession() { try { const s = JSON.parse(localStorage.getItem('aec-session')); if (!s) return null; if (s.loginAt && Date.now() - s.loginAt > SESSION_TTL) { localStorage.removeItem('aec-session'); return null; } return s; } catch { return null; } }
+    const isAdminSess = s => s && (s.email === ADMIN_EMAIL || s.isAdmin === true);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    let mySession   = null;
-    let allMembers  = [];
-    let activeConvId = null;
-    let threadPoll  = null;
-    let inboxPoll   = null;
+    let me = null, myKey = '', myMember = null;
+    let members = [];                       // everyone except me
+    const memberByEmail = new Map();
+    let activeConv = null;                  // { id, partnerEmail, partnerName, msgs:[], lastAt }
+    let threadTimer = null, inboxTimer = null;
+    let indexed = true;                     // false once an orderBy query is refused
 
-    // ── Conversations ─────────────────────────────────────────────────────────
+    // ── Inbox: shallow key list, then only MY conversations' meta ─────────────
+    // /dms.json?shallow=true returns just the conversation ids (a few bytes
+    // each). Ids are "<keyA>__<keyB>", so membership is known without reading
+    // anything else. Message bodies are never downloaded for the inbox.
     async function loadConversations() {
-      const dms = await fbGet('dms');
-      if (!dms) return [];
-      return Object.entries(dms)
-        .filter(([,v]) => v && v.meta && Array.isArray(v.meta.participants) && v.meta.participants.includes(mySession.email))
-        .map(([k,v]) => ({ id:k, ...v.meta }))
-        .sort((a,b) => (b.lastAt||0) - (a.lastAt||0));
+      const keys = await fbGet('dms', 'shallow=true');
+      const mine = Object.keys(keys || {}).filter(id => id.split('__').includes(myKey));
+      const metas = await Promise.all(mine.map(id => fbGet(`dms/${id}/meta`)));
+      return mine
+        .map((id, i) => ({ id, ...(metas[i] || {}) }))
+        .filter(c => Array.isArray(c.participants))
+        .sort((a, b) => (b.lastAt || 0) - (a.lastAt || 0));
     }
 
     function renderConvList(convs) {
       const list = document.getElementById('conv-list');
       list.innerHTML = '';
       if (!convs.length) {
-        list.innerHTML = '<div class="conv-empty">No conversations yet.<br>Search for a member above to start messaging.</div>';
+        list.innerHTML = '<div class="conv-empty">No conversations yet.<br>Search above to find someone to message.</div>';
         return;
       }
-      convs.forEach(conv => {
-        const partnerEmail = (conv.participants||[]).find(e => e !== mySession.email) || '';
+      for (const conv of convs) {
+        const partnerEmail = conv.participants.find(e => e !== me.email) || '';
         const partnerName  = (conv.names && conv.names[eKey(partnerEmail)]) || partnerEmail || 'Member';
-        const myUnread     = conv['unread_'+eKey(mySession.email)] || 0;
-
-        const isMine = conv.lastFrom === mySession.email;
-        const previewText = (conv.lastMsg||'').slice(0, 60);
-        const previewHtml = isMine
-          ? '<span class="conv-preview-you">You: </span>' + esc(previewText)
-          : esc(previewText);
-
+        const unread       = conv['unread_' + myKey] || 0;
+        const isMine       = conv.lastFrom === me.email;
         const item = document.createElement('div');
-        item.className = 'conv-item' + (conv.id === activeConvId ? ' active' : '');
-        item.dataset.convId       = conv.id;
-        item.dataset.partnerEmail = partnerEmail;
+        item.className = 'conv-item' + (activeConv && conv.id === activeConv.id ? ' active' : '');
+        item.dataset.conv = conv.id;
         item.innerHTML =
-          '<div class="conv-avatar">'+esc(initials(partnerName))+'</div>'+
-          '<div class="conv-info">'+
-            '<div class="conv-name-row">'+
-              '<span class="conv-name'+(myUnread > 0 ? ' unread' : '')+'">'+esc(partnerName)+'</span>'+
-              '<span class="conv-time">'+esc(fmtTime(conv.lastAt))+'</span>'+
-            '</div>'+
-            '<div class="conv-preview-row">'+
-              '<span class="conv-preview'+(myUnread > 0 ? ' unread' : '')+'">'+previewHtml+'</span>'+
-              (myUnread > 0 ? '<span class="unread-badge">'+myUnread+'</span>' : '')+
-            '</div>'+
+          '<div class="conv-avatar">' + esc(initials(partnerName)) + '</div>' +
+          '<div class="conv-info">' +
+            '<div class="conv-name-row"><span class="conv-name' + (unread ? ' unread' : '') + '">' + esc(partnerName) + '</span><span class="conv-time">' + esc(fmtTime(conv.lastAt)) + '</span></div>' +
+            '<div class="conv-preview-row"><span class="conv-preview' + (unread ? ' unread' : '') + '">' + (isMine ? '<span class="conv-preview-you">You: </span>' : '') + esc((conv.lastMsg || '').slice(0, 60)) + '</span>' +
+            (unread ? '<span class="unread-badge">' + unread + '</span>' : '') + '</div>' +
           '</div>';
         item.addEventListener('click', () => openConversation(partnerEmail, partnerName));
         list.appendChild(item);
-      });
+      }
     }
 
     async function refreshInbox() {
+      if (document.hidden) return;
       const convs = await loadConversations();
       renderConvList(convs);
-      // Update nav badge
-      const total = convs.reduce((sum,c) => sum + (c['unread_'+eKey(mySession.email)]||0), 0);
+      const total = convs.reduce((s, c) => s + (c['unread_' + myKey] || 0), 0);
       const badge = document.getElementById('nav-unread-badge');
       if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'inline-flex' : 'none'; }
     }
 
-    // ── Open / create a conversation ──────────────────────────────────────────
+    // ── Thread ────────────────────────────────────────────────────────────────
     async function openConversation(partnerEmail, partnerName) {
       if (!partnerEmail) return;
-      const cid = convId(mySession.email, partnerEmail);
-      activeConvId = cid;
+      const id = convId(me.email, partnerEmail);
+      const partnerKey = eKey(partnerEmail);
+      activeConv = { id, partnerEmail, partnerName, partnerKey, msgs: [], lastAt: 0 };
 
-      // Ensure meta exists (creates conv if first message not yet sent)
-      const existingMeta = await fbGet('dms/'+cid+'/meta');
-      if (!existingMeta) {
-        const names = {};
-        names[eKey(mySession.email)] = mySession.name || 'Member';
-        names[eKey(partnerEmail)]    = partnerName;
-        await fbSet('dms/'+cid+'/meta', {
-          participants: [mySession.email, partnerEmail],
-          names,
-          lastMsg: '',
-          lastAt: 0,
-          ['unread_'+eKey(mySession.email)]: 0,
-          ['unread_'+eKey(partnerEmail)]: 0
+      const meta = await fbGet(`dms/${id}/meta`);
+      if (!meta) {
+        await fbSet(`dms/${id}/meta`, {
+          participants: [me.email, partnerEmail],
+          names: { [myKey]: me.name || 'Member', [partnerKey]: partnerName },
+          lastMsg: '', lastAt: 0,
+          ['unread_' + myKey]: 0, ['unread_' + partnerKey]: 0
         });
       } else {
-        // Mark as read. Clearing emailReminderAt too resets the reminder clock,
-        // so the next unread message can trigger a fresh reminder, otherwise
-        // a member would only ever be reminded once per conversation.
-        await fbSet('dms/'+cid+'/meta/unread_'+eKey(mySession.email), 0);
-        await fbSet('dms/'+cid+'/meta/emailReminderAt_'+eKey(mySession.email), null);
+        markRead(id);
       }
 
-      // Render thread header
+      const partner = memberByEmail.get(partnerEmail);
+      const sub = partner ? [partner.gradYear, partner.field || partner.subject].filter(Boolean).join(' · ') : '';
       document.getElementById('thread-empty').style.display = 'none';
-      const threadActive = document.getElementById('thread-active');
-      threadActive.style.display = 'flex';
+      document.getElementById('thread-active').style.display = 'flex';
       document.getElementById('thread-header').innerHTML =
-        '<button class="back-btn" id="back-btn">&#8592;</button>'+
-        '<div class="thread-header-avatar">'+esc(initials(partnerName))+'</div>'+
-        '<div>'+
-          '<div class="thread-header-name">'+esc(partnerName)+'</div>'+
-        '</div>';
-
+        '<button class="back-btn" id="back-btn" aria-label="Back">&#8249;</button>' +
+        '<div class="thread-header-avatar">' + esc(initials(partnerName)) + '</div>' +
+        '<div style="min-width:0"><div class="thread-header-name">' + esc(partnerName) + '</div>' +
+        (sub ? '<div class="thread-header-sub">' + esc(sub) + '</div>' : '') + '</div>';
       document.getElementById('back-btn').addEventListener('click', () => {
         document.getElementById('dm-wrap').classList.remove('thread-open');
+        activeConv = null; clearInterval(threadTimer);
+        refreshInbox();
       });
-
-      // Mobile: show thread panel
       document.getElementById('dm-wrap').classList.add('thread-open');
+      document.querySelectorAll('.conv-item').forEach(el => el.classList.toggle('active', el.dataset.conv === id));
 
-      // Highlight active conv in list
-      document.querySelectorAll('.conv-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.partnerEmail === partnerEmail);
-      });
+      await loadThread(true);
+      // Phones: focusing here pops the keyboard before the user taps; let them tap.
+      if (window.matchMedia('(min-width: 641px)').matches) document.getElementById('compose-input').focus();
 
-      // Focus compose
-      document.getElementById('compose-input').focus();
-
-      // Load messages
-      await refreshThread();
-
-      // Start polling
-      clearInterval(threadPoll);
-      threadPoll = setInterval(refreshThread, 5000);
+      clearInterval(threadTimer);
+      threadTimer = setInterval(() => loadThread(false), THREAD_POLL_MS);
     }
 
-    // ── Thread ────────────────────────────────────────────────────────────────
-    async function refreshThread() {
-      if (!activeConvId) return;
-      const raw = await fbGet('dms/'+activeConvId+'/messages');
-      const msgs = raw
-        ? Object.entries(raw).map(([k,v])=>({key:k,...v})).sort((a,b)=>(a.at||0)-(b.at||0))
-        : [];
-      renderThread(msgs);
+    function markRead(id) {
+      return fbPatch(`dms/${id}/meta`, { ['unread_' + myKey]: 0, ['emailReminderAt_' + myKey]: null });
+    }
+
+    // initial: last PAGE_SIZE messages. poll: only messages newer than what we
+    // have (minus a minute of slack for clock skew; dedupe handles overlap).
+    async function loadThread(initial) {
+      const conv = activeConv;
+      if (!conv || (!initial && document.hidden)) return;
+      const query = initial
+        ? q({ orderBy: 'at', limitToLast: PAGE_SIZE })
+        : q({ orderBy: 'at', startAt: Math.max(0, conv.lastAt - 60000) });
+      let raw = indexed ? await fbGet(`dms/${conv.id}/messages`, query) : undefined;
+      if (raw === undefined) {
+        // Indexed query refused (rules not deployed yet): fall back to a full read.
+        indexed = false;
+        raw = await fbGet(`dms/${conv.id}/messages`);
+      }
+      if (activeConv !== conv) return;   // user switched threads mid-request
+      const incoming = Object.entries(raw || {}).map(([key, v]) => ({ key, ...v }));
+      if (!initial && !incoming.some(m => !conv.msgs.some(x => x.key === m.key))) return;
+
+      const have = new Map(conv.msgs.filter(m => !m.pending).map(m => [m.key, m]));
+      incoming.forEach(m => have.set(m.key, m));
+      const pending = conv.msgs.filter(m => m.pending);
+      conv.msgs = [...have.values(), ...pending].sort((a, b) => (a.at || 0) - (b.at || 0));
+      conv.lastAt = conv.msgs.reduce((t, m) => Math.max(t, m.at || 0), 0);
+      renderThread(conv.msgs);
+
+      if (!initial && incoming.some(m => m.from !== me.email)) markRead(conv.id);
     }
 
     function renderThread(msgs) {
@@ -572,197 +479,180 @@
       feed.innerHTML = '';
       if (!msgs.length) {
         feed.innerHTML = '<div class="thread-no-msgs">No messages yet, say hello!</div>';
-      } else {
-        msgs.forEach(msg => {
-          const isMine = msg.from === mySession.email;
-          const row = document.createElement('div');
-          row.className = 'msg-row '+(isMine?'mine':'theirs');
-          row.innerHTML =
-            '<div class="msg-bubble '+(isMine?'mine':'theirs')+'">'+
-              '<div class="msg-text">'+esc(msg.body)+'</div>'+
-              '<div class="msg-time">'+esc(fmtFull(msg.at))+'</div>'+
-            '</div>';
-          feed.appendChild(row);
-        });
+        return;
       }
+      let prev = null;
+      msgs.forEach((m, i) => {
+        const gap = !prev || (m.at - prev.at) > 5 * 60000;
+        if (gap) feed.insertAdjacentHTML('beforeend', '<div class="msg-sep">' + esc(fmtSep(m.at)) + '</div>');
+        const isMine = m.from === me.email;
+        const next = msgs[i + 1];
+        const last = !next || next.from !== m.from || (next.at - m.at) > 5 * 60000;
+        const row = document.createElement('div');
+        row.className = 'msg-row ' + (isMine ? 'mine' : 'theirs') + (last ? ' last' : '') + (m.pending ? ' pending' : '') + (!gap && prev && prev.from !== m.from ? ' gap' : '');
+        row.innerHTML = '<div class="msg-bubble ' + (isMine ? 'mine' : 'theirs') + '"><div class="msg-text">' + esc(m.body) + '</div></div>';
+        feed.appendChild(row);
+        prev = m;
+      });
       if (atBottom || msgs.length <= 3) feed.scrollTop = feed.scrollHeight;
     }
 
-    // ── Notifications ─────────────────────────────────────────────────────────
-    // Unread-message emails are sent by the scheduled Cloud Function
-    // (sendUnreadEmailReminders), not from the browser. A client-side send can
-    // only fire while someone has the page open, which is exactly the case
-    // where a reminder isn't needed. Nothing to do here.
-    async function notifyRecipient() { /* handled server-side */ }
-
     async function sendMessage() {
-      if (!activeConvId) return;
+      const conv = activeConv;
       const input = document.getElementById('compose-input');
-      const body  = input.value.trim();
-      if (!body) return;
+      const body = input.value.trim();
+      if (!conv || !body) return;
 
-      const btn = document.getElementById('compose-send');
-      btn.disabled = true;
+      input.value = ''; autosize(input);
+      document.getElementById('compose-send').disabled = true;
 
-      // Load meta to get partner info
-      const meta = await fbGet('dms/'+activeConvId+'/meta');
-      const partnerEmail = meta && Array.isArray(meta.participants)
-        ? meta.participants.find(e => e !== mySession.email)
-        : null;
-      const partnerKey = partnerEmail ? eKey(partnerEmail) : null;
+      // Show it immediately, then confirm with the server.
+      const at = Date.now();
+      const tmp = { key: 'tmp-' + at, from: me.email, fromName: me.name || 'Member', body, at, pending: true };
+      conv.msgs.push(tmp); renderThread(conv.msgs);
 
-      // Post message
-      await fbPost('dms/'+activeConvId+'/messages', {
-        from:     mySession.email,
-        fromName: mySession.name || 'Member',
-        body,
-        at: Date.now()
+      const res = await fbPost(`dms/${conv.id}/messages`, { from: tmp.from, fromName: tmp.fromName, body, at });
+      if (activeConv === conv) {
+        if (res && res.name) { tmp.key = res.name; delete tmp.pending; }
+        else { conv.msgs = conv.msgs.filter(m => m !== tmp); }
+        conv.lastAt = Math.max(conv.lastAt, at);
+        renderThread(conv.msgs);
+      }
+      if (!res) return;
+
+      // PATCH only what changed; the server increments the partner's unread
+      // count atomically so two people sending at once can't clobber it.
+      await fbPatch(`dms/${conv.id}/meta`, {
+        lastMsg: body.slice(0, 80), lastFrom: me.email, lastAt: at,
+        ['unread_' + myKey]: 0,
+        ['unread_' + conv.partnerKey]: { '.sv': { increment: 1 } }
       });
-
-      // Update meta (lastMsg, lastAt, increment partner unread)
-      if (meta) {
-        const updatedMeta = Object.assign({}, meta, {
-          lastMsg:  body.slice(0, 80),
-          lastFrom: mySession.email,
-          lastAt:   Date.now(),
-          ['unread_'+eKey(mySession.email)]: 0
-        });
-        if (partnerKey) updatedMeta['unread_'+partnerKey] = (meta['unread_'+partnerKey]||0) + 1;
-        await fbSet('dms/'+activeConvId+'/meta', updatedMeta);
-      }
-
-      input.value = '';
-      input.style.height = 'auto';
-      btn.disabled = false;
-      input.focus();
-
-      await refreshThread();
-      await refreshInbox();
-
-      // Fire notifications in background, don't await so UI stays snappy
-      if (partnerEmail) {
-        const partnerName = meta && meta.names ? (meta.names[eKey(partnerEmail)] || partnerEmail) : partnerEmail;
-        notifyRecipient(partnerEmail, partnerName, body, meta);
-      }
+      refreshInbox();
     }
 
-    // ── Member search ─────────────────────────────────────────────────────────
-    async function setupMemberSearch() {
+    // ── Compose box: grows like iMessage, Enter sends ─────────────────────────
+    function autosize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+      document.getElementById('compose-send').disabled = !el.value.trim();
+    }
+
+    // ── Members: search + suggestions by interest / industry ──────────────────
+    const words = s => String(s || '').toLowerCase().split(/[^a-z]+/).filter(w => w.length > 3);
+    const STOP = new Set(['want', 'would', 'like', 'work', 'with', 'about', 'that', 'this', 'into', 'learn', 'more', 'career']);
+    function similarity(a, b) {
+      const A = new Set([...words(a.field), ...words(a.subject), ...words(a.goal), ...words(a.learn)].filter(w => !STOP.has(w)));
+      const B = new Set([...words(b.field), ...words(b.subject), ...words(b.goal), ...words(b.learn)].filter(w => !STOP.has(w)));
+      let n = 0; A.forEach(w => { if (B.has(w)) n++; });
+      return n;
+    }
+    function suggestedMembers(limit) {
+      const scored = members.map(m => ({ m, s: myMember ? similarity(myMember, m) : 0 }));
+      scored.sort((x, y) => y.s - x.s || (y.m.joinedAt || 0) - (x.m.joinedAt || 0));
+      return scored.slice(0, limit).map(x => x.m);
+    }
+    const memberBlurb = m => m.field || m.subject || m.goal || '';
+    const memberTags  = m => [m.subject, m.goal].flatMap(s => String(s || '').split(/,|\band\b/)).map(s => s.trim()).filter(s => s && s.length < 28).slice(0, 3);
+
+    function renderSuggestions(list, label) {
+      const box = document.getElementById('member-suggestions');
+      box.innerHTML = label ? '<div class="suggest-label">' + esc(label) + '</div>' : '';
+      if (!list.length) box.innerHTML += '<div class="suggest-empty">No members match that.</div>';
+      for (const m of list) {
+        const item = document.createElement('div');
+        item.className = 'suggest-item';
+        item.innerHTML =
+          '<span class="suggest-avatar">' + esc(initials(m.name)) + '</span>' +
+          '<span class="suggest-info"><div class="suggest-name">' + esc(m.name) + '</div><div class="suggest-sub">' + esc(memberBlurb(m)) + '</div></span>';
+        item.addEventListener('mousedown', e => e.preventDefault());   // keep input focus
+        item.addEventListener('click', () => { hideSuggestions(); document.getElementById('inbox-search').value = ''; openConversation(m.email, m.name); });
+        box.appendChild(item);
+      }
+      box.style.display = 'block';
+    }
+    function hideSuggestions() { document.getElementById('member-suggestions').style.display = 'none'; }
+
+    function renderPeopleGrid() {
+      const grid = document.getElementById('people-grid');
+      grid.innerHTML = '';
+      suggestedMembers(6).forEach((m, i) => {
+        const card = document.createElement('div');
+        card.className = 'person-card';
+        card.style.animationDelay = (i * 50) + 'ms';
+        card.innerHTML =
+          '<div class="person-top"><span class="suggest-avatar">' + esc(initials(m.name)) + '</span>' +
+          '<div><div class="person-name">' + esc(m.name) + '</div>' + (m.gradYear ? '<div class="person-year">Class of ' + esc(m.gradYear) + '</div>' : '') + '</div></div>' +
+          '<div class="person-field">' + esc(memberBlurb(m)) + '</div>' +
+          '<div class="person-tags">' + memberTags(m).map(t => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>';
+        card.addEventListener('click', () => openConversation(m.email, m.name));
+        grid.appendChild(card);
+      });
+    }
+
+    async function loadMembers() {
       const raw = await fbGet('members');
-      if (!raw) return;
-      // Deduplicate by email, exclude self
-      const emailMap = new Map();
-      Object.values(raw).filter(m=>m&&m.name&&m.email&&m.email!==mySession.email).forEach(m => {
-        const prev = emailMap.get(m.email);
-        if (!prev || (m.joinedAt||Infinity) < (prev.joinedAt||Infinity)) emailMap.set(m.email, m);
+      const byEmail = new Map();
+      Object.values(raw || {}).filter(m => m && m.name && m.email).forEach(m => {
+        const prev = byEmail.get(m.email);
+        if (!prev || (m.joinedAt || Infinity) < (prev.joinedAt || Infinity)) byEmail.set(m.email, m);
       });
-      allMembers = Array.from(emailMap.values()).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+      myMember = byEmail.get(me.email) || null;
+      byEmail.delete(me.email);
+      members = [...byEmail.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      members.forEach(m => memberByEmail.set(m.email, m));
 
-      const searchInput = document.getElementById('inbox-search');
-      const suggestBox  = document.getElementById('member-suggestions');
-
-      searchInput.addEventListener('input', function() {
-        const q = this.value.trim().toLowerCase();
-        if (!q) { suggestBox.style.display='none'; suggestBox.innerHTML=''; return; }
-        const matches = allMembers.filter(m =>
-          (m.name||'').toLowerCase().includes(q) || (m.email||'').toLowerCase().includes(q)
-        ).slice(0, 7);
-        if (!matches.length) { suggestBox.style.display='none'; return; }
-        suggestBox.innerHTML = '';
-        matches.forEach(m => {
-          const item = document.createElement('div');
-          item.className = 'suggest-item';
-          item.innerHTML =
-            '<span class="suggest-avatar">'+esc(initials(m.name))+'</span>'+
-            '<span class="suggest-name">'+esc(m.name)+'</span>'+
-            '<span class="suggest-subject">'+esc((m.subject||'').slice(0,20))+'</span>';
-          item.addEventListener('click', () => {
-            searchInput.value = '';
-            suggestBox.style.display = 'none';
-            openConversation(m.email, m.name);
-          });
-          suggestBox.appendChild(item);
-        });
-        suggestBox.style.display = 'block';
-      });
-
-      document.addEventListener('click', e => {
-        if (!e.target.closest('.inbox-search-wrap')) suggestBox.style.display = 'none';
-      });
+      const input = document.getElementById('inbox-search');
+      const search = () => {
+        const term = input.value.trim().toLowerCase();
+        if (!term) return renderSuggestions(suggestedMembers(6), 'Suggested for you');
+        const hits = members.filter(m => [m.name, m.email, m.field, m.subject, m.goal, m.learn].join(' ').toLowerCase().includes(term)).slice(0, 8);
+        renderSuggestions(hits, '');
+      };
+      input.addEventListener('input', search);
+      input.addEventListener('focus', search);
+      document.addEventListener('click', e => { if (!e.target.closest('.inbox-search-wrap')) hideSuggestions(); });
+      renderPeopleGrid();
     }
 
     // ── Boot ──────────────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', async function() {
-      // Nav scroll
-      window.addEventListener('scroll', () =>
-        document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 8)
-      , { passive: true });
+    document.addEventListener('DOMContentLoaded', async () => {
+      const page = location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.main-nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === page));
 
-      // Nav highlight
-      const page = window.location.pathname.split('/').pop() || 'index.html';
-      document.querySelectorAll('.main-nav a').forEach(a =>
-        a.classList.toggle('active', a.getAttribute('href') === page)
-      );
+      me = getSession();
+      if (!me) { document.getElementById('auth-gate').style.display = 'block'; return; }
+      myKey = eKey(me.email);
 
-      mySession = getSession();
-
-      if (!mySession) {
-        document.getElementById('auth-gate').style.display = 'block';
-        return;
-      }
-
-      // Reveal nav links
-      const ml = document.getElementById('members-nav-link');
-      if (ml) ml.style.display = 'inline-flex';
-      const sl = document.querySelector('.main-nav a[href="signin.html"]');
-      if (sl) sl.textContent = 'Profile';
+      document.getElementById('members-nav-link').style.display = 'inline-flex';
       document.getElementById('messages-nav-link').style.display = 'inline-flex';
-      if (isAdminSess(mySession)) {
-        const al = document.getElementById('admin-nav-link');
-        if (al) al.style.display = 'inline-flex';
-      }
+      const sl = document.querySelector('.main-nav a[href="signin.html"]'); if (sl) sl.textContent = 'Profile';
+      if (isAdminSess(me)) document.getElementById('admin-nav-link').style.display = 'inline-flex';
+      document.getElementById('dm-content').style.display = 'flex';
 
-      // Show DM UI
-      const dmContent = document.getElementById('dm-content');
-      dmContent.style.display = 'flex';
+      await Promise.all([loadMembers(), refreshInbox()]);
 
-      // Load members for search + initial inbox
-      await Promise.all([setupMemberSearch(), refreshInbox()]);
-
-      // Check ?with= param (from member card "Message" button)
-      const params     = new URLSearchParams(window.location.search);
-      const withParam  = params.get('with');
+      // ?with=email from a member card's "Message" button
+      const withParam = new URLSearchParams(location.search).get('with');
       if (withParam) {
-        const partner = allMembers.find(m => m.email === withParam);
-        if (partner) {
-          await openConversation(partner.email, partner.name);
-        } else {
-          // Partner might not be in allMembers (e.g. admin), try to get name from existing conv
-          const convs = await loadConversations();
-          const existing = convs.find(c => (c.participants||[]).includes(withParam));
-          if (existing) {
-            const pName = (existing.names && existing.names[eKey(withParam)]) || withParam;
-            await openConversation(withParam, pName);
-          } else {
-            // Open with email as fallback name
-            await openConversation(withParam, withParam);
-          }
-        }
+        const partner = memberByEmail.get(withParam);
+        await openConversation(withParam, partner ? partner.name : withParam);
       }
 
-      // Inbox poll every 15s
-      inboxPoll = setInterval(refreshInbox, 15000);
+      inboxTimer = setInterval(refreshInbox, INBOX_POLL_MS);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) return;
+        refreshInbox();
+        if (activeConv) loadThread(false);
+      });
 
-      // Compose handlers
+      const input = document.getElementById('compose-input');
       document.getElementById('compose-send').addEventListener('click', sendMessage);
-      document.getElementById('compose-input').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+      input.addEventListener('input', () => autosize(input));
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); }
       });
-      document.getElementById('compose-input').addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-      });
-
+      // Keep the latest message in view when the phone keyboard opens.
+      input.addEventListener('focus', () => setTimeout(() => { const f = document.getElementById('thread-messages'); f.scrollTop = f.scrollHeight; }, 250));
     });
   </script>
 </body>
