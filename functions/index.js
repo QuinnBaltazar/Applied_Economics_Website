@@ -181,7 +181,19 @@ async function sendEmail(apiKey, recipients, toName, senderName, unreadCount) {
   }
 }
 
-// ── Hourly: email anyone sitting on a DM unread for 24h+ ────────────────────
+// The Admin SDK has no shallow read, so use the REST API with the service
+// account's access token to fetch just the top-level keys under /dms.
+async function listConversationIds() {
+  const { access_token } = await admin.app().options.credential.getAccessToken();
+  const dbUrl = admin.app().options.databaseURL
+    || 'https://applied-economics-club-default-rtdb.firebaseio.com';
+  const res = await fetch(`${dbUrl}/dms.json?shallow=true&access_token=${encodeURIComponent(access_token)}`);
+  if (!res.ok) throw new Error(`shallow dms read failed: ${res.status}`);
+  const keys = await res.json();
+  return keys ? Object.keys(keys) : [];
+}
+
+// ── Every 15 min: email anyone sitting on an unread DM for 1h+ ──────────────
 exports.sendUnreadEmailReminders = onSchedule(
   { schedule: 'every 15 minutes', region: 'us-central1', secrets: [BREVO_API_KEY] },
   async () => {
@@ -189,14 +201,15 @@ exports.sendUnreadEmailReminders = onSchedule(
     const now = Date.now();
     const apiKey = BREVO_API_KEY.value();
 
-    const snap = await db.ref('dms').get();
-    const dms = snap.val();
-    if (!dms) { console.log('no conversations'); return; }
+    // List conversation ids only (shallow), then read each meta node. Never
+    // pull message bodies into this function; they are the bulk of the data.
+    const convIds = await listConversationIds();
+    if (!convIds.length) { console.log('no conversations'); return; }
 
     let sent = 0, skipped = 0, failed = 0;
 
-    for (const [convId, conv] of Object.entries(dms)) {
-      const meta = conv && conv.meta;
+    for (const convId of convIds) {
+      const meta = (await db.ref(`dms/${convId}/meta`).get()).val();
       if (!meta || !Array.isArray(meta.participants) || !meta.lastAt) continue;
 
       // Not old enough yet.
@@ -208,10 +221,12 @@ exports.sendUnreadEmailReminders = onSchedule(
         const unread = meta['unread_' + key] || 0;
         if (unread === 0) continue;
 
-        // One reminder per unread streak. Opening the thread clears this flag
-        // (see messages.html), so reading resets the clock and a later message
-        // can trigger a fresh reminder.
-        if (meta['emailReminderAt_' + key]) { skipped++; continue; }
+        // One reminder per batch of new messages: skip only if we already
+        // reminded them about the latest message. A newer message (lastAt past
+        // the last reminder) earns a fresh email. Opening the thread clears the
+        // flag too (see messages.html).
+        const remindedAt = meta['emailReminderAt_' + key] || 0;
+        if (remindedAt >= meta.lastAt) { skipped++; continue; }
 
         // Never remind someone about their own message.
         if (meta.lastFrom && eKey(meta.lastFrom) === key) continue;
