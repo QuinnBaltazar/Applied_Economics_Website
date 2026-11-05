@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Password | UCSB Applied Economics Club</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#090F1A" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="assets/auth.js"></script>
+  <script src="assets/app.js" defer></script>
+  <style>
+    :root {
+      --bg:       #090F1A;
+      --surface:  #0E1829;
+      --navy:     #162438;
+      --gold:     #C4A448;
+      --gold-lt:  #D4B55E;
+      --steel:    #2B4A6F;
+      --text:     #FFFFFF;
+      --muted:    rgba(255,255,255,0.62);
+      --border:   rgba(255,255,255,0.07);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; color: var(--text); line-height: 1.6; background: var(--bg); overflow-x: hidden; }
+
+    /* Subtle full-page glow behind the form */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(196,164,72,0.07) 0%, rgba(43,74,111,0.07) 40%, transparent 68%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page { max-width: 1080px; margin: 0 auto; padding: 64px 0 0; }
+
+    /* ── NAV ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 56px); height: 64px;
+      background: rgba(9,15,26,0.78); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background .35s, box-shadow .35s, border-color .35s;
+      animation: navDown .55s cubic-bezier(.4,0,.2,1) both;
+    }
+    @keyframes navDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .topbar.scrolled { background: rgba(9,15,26,.97); box-shadow: 0 2px 40px rgba(0,0,0,.45); border-color: rgba(196,164,72,.14); }
+    .brand { font-size: .78rem; font-weight: 800; color: #fff; letter-spacing: .22em; text-transform: uppercase; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: color .2s; }
+    .brand:hover { color: var(--gold); }
+    .main-nav { display: flex; align-items: center; gap: 2px; }
+    .main-nav a { position: relative; display: inline-flex; align-items: center; padding: 8px 13px; color: rgba(255,255,255,.65); text-decoration: none; font-size: .875rem; font-weight: 500; letter-spacing: .03em; border-radius: 8px; transition: color .2s, background .2s; }
+    .main-nav a::after { content: ''; position: absolute; bottom: 5px; left: 13px; right: 13px; height: 2px; background: var(--gold); border-radius: 2px; transform: scaleX(0); transition: transform .25s cubic-bezier(.4,0,.2,1); transform-origin: center; }
+    .main-nav a:hover { color: #fff; background: rgba(255,255,255,.05); }
+    .main-nav a:hover::after, .main-nav a.active::after { transform: scaleX(1); }
+    .main-nav a.active { color: #fff; font-weight: 700; background: rgba(196,164,72,.08); }
+
+    /* ── SHELL ── */
+    .signin-shell {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 52px 24px 80px;
+    }
+
+    /* ── INTRO ── */
+    .signin-intro {
+      text-align: center;
+      margin-bottom: 38px;
+      max-width: 540px;
+      animation: fadeUp .7s cubic-bezier(.4,0,.2,1) .1s both;
+    }
+    .signin-eyebrow {
+      display: inline-flex; align-items: center;
+      padding: 6px 18px; border-radius: 999px;
+      background: rgba(196,164,72,0.12); color: var(--gold);
+      font-size: .7rem; font-weight: 700; letter-spacing: .3em; text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .signin-intro h1 {
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.08;
+      margin-bottom: 12px;
+    }
+    .signin-intro p { color: var(--muted); font-size: .97rem; line-height: 1.75; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── AUTH CARD ── */
+    .auth-card {
+      width: 100%; max-width: 520px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      padding: 44px 48px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(196,164,72,0.06);
+      position: relative; overflow: hidden;
+      animation: cardIn .7s cubic-bezier(.4,0,.2,1) .2s both;
+    }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+    /* Gold top accent line */
+    .auth-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), var(--gold-lt), var(--gold), transparent);
+    }
+
+    /* ── STEP LOGO ── */
+    .step-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 26px;
+    }
+    .step-logo-mark {
+      width: 42px; height: 42px; border-radius: 13px;
+      background: rgba(196,164,72,0.1); border: 1px solid rgba(196,164,72,0.22);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.05rem; font-weight: 900; color: var(--gold);
+      font-family: Georgia, serif; letter-spacing: -1px; flex-shrink: 0;
+    }
+    .step-logo-text {
+      font-size: .72rem; font-weight: 700; letter-spacing: .2em;
+      text-transform: uppercase; color:rgba(255,255,255,0.5);
+    }
+
+    /* ── STEP HEADINGS ── */
+    .auth-card h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 8px; }
+    .subtitle { color: rgba(255,255,255,0.62); font-size: .95rem; line-height: 1.65; margin-bottom: 30px; }
+
+    /* ── CHOICE CARDS ── */
+    .feature-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    .feature-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: transform .25s, border-color .25s, background .25s;
+    }
+    .feature-card::before {
+      content: ''; display: block; width: 26px; height: 2px;
+      background: var(--gold); border-radius: 2px; margin-bottom: 2px;
+    }
+    .feature-card:hover { transform: translateY(-3px); border-color: rgba(196,164,72,0.28); background: rgba(196,164,72,0.04); }
+    .feature-card h3 { font-size: .97rem; font-weight: 700; color: #fff; margin: 0; }
+    .feature-card p { color: rgba(255,255,255,0.58); font-size: .86rem; line-height: 1.6; margin: 0; flex: 1; }
+
+    /* ── FORM ── */
+    .auth-form { display: flex; flex-direction: column; gap: 20px; }
+    .field-group { display: flex; flex-direction: column; gap: 7px; }
+    .field-label { font-size: .76rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,0.48); }
+    .req { color: var(--gold); }
+    .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.3); }
+    .field-hint { font-size: .78rem; color:rgba(255,255,255,0.48); line-height: 1.5; margin-top: 2px; }
+    .auth-input, .auth-textarea {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 14px; color: #fff; padding: 13px 16px;
+      font-size: .97rem; font-family: inherit; outline: none; width: 100%;
+      transition: border-color .2s, background .2s;
+    }
+    .auth-textarea { resize: none; }
+    .auth-input::placeholder, .auth-textarea::placeholder { color: rgba(255,255,255,0.26); }
+    .auth-input:focus, .auth-textarea:focus { border-color: var(--gold); background: rgba(255,255,255,0.08); }
+    .auth-input.error-field { border-color: rgba(255,100,100,0.7); }
+    .code-input { font-size: 2.2rem; font-weight: 700; letter-spacing: .38em; text-align: center; padding: 18px 14px; }
+
+    /* ── BUTTONS ── */
+    .auth-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 14px 24px; border-radius: 999px; border: none;
+      background: var(--gold); color: #090F1A;
+      font-weight: 700; font-size: .97rem; font-family: inherit; cursor: pointer;
+      transition: transform .2s, filter .2s, box-shadow .2s;
+      box-shadow: 0 8px 28px rgba(196,164,72,0.25);
+    }
+    .auth-btn:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 14px 36px rgba(196,164,72,0.32); }
+    .auth-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+    .secondary-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 22px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18);
+      background: transparent; color: rgba(255,255,255,0.65);
+      font-weight: 600; font-size: .92rem; font-family: inherit; cursor: pointer;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .secondary-btn:hover { border-color:rgba(255,255,255,0.52); color: #fff; background: rgba(255,255,255,0.04); }
+    .link-btn {
+      background: none; border: none; color: var(--gold);
+      font-family: inherit; font-size: .88rem; cursor: pointer;
+      padding: 0; text-decoration: underline; text-underline-offset: 3px;
+      opacity: .82; transition: opacity .2s;
+    }
+    .link-btn:hover { opacity: 1; }
+    .link-btn:disabled { opacity: .38; cursor: not-allowed; }
+    .auth-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .auth-sep { color: rgba(255,255,255,0.25); }
+
+    /* ── MESSAGES ── */
+    .auth-msg { font-size: .9rem; min-height: 1.2em; }
+    .auth-msg.error   { color: #ffb3b3; }
+    .auth-msg.success { color: #d0f4ff; }
+    .auth-msg.info    { color: rgba(255,255,255,0.58); }
+
+    .form-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 4px 0; }
+
+    /* ── PROFILE (welcome) ── */
+    .profile-avatar {
+      width: 68px; height: 68px; border-radius: 22px;
+      background: linear-gradient(135deg, rgba(196,164,72,0.22), rgba(43,74,111,0.38));
+      border: 1px solid rgba(196,164,72,0.28);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.55rem; font-weight: 900; color: var(--gold);
+      font-family: Georgia, serif; letter-spacing: -2px;
+      margin-bottom: 20px;
+    }
+    .profile-grid {
+      display: flex; flex-direction: column; gap: 0;
+      margin: 22px 0;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px; overflow: hidden;
+    }
+    .profile-row {
+      display: flex; align-items: baseline; gap: 14px;
+      padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-label { font-size: .72rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,0.36); min-width: 68px; flex-shrink: 0; padding-top: 2px; }
+    .profile-value { color: rgba(255,255,255,0.92); font-size: .95rem; }
+    .welcome-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+
+    /* ── PERKS ── */
+    .signin-perks {
+      width: 100%; max-width: 520px; margin-top: 24px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      animation: fadeUp .7s cubic-bezier(.4,0,.2,1) .5s both;
+    }
+    .perk-item {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 18px 14px; text-align: center;
+    }
+    .perk-item::before { content: ''; display: block; width: 22px; height: 2px; background: var(--gold); border-radius: 2px; margin: 0 auto 10px; }
+    .perk-title { font-size: .8rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .perk-desc { font-size: .74rem; color:rgba(255,255,255,0.52); line-height: 1.5; }
+
+    /* ── DIVIDER ── */
+    .gold-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(196,164,72,0.18), transparent); margin: 24px 0 0; width: 100%; max-width: 520px; }
+
+    /* ── FOOTER ── */
+    .signin-footer { text-align: center; color: rgba(255,255,255,0.22); font-size: .85rem; padding: 20px 24px 40px; width: 100%; max-width: 520px; }
+    .signin-footer strong { color: rgba(196,164,72,0.6); font-weight: 600; }
+
+    .hidden { display: none; }
+
+    @media (max-width: 600px) {
+      .signin-shell { padding: 32px 16px 60px; }
+      .auth-card { padding: 32px 22px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .signin-perks { grid-template-columns: 1fr; }
+      .auth-card h1 { font-size: 1.6rem; }
+    }
+
+    /* ── MOBILE NAV ── */
+    .nav-toggle {
+      display: none; flex-direction: column; justify-content: center; align-items: center;
+      gap: 5px; width: 40px; height: 40px; background: none; border: none;
+      cursor: pointer; padding: 8px; border-radius: 8px; transition: background .2s; flex-shrink: 0;
+    }
+    .nav-toggle:hover { background: rgba(255,255,255,.06); }
+    .nav-toggle span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: transform .25s, opacity .25s; transform-origin: center; }
+    .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-toggle.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .brand-abbr { display: none; }
+    @media (max-width: 640px) {
+      .nav-toggle { display: flex; }
+      .brand-full { display: none; }
+      .brand-abbr { display: inline; }
+      .main-nav {
+        display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0;
+        background: rgba(9,15,26,.97); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+        border-bottom: 1px solid rgba(196,164,72,.14); padding: 12px 16px 20px; gap: 4px;
+        opacity: 0; transform: translateY(-6px); pointer-events: none; visibility: hidden;
+        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.22s;
+      }
+      .main-nav.open {
+        opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible;
+        transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.22s cubic-bezier(0.4,0,0.2,1);
+      }
+      .main-nav a { padding: 12px 16px; font-size: 1rem; border-radius: 10px; }
+      .main-nav.open a { animation: navLinkIn 0.18s cubic-bezier(0.4,0,0.2,1) both; }
+      .main-nav.open a:nth-child(1){animation-delay:.04s}.main-nav.open a:nth-child(2){animation-delay:.08s}.main-nav.open a:nth-child(3){animation-delay:.12s}.main-nav.open a:nth-child(4){animation-delay:.16s}.main-nav.open a:nth-child(5){animation-delay:.20s}.main-nav.open a:nth-child(6){animation-delay:.24s}
+    }
+    @keyframes navLinkIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
+    @media (hover:none) {
+      .auth-btn:active, .btn-primary:active, .btn-outline:active { transform:scale(0.96); filter:brightness(1.04); }
+      .nav-toggle:active { background:rgba(255,255,255,.12) !important; }
+    }
+  </style>
+  <style>
+    .reset-ok { text-align: center; padding: 10px 0 4px; }
+    .reset-ok .check { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 16px; display: grid; place-items: center; background: rgba(76,184,122,0.14); color: #6fdc96; font-size: 26px; }
+    .pw-hint { font-size: .8rem; color: rgba(255,255,255,0.45); margin-top: -10px; }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a class="brand" href="index.html"><span class="brand-full">UCSB Applied Economics Club</span><span class="brand-abbr">UCSB&nbsp;AEC</span></a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="main-nav" id="main-nav">
+      <a href="index.html">Home</a>
+      <a href="vote.html">Vote</a>
+      <a href="topics.html">Tracks</a>
+      <a href="members.html" id="members-nav-link" data-auth="member">Members</a>
+      <a href="messages.html" id="messages-nav-link" data-auth="member">Messages</a>
+      <a href="board.html">Board</a>
+      <a href="signin.html">Sign In</a>
+      <a href="admin.html" id="admin-nav-link" data-auth="admin">Admin</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="signin-shell">
+      <div class="signin-intro">
+        <div class="signin-eyebrow">Member Portal &mdash; UCSB Registered Student Organization</div>
+        <h1>Reset your password</h1>
+        <p>Choose a new password for your AEC account. You'll be signed in right after.</p>
+      </div>
+
+      <section class="auth-card">
+        <!-- Checking the link -->
+        <div id="state-loading">
+          <div class="step-logo"><div class="step-logo-mark">AE</div><span class="step-logo-text">Reset Password</span></div>
+          <h1>One moment</h1>
+          <p class="subtitle">Checking your reset link.</p>
+        </div>
+
+        <!-- Link is good: pick a password -->
+        <div id="state-form" class="hidden">
+          <div class="step-logo"><div class="step-logo-mark">AE</div><span class="step-logo-text">Reset Password</span></div>
+          <h1>New password</h1>
+          <p class="subtitle">Resetting the password for <strong id="reset-email"></strong>.</p>
+          <form id="reset-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="pw1">New password <span class="req">*</span></label>
+              <input type="password" id="pw1" class="auth-input" placeholder="At least 6 characters" autocomplete="new-password" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="pw2">Confirm password <span class="req">*</span></label>
+              <input type="password" id="pw2" class="auth-input" placeholder="Type it again" autocomplete="new-password" />
+            </div>
+            <div class="auth-msg" id="reset-msg"></div>
+            <button type="submit" class="auth-btn" id="reset-btn">Set password and sign in</button>
+          </form>
+        </div>
+
+        <!-- Link is bad: expired, used, or malformed -->
+        <div id="state-bad" class="hidden">
+          <div class="step-logo"><div class="step-logo-mark">AE</div><span class="step-logo-text">Reset Password</span></div>
+          <h1>This link no longer works</h1>
+          <p class="subtitle" id="bad-reason">Reset links are single-use and expire after about an hour. Request a fresh one below and open it right away.</p>
+          <form id="resend-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label class="field-label" for="resend-email">UCSB Email <span class="req">*</span></label>
+              <input type="email" id="resend-email" class="auth-input" placeholder="yourname@ucsb.edu" autocomplete="email" />
+            </div>
+            <div class="auth-msg" id="resend-msg"></div>
+            <button type="submit" class="auth-btn" id="resend-btn">Send a new reset link</button>
+          </form>
+        </div>
+
+        <!-- Done -->
+        <div id="state-done" class="hidden reset-ok">
+          <div class="check">&#10003;</div>
+          <h1>Password updated</h1>
+          <p class="subtitle">You're signed in. Taking you to your profile.</p>
+        </div>
+      </section>
+
+      <footer class="signin-footer">
+        <strong>UCSB Applied Economics Club</strong> &nbsp;&middot;&nbsp; Registered Student Organization at UC Santa Barbara
+        &nbsp;&middot;&nbsp; <a href="index.html" style="color:rgba(196,164,72,0.7);text-decoration:none;">quinnbaltazar.github.io/Applied_Economics_Website</a>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    const params  = new URLSearchParams(location.search);
+    const mode    = params.get('mode');
+    const oobCode = params.get('oobCode');
+    const auth    = firebase.auth();
+    const show = id => ['state-loading', 'state-form', 'state-bad', 'state-done'].forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+    const setMsg = (id, text, type) => { const el = document.getElementById(id); el.textContent = text; el.className = 'auth-msg ' + (type || 'info'); };
+
+    // Firebase sends every email action (verify email, recover email, ...)
+    // to the same handler URL. This page only handles password resets; hand
+    // anything else to Firebase's default handler.
+    if (mode && mode !== 'resetPassword') {
+      location.replace('https://applied-economics-club.firebaseapp.com/__/auth/action' + location.search);
+    }
+
+    let email = '';
+    (async () => {
+      if (mode !== 'resetPassword' || !oobCode) {
+        document.getElementById('bad-reason').textContent = 'This page needs a reset link from your email. Request one below.';
+        show('state-bad'); return;
+      }
+      try {
+        email = await auth.verifyPasswordResetCode(oobCode);
+        document.getElementById('reset-email').textContent = email;
+        document.getElementById('resend-email').value = email;
+        show('state-form');
+        document.getElementById('pw1').focus();
+      } catch (e) {
+        const r = document.getElementById('bad-reason');
+        if (e.code === 'auth/expired-action-code')      r.textContent = 'This reset link has expired. Links last about an hour. Request a fresh one and open it right away.';
+        else if (e.code === 'auth/invalid-action-code') r.textContent = 'This link was already used, or a newer reset email replaced it. Only the most recent link works. Request a fresh one below.';
+        else if (e.code === 'auth/user-not-found')      r.textContent = 'No account matches this link anymore.';
+        else                                            r.textContent = 'Could not check this link (' + (e.code || 'unknown error') + '). Request a fresh one below.';
+        show('state-bad');
+      }
+    })();
+
+    document.getElementById('reset-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const p1 = document.getElementById('pw1').value, p2 = document.getElementById('pw2').value;
+      if (p1.length < 6) { setMsg('reset-msg', 'Use at least 6 characters.', 'error'); return; }
+      if (p1 !== p2)     { setMsg('reset-msg', 'Those passwords do not match.', 'error'); return; }
+      const btn = document.getElementById('reset-btn'); btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        await auth.confirmPasswordReset(oobCode, p1);
+        try { await auth.signInWithEmailAndPassword(email, p1); } catch {}
+        show('state-done');
+        setTimeout(() => location.replace('signin.html'), 1800);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = 'Set password and sign in';
+        if (e.code === 'auth/weak-password') setMsg('reset-msg', 'That password is too weak. Try something longer.', 'error');
+        else if (e.code === 'auth/expired-action-code' || e.code === 'auth/invalid-action-code') { document.getElementById('bad-reason').textContent = 'This link expired while you were on the page. Request a fresh one.'; show('state-bad'); }
+        else setMsg('reset-msg', 'Could not update the password (' + (e.code || 'unknown') + '). Try again.', 'error');
+      }
+    });
+
+    document.getElementById('resend-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const addr = document.getElementById('resend-email').value.trim().toLowerCase();
+      if (!addr.endsWith('@ucsb.edu')) { setMsg('resend-msg', 'Enter your @ucsb.edu email.', 'error'); return; }
+      const btn = document.getElementById('resend-btn'); btn.disabled = true;
+      try {
+        await auth.sendPasswordResetEmail(addr);
+        setMsg('resend-msg', 'Sent. Open the newest email from us within the hour; older links stop working.', 'success');
+      } catch (e) {
+        btn.disabled = false;
+        setMsg('resend-msg', e.code === 'auth/user-not-found' ? 'No account with that email. Create one from the sign-in page.' : 'Could not send the email. Try again in a minute.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
