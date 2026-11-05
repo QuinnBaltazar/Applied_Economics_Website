@@ -605,6 +605,7 @@
                      border-color:rgba(255,160,50,0.4);color:rgba(255,190,110,0.95)">
               Send to <span id="bc-recipients">…</span> members
             </button>
+            <span id="bc-budget" style="display:none;font-size:0.8rem;color:rgba(255,255,255,0.5)"></span>
           </div>
 
           <div id="bc-msg" style="margin-top:14px;font-size:0.88rem;display:none"></div>
@@ -2247,11 +2248,28 @@
         box.style.display = 'block';
       });
 
-      // Show how many people this will actually reach.
-      fetch(DB_URL + '/members.json?shallow=true')
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { recipEl.textContent = d ? Object.keys(d).length : '?'; })
-        .catch(() => { recipEl.textContent = '?'; });
+      // Show how many people this will reach and how much of today's email
+      // budget is left (one email per member; Brevo allows 300 a day).
+      let budget = null;
+      const budgetEl = document.getElementById('bc-budget');
+      (async () => {
+        try {
+          const hdrs = await adminHeaders();
+          const r = hdrs && await fetch(BROADCAST_URL, { headers: hdrs });
+          budget = r && r.ok ? await r.json() : null;
+        } catch {}
+        if (budget) {
+          recipEl.textContent = budget.recipients;
+          if (budgetEl) {
+            budgetEl.style.display = 'block';
+            budgetEl.textContent = budget.left + ' of ' + budget.cap + ' emails left today' + (budget.left < budget.recipients ? ' , not enough for a full send. Resets at midnight UTC (4 PM Pacific).' : '.');
+            budgetEl.style.color = budget.left < budget.recipients ? 'rgba(255,120,120,0.9)' : 'rgba(255,255,255,0.5)';
+          }
+        } else {
+          fetch(DB_URL + '/members.json?shallow=true').then(r => r.ok ? r.json() : null)
+            .then(d => { recipEl.textContent = d ? Object.keys(d).length : '?'; }).catch(() => { recipEl.textContent = '?'; });
+        }
+      })();
 
       sendBtn.addEventListener('click', async () => {
         const subject = subjectEl.value.trim();
@@ -2283,8 +2301,9 @@
           else if (!res.ok)            say(data.error || `Failed (${res.status}).`, 'error');
           else {
             let t = `Sent to ${data.sent} member${data.sent === 1 ? '' : 's'}.`;
-            if (data.failed)  t += ` ${data.failed} failed.`;
+            if (data.failed)  t += ` ${data.failed} failed.` + (data.errors && data.errors.length ? ` First error: ${data.errors[0]}` : '');
             if (data.skipped) t += ` ${data.skipped} skipped (no usable address).`;
+            if (data.cap)     t += ` ${Math.max(0, data.cap - data.used)} emails left today.`;
             say(t, data.failed ? 'error' : 'ok');
             if (!data.failed) { subjectEl.value = ''; bodyEl.value = ''; countEl.textContent = '0'; }
 
