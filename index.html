@@ -374,14 +374,39 @@
     <div class="gold-divider"></div>
 
     <!-- ── MISSION ── -->
-    <section id="placements-section" class="reveal" style="display:none;padding:72px 24px 8px;max-width:1080px;margin:0 auto;text-align:center;">
-      <span style="color:var(--gold);font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:13px;">Placements &amp; Affiliations</span>
-      <h2 id="placements-headline" style="margin:14px auto 8px;font-size:clamp(26px,3.4vw,40px);letter-spacing:-0.02em;max-width:22ch;"></h2>
-      <p style="color:var(--muted);max-width:52ch;margin:0 auto 30px;font-size:15px;line-height:1.6;">
-        Where our members have earned seats, verified by the board.
-      </p>
-      <div id="placements-strip" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;"></div>
-      <div id="placements-orgs" style="margin-top:22px;color:var(--muted);font-size:14px;"></div>
+    <section id="placements-section" class="reveal" style="display:none;max-width:1080px;margin:0 auto;padding:56px 24px 16px;">
+      <style>
+        .pl-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .pl-col { border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 22px 22px 20px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); transition: border-color 0.25s; }
+        .pl-col:hover { border-color: rgba(196,164,72,0.35); }
+        .pl-col-top { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+        .pl-col-top > div { flex: 1; min-width: 0; }
+        .pl-col-n { font-size: 44px; line-height: 1; color: #D4B55E; font-weight: 800; letter-spacing: -0.03em; }
+        .pl-col-h { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+        .pl-rot { position: relative; height: 1.5em; margin-top: 4px; font-size: 14px; }
+        .pl-rot span { position: absolute; left: 0; top: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.85); opacity: 0; transform: translateY(8px); transition: opacity .45s, transform .45s; }
+        .pl-rot span.on { opacity: 1; transform: none; }
+        .pl-rot b { color: #fff; font-weight: 700; }
+        .pl-rot i { font-style: normal; color: #D4B55E; }
+        .pl-wall { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+        .pl-tile { position: relative; padding: 4px 0; color: rgba(255,255,255,0.4); font-weight: 700; font-size: 15px; letter-spacing: .02em; transition: color .3s; }
+        .pl-tile::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: #D4B55E; transition: right .4s cubic-bezier(.2,.8,.2,1); }
+        .pl-tile.on { color: #fff; }
+        .pl-tile.on::after { right: 0; }
+        .pl-empty { color: rgba(255,255,255,0.35); font-size: 14px; }
+        @media (max-width: 700px) { .pl-cols { grid-template-columns: 1fr; gap: 14px; } .pl-col { padding: 18px; } .pl-col-n { font-size: 36px; } .pl-col-top { align-items: flex-start; } .pl-rot { height: 2.9em; } .pl-rot span { white-space: normal; line-height: 1.4; } }
+        @media (prefers-reduced-motion: reduce) { .pl-rot span, .pl-tile, .pl-tile::after { transition: none; } }
+      </style>
+      <div class="pl-cols">
+        <div class="pl-col">
+          <div class="pl-col-top"><span class="pl-col-n" id="pl-n-firms"></span><div><div class="pl-col-h">Placed at firms</div><div class="pl-rot" id="pl-rot-firms"></div></div></div>
+          <div class="pl-wall" id="pl-wall-firms"></div>
+        </div>
+        <div class="pl-col">
+          <div class="pl-col-top"><span class="pl-col-n" id="pl-n-orgs"></span><div><div class="pl-col-h">Leading campus orgs</div><div class="pl-rot" id="pl-rot-orgs"></div></div></div>
+          <div class="pl-wall" id="pl-wall-orgs"></div>
+        </div>
+      </div>
     </section>
 
     <section class="mission-section reveal">
@@ -440,47 +465,54 @@
         if (!r.ok) return;
         const raw = await r.json();
         if (!raw) return;
-        const items = Object.values(raw).filter(x => x && x.name);
+        const items = Object.values(raw).filter(x => x && x.name)
+          .sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0));
         if (!items.length) return;
 
-        const rank = { fulltime: 0, internship: 1, org: 2 };
-        const firms = {}, orgs = {};
-        items.forEach(x => {
-          const bucket = x.type === 'org' ? orgs : firms;
-          const k = x.name.trim();
-          bucket[k] = bucket[k] || { n: 0, type: x.type || 'internship', people: [] };
-          bucket[k].n++;
-          if (x.publicName && x.member) bucket[k].people.push(x.member);
-          if (x.type === 'fulltime') bucket[k].type = 'fulltime';
-        });
-
         const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        const strip = document.getElementById('placements-strip');
-        Object.entries(firms)
-          .sort((a,b) => (rank[a[1].type]-rank[b[1].type]) || (b[1].n-a[1].n) || a[0].localeCompare(b[0]))
-          .forEach(([name, d]) => {
-            const chip = document.createElement('div');
-            chip.style.cssText = 'border:1px solid rgba(196,164,72,0.5);background:rgba(196,164,72,0.07);' +
-              'border-radius:12px;padding:14px 22px;font-weight:800;letter-spacing:.06em;' +
-              'text-transform:uppercase;font-size:15px;color:#D4B55E;';
-            chip.innerHTML = esc(name) + (d.n > 1 ? ' <span style="opacity:.65;font-size:12px;">\u00D7' + d.n + '</span>' : '') +
-              (d.type === 'internship' ? ' <span style="display:block;font-size:10px;letter-spacing:.14em;opacity:.55;margin-top:3px;">INTERNSHIP</span>'
-                                       : ' <span style="display:block;font-size:10px;letter-spacing:.14em;opacity:.55;margin-top:3px;">FULL-TIME</span>');
-            if (d.people.length) chip.title = d.people.join(', ');
-            strip.appendChild(chip);
+        const LABEL = { fulltime: 'Full-time', internship: 'Internship', org: 'Active in' };
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // One column: count, a rotating "name · role at place" line, and the
+        // place names as a text list. The name currently being shown is underlined.
+        function column(kind, list) {
+          document.getElementById('pl-n-' + kind).textContent = list.length;
+          const wall = document.getElementById('pl-wall-' + kind);
+          const rot  = document.getElementById('pl-rot-' + kind);
+          if (!list.length) { wall.innerHTML = '<span class="pl-empty">Nothing yet. Add yours from your profile.</span>'; return; }
+
+          const tiles = new Map();
+          list.forEach(x => {
+            const name = x.name.trim();
+            if (tiles.has(name)) return;
+            const t = document.createElement('span');
+            t.className = 'pl-tile'; t.textContent = name;
+            wall.appendChild(t); tiles.set(name, t);
+          });
+          list.forEach(x => {
+            const s = document.createElement('span');
+            const who = x.publicName && x.member ? '<b>' + esc(x.member) + '</b> \u00B7 ' : '';
+            const verb = x.type === 'org' ? LABEL.org : (LABEL[x.type] || 'Placed') + ' at';
+            s.innerHTML = who + verb + ' <i>' + esc(x.name) + '</i>';
+            rot.appendChild(s);
           });
 
-        const firmCount = Object.keys(firms).length;
-        const memberCount = items.filter(x => x.type !== 'org').length;
-        document.getElementById('placements-headline').textContent =
-          firmCount ? memberCount + ' member' + (memberCount===1?'':'s') + ' placed at ' + firmCount + ' top firm' + (firmCount===1?'':'s')
-                    : 'Our members, across campus';
-
-        const orgNames = Object.entries(orgs).sort((a,b)=>b[1].n-a[1].n).map(([n,d]) => esc(n) + (d.n>1 ? ' \u00D7' + d.n : ''));
-        if (orgNames.length) {
-          document.getElementById('placements-orgs').innerHTML =
-            'Also active in: <span style="color:rgba(255,255,255,0.85);font-weight:600;">' + orgNames.join(' \u00B7 ') + '</span>';
+          let i = 0;
+          const show = () => {
+            [...rot.children].forEach((c, j) => c.classList.toggle('on', j === i));
+            tiles.forEach((t, name) => t.classList.toggle('on', name === list[i].name.trim()));
+          };
+          show();
+          if (list.length > 1 && !reduced) {
+            let timer = setInterval(() => { i = (i + 1) % list.length; show(); }, 3400);
+            const col = wall.closest('.pl-col');
+            col.addEventListener('mouseenter', () => clearInterval(timer));
+            col.addEventListener('mouseleave', () => { timer = setInterval(() => { i = (i + 1) % list.length; show(); }, 3400); });
+          }
         }
+        column('firms', items.filter(x => x.type !== 'org'));
+        column('orgs',  items.filter(x => x.type === 'org'));
+
         document.getElementById('placements-section').style.display = 'block';
       } catch (e) { /* section stays hidden */ }
     })();
