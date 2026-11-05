@@ -26,13 +26,16 @@
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); line-height: 1.6; }
-    /* dvh tracks the on-screen keyboard on phones so the compose bar stays visible. */
-    @supports (height: 100dvh) { html, body { height: 100dvh; } }
+    /* --app-h is the visible height. dvh handles browser chrome; the script
+       below updates it from visualViewport when the phone keyboard opens,
+       since iOS scrolls the page instead of shrinking it. */
+    :root { --app-h: 100vh; }
+    @supports (height: 100dvh) { :root { --app-h: 100dvh; } }
+    html, body { height: var(--app-h); overflow: hidden; background: var(--bg); color: var(--text); line-height: 1.6; }
 
     /* ── NAV ── */
     .topbar {
-      position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 100;
+      position: fixed; top: var(--app-top, 0px); left: 0; right: 0; width: 100%; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 clamp(20px, 4vw, 56px); height: 64px;
       background: rgba(9,15,26,0.84); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
@@ -196,7 +199,8 @@
       -webkit-appearance: none;
     }
     .compose-input::placeholder { color: rgba(255,255,255,0.3); }
-    .compose-input:focus { border-color: var(--accent); }
+    .compose-input:focus, .compose-input:focus-visible { border-color: var(--accent); outline: none; }
+    .inbox-search:focus-visible { outline: none; }
     .compose-send {
       width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--accent); color: #0b1424;
       font-size: 1.2rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -684,6 +688,21 @@
       });
       // Keep the latest message in view when the phone keyboard opens.
       input.addEventListener('focus', () => setTimeout(() => { const f = document.getElementById('thread-messages'); f.scrollTop = f.scrollHeight; }, 250));
+
+      // iOS: the keyboard shrinks the visual viewport but not the layout, and
+      // Safari scrolls the page to show the field, pushing the header off
+      // screen. Size the app to the visible area and pin the page to the top.
+      const vv = window.visualViewport;
+      if (vv) {
+        const fit = () => {
+          document.documentElement.style.setProperty('--app-h', Math.round(vv.height) + 'px');
+          document.documentElement.style.setProperty('--app-top', Math.round(vv.offsetTop) + 'px');
+          window.scrollTo(0, 0);
+          const f = document.getElementById('thread-messages'); if (activeConv) f.scrollTop = f.scrollHeight;
+        };
+        vv.addEventListener('resize', fit);
+        vv.addEventListener('scroll', fit);
+      }
     });
   </script>
 </body>
