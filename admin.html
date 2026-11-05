@@ -104,6 +104,15 @@
     .topic-row-info { flex: 1; }
     .topic-row-name { font-weight: 600; font-size: 0.97rem; }
     .topic-row-meta { font-size: 0.82rem; color: rgba(255,255,255,0.48); margin-top: 2px; }
+    .pl-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .pl-pill { padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+    .pl-pill:hover { background: rgba(255,255,255,0.08); }
+    .pl-pill.active { background: rgba(196,164,72,0.14); border-color: rgba(196,164,72,0.5); color: #D4B55E; }
+    .pl-pill .n { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: rgba(255,160,50,0.2); color: rgba(255,160,50,0.95); font-size: 0.7rem; }
+    .pl-bulk { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.82rem; color: rgba(255,255,255,0.55); }
+    .pl-bulk button { margin-left: auto; }
+    .pl-check { width: 16px; height: 16px; accent-color: #C4A448; cursor: pointer; flex-shrink: 0; }
+    .pl-type { font-size: 0.68rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
     .topic-row-votes { color: var(--accent); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
     .delete-topic-btn {
       background: transparent; border: 1px solid rgba(255,80,80,0.4);
@@ -607,6 +616,15 @@
         <div class="section-body">
           <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0 0 14px;line-height:1.5;">
             Approved entries show on the public homepage. Keep the bar high, this strip is the club's front window.</p>
+          <div class="pl-filters" id="pl-filters">
+            <button type="button" class="pl-pill active" data-group="all">All</button>
+            <button type="button" class="pl-pill" data-group="jobs">Jobs</button>
+            <button type="button" class="pl-pill" data-group="clubs">Clubs</button>
+          </div>
+          <div class="pl-bulk" id="pl-bulk" style="display:none">
+            <input type="checkbox" class="pl-check" id="pl-check-all" /> <label for="pl-check-all">Select all pending</label>
+            <button type="button" class="reset-pwd-btn" id="pl-approve-sel" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);font-size:0.82rem;padding:7px 14px;" disabled>Approve selected</button>
+          </div>
           <div id="pl-pending-list"></div>
           <div style="margin:16px 0 8px;font-weight:700;font-size:0.9rem;">Live on homepage</div>
           <div id="pl-live-list"></div>
@@ -2085,31 +2103,65 @@
     })();
 
     // ── Placements curation ───────────────────────────────────────────────────
+    // Jobs = internship + fulltime, Clubs = campus org. One list, filtered.
+    const PL_GROUP = t => (t === 'org' ? 'clubs' : 'jobs');
+    const PL_LABEL = { internship: 'Internship', fulltime: 'Full-time', org: 'Campus org' };
+    let plGroup = null;                 // null until first render picks a default
+    const plSelected = new Set();
+
+    async function approvePlacement(t) {
+      const ok = await fbPost('placements', { name:t.name, type:t.type||'internship',
+        member:t.member||'', publicName:!!t.publicName, approvedAt:Date.now() });
+      if (ok) await fbDelete('placement-pending/' + t.key);
+      return !!ok;
+    }
+
     async function renderPlacements() {
       const pend = document.getElementById('pl-pending-list');
       const live = document.getElementById('pl-live-list');
       if (!pend) return;
       const [pRaw, lRaw] = await Promise.all([fbGet('placement-pending'), fbGet('placements')]);
-      const pending = pRaw ? Object.entries(pRaw).map(([k,v]) => ({key:k, ...v})) : [];
+      const pending  = pRaw ? Object.entries(pRaw).map(([k,v]) => ({key:k, ...v})) : [];
+      const approved = lRaw ? Object.entries(lRaw).map(([k,v]) => ({key:k, ...v})) : [];
       const badge = document.getElementById('pl-pending-badge');
       badge.style.display = pending.length ? 'inline' : 'none';
       badge.textContent = pending.length;
 
-      pend.innerHTML = pending.length ? '' : '<p class="empty-state">Nothing awaiting review.</p>';
-      pending.sort((a,b)=>(a.at||0)-(b.at||0)).forEach(t => {
+      // Land on whichever group has work waiting.
+      const count = g => pending.filter(t => g === 'all' || PL_GROUP(t.type) === g).length;
+      if (!plGroup) plGroup = count('jobs') && !count('clubs') ? 'jobs' : count('clubs') && !count('jobs') ? 'clubs' : 'all';
+      document.querySelectorAll('#pl-filters .pl-pill').forEach(b => {
+        const g = b.dataset.group, n = count(g);
+        b.classList.toggle('active', g === plGroup);
+        b.innerHTML = (g === 'all' ? 'All' : g === 'jobs' ? 'Jobs' : 'Clubs') + (n ? '<span class="n">' + n + '</span>' : '');
+      });
+      const inGroup = t => plGroup === 'all' || PL_GROUP(t.type) === plGroup;
+      const shown = pending.filter(inGroup).sort((a,b)=>(a.at||0)-(b.at||0));
+      [...plSelected].forEach(k => { if (!shown.some(t => t.key === k)) plSelected.delete(k); });
+
+      const bulk = document.getElementById('pl-bulk');
+      bulk.style.display = shown.length > 1 ? 'flex' : 'none';
+      const syncBulk = () => {
+        const btn = document.getElementById('pl-approve-sel');
+        btn.disabled = !plSelected.size;
+        btn.textContent = plSelected.size ? 'Approve selected (' + plSelected.size + ')' : 'Approve selected';
+        document.getElementById('pl-check-all').checked = shown.length && plSelected.size === shown.length;
+      };
+
+      pend.innerHTML = shown.length ? '' : '<p class="empty-state">Nothing awaiting review' + (plGroup === 'all' ? '' : ' in ' + plGroup) + '.</p>';
+      shown.forEach(t => {
         const row = document.createElement('div');
         row.className = 'topic-row';
         row.innerHTML =
+          '<input type="checkbox" class="pl-check pl-row-check"' + (plSelected.has(t.key) ? ' checked' : '') + ' />' +
           '<div class="topic-row-info"><div class="topic-row-name">' + escapeHtml(t.name||'') +
-          ' <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.06em;">' + escapeHtml(t.type||'') + '</span></div>' +
+          '<span class="pl-type">' + escapeHtml(PL_LABEL[t.type] || t.type || '') + '</span></div>' +
           '<div class="topic-row-meta">' + escapeHtml(t.member||t.email||'') + (t.publicName ? ' , name OK to show' : ' , keep name private') + '</div></div>' +
           '<button class="reset-pwd-btn pl-approve" style="border-color:rgba(100,220,130,0.4);color:rgba(100,220,130,0.9);">Approve</button>' +
           '<button class="delete-topic-btn pl-reject" style="margin-left:6px;">Reject</button>';
+        row.querySelector('.pl-row-check').addEventListener('change', e => { e.target.checked ? plSelected.add(t.key) : plSelected.delete(t.key); syncBulk(); });
         row.querySelector('.pl-approve').addEventListener('click', async () => {
-          const ok = await fbPost('placements', { name:t.name, type:t.type||'internship',
-            member:t.member||'', publicName:!!t.publicName, approvedAt:Date.now() });
-          if (!ok) { setMsg('Could not publish "' + t.name + '". Are you signed in as an admin?', true); return; }
-          await fbDelete('placement-pending/' + t.key);
+          if (!await approvePlacement(t)) { setMsg('Could not publish "' + t.name + '". Are you signed in as an admin?', true); return; }
           setMsg('"' + t.name + '" is now on the homepage.');
           renderPlacements();
         });
@@ -2119,15 +2171,27 @@
         });
         pend.appendChild(row);
       });
+      syncBulk();
 
-      const approved = lRaw ? Object.entries(lRaw).map(([k,v]) => ({key:k, ...v})) : [];
-      live.innerHTML = approved.length ? '' : '<p class="empty-state">Nothing live yet.</p>';
-      approved.forEach(t => {
+      const checkAll = document.getElementById('pl-check-all');
+      checkAll.onchange = () => { plSelected.clear(); if (checkAll.checked) shown.forEach(t => plSelected.add(t.key)); renderPlacements(); };
+      document.getElementById('pl-approve-sel').onclick = async () => {
+        const picks = shown.filter(t => plSelected.has(t.key));
+        let n = 0;
+        for (const t of picks) if (await approvePlacement(t)) n++;
+        plSelected.clear();
+        setMsg(n + ' of ' + picks.length + ' published to the homepage.', n !== picks.length);
+        renderPlacements();
+      };
+
+      const liveShown = approved.filter(inGroup).sort((a,b)=>(b.approvedAt||0)-(a.approvedAt||0));
+      live.innerHTML = liveShown.length ? '' : '<p class="empty-state">Nothing live yet.</p>';
+      liveShown.forEach(t => {
         const row = document.createElement('div');
         row.className = 'topic-row';
         row.innerHTML =
           '<div class="topic-row-info"><div class="topic-row-name">' + escapeHtml(t.name||'') +
-          ' <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);text-transform:uppercase;">' + escapeHtml(t.type||'') + '</span></div>' +
+          '<span class="pl-type">' + escapeHtml(PL_LABEL[t.type] || t.type || '') + '</span></div>' +
           '<div class="topic-row-meta">' + escapeHtml(t.publicName && t.member ? t.member : 'name not shown') + '</div></div>' +
           '<button class="delete-topic-btn pl-del">Remove</button>';
         row.querySelector('.pl-del').addEventListener('click', async () => {
@@ -2138,6 +2202,7 @@
         live.appendChild(row);
       });
     }
+    document.querySelectorAll('#pl-filters .pl-pill').forEach(b => b.addEventListener('click', () => { plGroup = b.dataset.group; plSelected.clear(); renderPlacements(); }));
     const plAdd = document.getElementById('pl-add-btn');
     if (plAdd) plAdd.addEventListener('click', async () => {
       const name = document.getElementById('pl-add-name').value.trim();
