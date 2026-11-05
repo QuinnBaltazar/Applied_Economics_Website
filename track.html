@@ -2004,10 +2004,13 @@
           Object.keys(subData).forEach(function(k) { submissions[parseInt(k, 10)] = subData[k]; });
         }
 
-        // Merge Firebase progress into localStorage
+        // Merge Firebase progress into localStorage. An approved submission
+        // also counts as complete: it is the officer's decision that earns
+        // the credit, and this self-heals any approval whose progress write
+        // did not land.
+        var progress = getProgress();
+        var changed = false;
         if (fbProgressData) {
-          var progress = getProgress();
-          var changed = false;
           ALL_TRACK_IDS.forEach(function(tid) {
             if (Array.isArray(fbProgressData[tid])) {
               if (!Array.isArray(progress[tid])) progress[tid] = Array(5).fill(false);
@@ -2016,8 +2019,15 @@
               });
             }
           });
-          if (changed) try { localStorage.setItem('aec-track-progress', JSON.stringify(progress)); } catch(e) {}
         }
+        Object.keys(submissions).forEach(function(k) {
+          var s = submissions[k];
+          if (s && s.status === 'approved') {
+            if (!Array.isArray(progress[id])) progress[id] = Array(5).fill(false);
+            if (!progress[id][k]) { progress[id][k] = true; changed = true; }
+          }
+        });
+        if (changed) saveProgress(progress);
       }
 
       renderTrack(id, track, submissions);

@@ -832,13 +832,32 @@
       if (Object.keys(n).length) await fbPatch('vote-counts', n);
       return { ...n, ...c };
     }
-    function getTrackCredits() {
-      try {
-        const p = JSON.parse(localStorage.getItem('aec-track-progress') || '{}');
-        return ['ib','trading','er','adtech','vc','consulting','macro'].reduce((s, id) => {
-          const arr = p[id]; return s + (Array.isArray(arr) ? arr.filter(Boolean).length : 0);
-        }, 0);
-      } catch { return 0; }
+    // Credits come from the member's Firebase progress (the source of truth,
+    // written on officer approval) merged with this browser's copy, so the
+    // weight is the same on every device they vote from.
+    async function getTrackCredits(session) {
+      const ids = ['ib','trading','er','adtech','vc','consulting','macro'];
+      const done = {}; ids.forEach(id => done[id] = new Set());
+      const absorb = p => {
+        if (!p) return;
+        ids.forEach(id => {
+          const arr = p[id];
+          if (Array.isArray(arr)) arr.forEach((v, i) => { if (v === true) done[id].add(i); });
+        });
+      };
+      try { absorb(JSON.parse(localStorage.getItem('aec-track-progress') || '{}')); } catch {}
+      if (session && FB_READY) {
+        const [fbP, subs] = await Promise.all([
+          fbGet('track-progress/' + eKey(session.email)),
+          fbGet('submissions/' + eKey(session.email))
+        ]);
+        absorb(fbP);
+        if (subs) ids.forEach(id => {
+          const m = subs[id]; if (!m) return;
+          Object.keys(m).forEach(i => { if (m[i] && m[i].status === 'approved') done[id].add(parseInt(i, 10)); });
+        });
+      }
+      return ids.reduce((s, id) => s + done[id].size, 0);
     }
 
     async function incrementCount(topic, weight) {
@@ -1015,7 +1034,7 @@
       const isAdmin = isSessionAdmin(session);
 
       // Track credits + vote weight
-      const totalCredits = getTrackCredits();
+      const totalCredits = await getTrackCredits(session);
       const voteWeight = 1 + Math.floor(totalCredits / 5);
 
       // Session indicator + nav links
