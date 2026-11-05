@@ -111,27 +111,41 @@ function hasGraduated(gradYear, now = new Date()) {
   return now.getMonth() >= 6;                     // July (0-indexed) or later
 }
 
-// Returns a de-duplicated list of Brevo recipients.
+// One address per member. Students get their UCSB address until they
+// graduate; alumni get the personal address they gave us (UCSB as fallback
+// since campus mail is often shut off after graduation).
 function recipientsFor(member, ucsbEmail, personalEmail, now = new Date()) {
   const name = member && member.name ? member.name : undefined;
-  const out = [];
-  const seen = new Set();
-  const add = (addr) => {
-    const a = String(addr || '').trim().toLowerCase();
-    if (!a || !a.includes('@') || seen.has(a)) return;
-    seen.add(a);
-    out.push({ email: a, name });
-  };
+  const clean = (addr) => { const a = String(addr || '').trim().toLowerCase(); return a.includes('@') ? a : ''; };
+  const pick = hasGraduated(member && member.gradYear, now)
+    ? (clean(personalEmail) || clean(ucsbEmail))
+    : (clean(ucsbEmail) || clean(personalEmail));
+  return pick ? [{ email: pick, name }] : [];
+}
 
-  if (hasGraduated(member && member.gradYear, now)) {
-    add(personalEmail);
-    add(ucsbEmail);          // fallback only - no personal address on file
-    return out.slice(0, 1);  // alumni: personal only
-  }
-
-  add(ucsbEmail);
-  add(personalEmail);
-  return out;
+// ── Daily email budget ──────────────────────────────────────────────────────
+// Brevo's free plan allows 300 emails a day. Everything that sends mail calls
+// reserveEmails(n) first and stops when the day's budget is gone. The counter
+// lives at admin/emailBudget/{YYYY-MM-DD} and is updated with a transaction
+// so the scheduled reminders and a broadcast can't both overspend it.
+const DAILY_EMAIL_CAP = 280;        // headroom under Brevo's 300
+function budgetKey(now = new Date()) {
+  // Brevo resets at midnight UTC.
+  return now.toISOString().slice(0, 10);
+}
+async function emailsUsedToday() {
+  const snap = await admin.database().ref(`admin/emailBudget/${budgetKey()}`).get();
+  return snap.val() || 0;
+}
+// Tries to reserve n emails. Returns how many were granted (0..n).
+async function reserveEmails(n) {
+  let granted = 0;
+  await admin.database().ref(`admin/emailBudget/${budgetKey()}`).transaction((cur) => {
+    const used = cur || 0;
+    granted = Math.max(0, Math.min(n, DAILY_EMAIL_CAP - used));
+    return used + granted;
+  });
+  return granted;
 }
 
 function eKey(email) {
@@ -247,6 +261,7 @@ exports.sendUnreadEmailReminders = onSchedule(
           const senderName =
             (senderKey && meta.names && meta.names[senderKey]) || 'Another member';
 
+          if (!(await reserveEmails(1))) { console.warn('daily email budget reached, reminders paused'); skipped++; continue; }
           await sendEmail(apiKey, recipients, member.name, senderName, unread);
           await db.ref(`dms/${convId}/meta/emailReminderAt_${key}`).set(now);
           sent++;
@@ -272,6 +287,14 @@ exports.sendBroadcast = onRequest(
     cors: ['https://www.ucsbaec.com', 'https://ucsbaec.com']
   },
   async (req, res) => {
+    if (req.method === 'GET') {
+      // Admin page asks how much of today's budget is left before sending.
+      if (!(await requireAdmin(req, res))) return;
+      const used = await emailsUsedToday();
+      const members = (await admin.database().ref('members').get()).val() || {};
+      res.json({ used, cap: DAILY_EMAIL_CAP, left: Math.max(0, DAILY_EMAIL_CAP - used), recipients: Object.values(members).filter(Boolean).length });
+      return;
+    }
     if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
 
     if (!(await requireAdmin(req, res))) return;
@@ -308,13 +331,28 @@ exports.sendBroadcast = onRequest(
     let sent = 0, failed = 0, skipped = 0;
     const errors = [];
 
+    // Resolve every recipient first so the budget check covers the whole send.
+    const targets = [];
     for (const [key, member] of Object.entries(members)) {
       if (!member) { skipped++; continue; }
       const ucsb = member.email || key.replace(/_/g, '.').replace(/\.ucsb\.edu$/, '@ucsb.edu');
       const personal = await decryptField(member.preferredEmail);
       const recipients = recipientsFor(member, ucsb, personal);
       if (!recipients.length) { skipped++; continue; }
+      targets.push({ key, recipients });
+    }
+    const used = await emailsUsedToday();
+    if (used + targets.length > DAILY_EMAIL_CAP) {
+      await lastRef.set(0);   // don't burn the cooldown on a refused send
+      res.status(429).json({
+        error: `This would send ${targets.length} emails but only ${Math.max(0, DAILY_EMAIL_CAP - used)} are left today (${used} of ${DAILY_EMAIL_CAP} used). Resets at midnight UTC.`,
+        used, cap: DAILY_EMAIL_CAP, needed: targets.length
+      });
+      return;
+    }
+    await reserveEmails(targets.length);
 
+    for (const { key, recipients } of targets) {
       try {
         const r = await fetch('https://api.brevo.com/v3/smtp/email', {
           method: 'POST',
@@ -346,7 +384,8 @@ exports.sendBroadcast = onRequest(
     }
 
     console.log(`broadcast "${subject}", sent:${sent} failed:${failed} skipped:${skipped}`);
-    res.json({ sent, failed, skipped, errors });
+    if (errors.length) console.error('broadcast errors (first few):', errors.join(' | '));
+    res.json({ sent, failed, skipped, errors, used: await emailsUsedToday(), cap: DAILY_EMAIL_CAP });
   }
 );
 
