@@ -158,6 +158,7 @@
     .person-year { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
     .person-field { font-size: 0.8rem; color: rgba(255,255,255,0.7); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .person-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .person-why { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.74rem; color: var(--accent-soft); }
     .tag { font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; background: rgba(196,164,72,0.12); color: var(--accent-soft); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .thread-active { display: none; flex-direction: column; flex: 1; min-height: 0; }
     .thread-header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; background: rgba(7,22,48,0.99); }
@@ -277,14 +278,14 @@
           <div class="thread-panel">
             <div class="thread-empty" id="thread-empty">
               <h3>People to meet</h3>
-              <p>Members whose interests line up with yours. Tap one to say hi.</p>
+              <p id="people-sub">Members whose interests line up with yours. Tap one to say hi.</p>
               <div class="people-grid" id="people-grid"></div>
             </div>
             <div class="thread-active" id="thread-active">
               <div class="thread-header" id="thread-header"></div>
               <div class="thread-messages" id="thread-messages"></div>
               <div class="thread-compose">
-                <textarea class="compose-input" id="compose-input" placeholder="iMessage-style: Enter sends, Shift+Enter for a new line" rows="1" maxlength="2000" enterkeyhint="send"></textarea>
+                <textarea class="compose-input" id="compose-input" placeholder="Message" rows="1" maxlength="2000" enterkeyhint="send"></textarea>
                 <button class="compose-send" id="compose-send" aria-label="Send" disabled>&#8593;</button>
               </div>
             </div>
@@ -391,7 +392,10 @@
     async function refreshInbox() {
       if (document.hidden) return;
       const convs = await loadConversations();
+      const before = talkedTo.size;
+      talkedTo = new Set(convs.map(c => (c.participants || []).find(e => e !== me.email)).filter(Boolean));
       renderConvList(convs);
+      if (talkedTo.size !== before && members.length) renderPeopleGrid();
       const total = convs.reduce((s, c) => s + (c['unread_' + myKey] || 0), 0);
       const badge = document.getElementById('nav-unread-badge');
       if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'inline-flex' : 'none'; }
@@ -532,24 +536,46 @@
 
     // ── Compose box: grows like iMessage, Enter sends ─────────────────────────
     function autosize(el) {
+      // Empty box snaps back to one line (scrollHeight would measure the placeholder).
       el.style.height = 'auto';
-      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+      el.style.height = el.value ? Math.min(el.scrollHeight, 140) + 'px' : '';
       document.getElementById('compose-send').disabled = !el.value.trim();
     }
 
-    // ── Members: search + suggestions by interest / industry ──────────────────
+    // ── Members: who should you reach out to? ─────────────────────────────
+    // Each member is scored against your profile. Weights, in order:
+    //   same career goal (3) > their field is what you want to learn (2.5)
+    //   > same field (2) > learning the same thing (1.5) > same grad year (0.5)
+    // People you already have a conversation with are skipped, and a short
+    // reason is kept so the card can say why they were picked.
     const words = s => String(s || '').toLowerCase().split(/[^a-z]+/).filter(w => w.length > 3);
-    const STOP = new Set(['want', 'would', 'like', 'work', 'with', 'about', 'that', 'this', 'into', 'learn', 'more', 'career']);
-    function similarity(a, b) {
-      const A = new Set([...words(a.field), ...words(a.subject), ...words(a.goal), ...words(a.learn)].filter(w => !STOP.has(w)));
-      const B = new Set([...words(b.field), ...words(b.subject), ...words(b.goal), ...words(b.learn)].filter(w => !STOP.has(w)));
-      let n = 0; A.forEach(w => { if (B.has(w)) n++; });
-      return n;
+    const STOP = new Set(['want', 'would', 'like', 'work', 'with', 'about', 'that', 'this', 'into', 'learn', 'more', 'career', 'interested']);
+    const bag = s => new Set(words(s).filter(w => !STOP.has(w)));
+    const overlap = (a, b) => { let n = 0; a.forEach(w => { if (b.has(w)) n++; }); return n; };
+    const firstPhrase = s => String(s || '').split(/,|\band\b|\./)[0].trim();
+
+    function matchMember(a, b) {
+      if (!a) return { score: 0, why: '' };
+      const A = { field: bag(a.field), subject: bag(a.subject), goal: bag(a.goal), learn: bag(a.learn) };
+      const B = { field: bag(b.field), subject: bag(b.subject), goal: bag(b.goal), learn: bag(b.learn) };
+      const parts = [];
+      let score = 0, n;
+      if ((n = overlap(A.goal, B.goal)))               { score += 3   * n; parts.push([3 * n, 'Also aiming for ' + firstPhrase(b.goal).toLowerCase()]); }
+      if ((n = overlap(A.learn, B.field) + overlap(A.learn, B.subject))) { score += 2.5 * n; parts.push([2.5 * n, 'Knows ' + firstPhrase(b.field || b.subject).toLowerCase() + ', which you want to learn']); }
+      if ((n = overlap(A.field, B.field) + overlap(A.subject, B.subject))) { score += 2 * n; parts.push([2 * n, 'Same field: ' + firstPhrase(b.field || b.subject)]); }
+      if ((n = overlap(A.learn, B.learn)))             { score += 1.5 * n; parts.push([1.5 * n, 'Both learning ' + firstPhrase(b.learn).toLowerCase()]); }
+      if (a.gradYear && a.gradYear === b.gradYear)     { score += 0.5;     parts.push([0.5, 'Class of ' + b.gradYear + ' like you']); }
+      parts.sort((x, y) => y[0] - x[0]);
+      return { score, why: parts.length ? parts[0][1] : '' };
     }
-    function suggestedMembers(limit) {
-      const scored = members.map(m => ({ m, s: myMember ? similarity(myMember, m) : 0 }));
-      scored.sort((x, y) => y.s - x.s || (y.m.joinedAt || 0) - (x.m.joinedAt || 0));
-      return scored.slice(0, limit).map(x => x.m);
+
+    let talkedTo = new Set();   // emails with an existing conversation
+    function suggestedMembers(limit, includeKnown) {
+      const pool = includeKnown ? members : members.filter(m => !talkedTo.has(m.email));
+      const scored = pool.map(m => ({ m, ...matchMember(myMember, m) }));
+      scored.sort((x, y) => y.score - x.score || (y.m.joinedAt || 0) - (x.m.joinedAt || 0));
+      // No profile to match on: fall back to the newest members.
+      return scored.slice(0, limit).map(x => Object.assign({}, x.m, { why: x.why || (x.m.joinedAt ? 'New to the club' : '') }));
     }
     const memberBlurb = m => m.field || m.subject || m.goal || '';
     const memberTags  = m => [m.subject, m.goal].flatMap(s => String(s || '').split(/,|\band\b/)).map(s => s.trim()).filter(s => s && s.length < 28).slice(0, 3);
@@ -575,7 +601,11 @@
     function renderPeopleGrid() {
       const grid = document.getElementById('people-grid');
       grid.innerHTML = '';
-      suggestedMembers(6).forEach((m, i) => {
+      const picks = suggestedMembers(6);
+      document.getElementById('people-sub').textContent = picks.length
+        ? 'Picked for you from your goals, field, and what you want to learn. Tap one to say hi.'
+        : 'You have already reached out to everyone. Search above to find someone.';
+      picks.forEach((m, i) => {
         const card = document.createElement('div');
         card.className = 'person-card';
         card.style.animationDelay = (i * 50) + 'ms';
@@ -583,7 +613,8 @@
           '<div class="person-top"><span class="suggest-avatar">' + esc(initials(m.name)) + '</span>' +
           '<div><div class="person-name">' + esc(m.name) + '</div>' + (m.gradYear ? '<div class="person-year">Class of ' + esc(m.gradYear) + '</div>' : '') + '</div></div>' +
           '<div class="person-field">' + esc(memberBlurb(m)) + '</div>' +
-          '<div class="person-tags">' + memberTags(m).map(t => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>';
+          '<div class="person-tags">' + memberTags(m).map(t => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
+          (m.why ? '<div class="person-why">' + esc(m.why) + '</div>' : '');
         card.addEventListener('click', () => openConversation(m.email, m.name));
         grid.appendChild(card);
       });
@@ -604,7 +635,7 @@
       const input = document.getElementById('inbox-search');
       const search = () => {
         const term = input.value.trim().toLowerCase();
-        if (!term) return renderSuggestions(suggestedMembers(6), 'Suggested for you');
+        if (!term) return renderSuggestions(suggestedMembers(6, true), 'Suggested for you');
         const hits = members.filter(m => [m.name, m.email, m.field, m.subject, m.goal, m.learn].join(' ').toLowerCase().includes(term)).slice(0, 8);
         renderSuggestions(hits, '');
       };
