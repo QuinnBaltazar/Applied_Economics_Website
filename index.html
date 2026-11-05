@@ -389,7 +389,9 @@
         .pl-rot b { color: #fff; font-weight: 700; }
         .pl-rot i { font-style: normal; color: #D4B55E; }
         .pl-wall { display: flex; flex-wrap: wrap; gap: 6px 22px; }
-        .pl-tile { position: relative; padding: 4px 0; color: rgba(255,255,255,0.4); font-weight: 700; font-size: 15px; letter-spacing: .02em; transition: color .3s; }
+        .pl-tile { position: relative; padding: 4px 0; color: rgba(255,255,255,0.4); font-weight: 700; font-size: 15px; letter-spacing: .02em; transition: color .3s; background: none; border: 0; font-family: inherit; cursor: pointer; }
+        .pl-tile:hover { color: rgba(255,255,255,0.75); }
+        .pl-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 4px; }
         .pl-tile::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: #D4B55E; transition: right .4s cubic-bezier(.2,.8,.2,1); }
         .pl-tile.on { color: #fff; }
         .pl-tile.on::after { right: 0; }
@@ -481,12 +483,17 @@
           const rot  = document.getElementById('pl-rot-' + kind);
           if (!list.length) { wall.innerHTML = '<span class="pl-empty">Nothing yet. Add yours from your profile.</span>'; return; }
 
+          // Click a name to jump to it. Auto-rotate pauses while someone is
+          // choosing and picks back up after 90s without a click.
+          const IDLE_MS = 90 * 1000, STEP_MS = 3400;
+          let i = 0, timer = null, lastClick = 0;
           const tiles = new Map();
-          list.forEach(x => {
+          list.forEach((x, idx) => {
             const name = x.name.trim();
             if (tiles.has(name)) return;
-            const t = document.createElement('span');
-            t.className = 'pl-tile'; t.textContent = name;
+            const t = document.createElement('button');
+            t.type = 'button'; t.className = 'pl-tile'; t.textContent = name;
+            t.addEventListener('click', () => { lastClick = Date.now(); i = idx; show(); });
             wall.appendChild(t); tiles.set(name, t);
           });
           list.forEach(x => {
@@ -497,17 +504,19 @@
             rot.appendChild(s);
           });
 
-          let i = 0;
           const show = () => {
             [...rot.children].forEach((c, j) => c.classList.toggle('on', j === i));
             tiles.forEach((t, name) => t.classList.toggle('on', name === list[i].name.trim()));
           };
           show();
           if (list.length > 1 && !reduced) {
-            let timer = setInterval(() => { i = (i + 1) % list.length; show(); }, 3400);
+            const tick = () => { if (Date.now() - lastClick < IDLE_MS) return; i = (i + 1) % list.length; show(); };
+            const start = () => { if (!timer) timer = setInterval(tick, STEP_MS); };
+            const stop  = () => { clearInterval(timer); timer = null; };
+            start();
             const col = wall.closest('.pl-col');
-            col.addEventListener('mouseenter', () => clearInterval(timer));
-            col.addEventListener('mouseleave', () => { timer = setInterval(() => { i = (i + 1) % list.length; show(); }, 3400); });
+            col.addEventListener('mouseenter', stop);
+            col.addEventListener('mouseleave', start);
           }
         }
         column('firms', items.filter(x => x.type !== 'org'));
