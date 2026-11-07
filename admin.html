@@ -808,7 +808,7 @@
     // Sends the member a Firebase password-reset link - the secure, standard
     // flow. Admins never touch or clear anyone's credential.
     async function sendPasswordResetEmail(email) {
-      try { await firebase.auth().sendPasswordResetEmail(email); return true; }
+      try { await AECAuth.sendReset(email); return true; }
       catch (e) { console.error('reset email failed:', e); return false; }
     }
 
