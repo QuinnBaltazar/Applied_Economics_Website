@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Password | UCSB Applied Economics Club</title>
+  <meta name="description" content="Set a new password for your UCSB Applied Economics Club account." />
+  <meta name="theme-color" content="#090F1A" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="assets/auth.js"></script>
+  <style>
+    :root {
+      --bg: #090F1A; --surface: #0E1829; --gold: #C4A448; --gold-lt: #D4B55E;
+      --muted: rgba(255,255,255,0.62);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg); color: #fff; display: flex; align-items: center; justify-content: center; padding: 32px 20px; line-height: 1.6; }
+    body::before {
+      content: ''; position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 600px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(43,74,111,0.18) 0%, rgba(196,164,72,0.05) 45%, transparent 70%);
+      pointer-events: none;
+    }
+    .card {
+      width: 100%; max-width: 460px; position: relative; overflow: hidden;
+      background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px;
+      padding: 44px 44px; box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+      animation: cardIn .7s cubic-bezier(.4,0,.2,1) both;
+    }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), var(--gold-lt), var(--gold), transparent); }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+    .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+    .logo-mark { width: 42px; height: 42px; border-radius: 13px; background: rgba(196,164,72,0.1); border: 1px solid rgba(196,164,72,0.22); display: flex; align-items: center; justify-content: center; font: 900 1.05rem Georgia, serif; color: var(--gold); letter-spacing: -1px; }
+    .logo-text { font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+    h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 8px; }
+    .sub { color: var(--muted); font-size: .95rem; margin-bottom: 28px; }
+    .sub b { color: #fff; font-weight: 600; }
+    .step { display: none; animation: fadeIn .35s ease both; }
+    .step.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    form { display: flex; flex-direction: column; gap: 18px; }
+    label { display: flex; flex-direction: column; gap: 7px; font-size: .76rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,0.48); }
+    input {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.11); border-radius: 14px;
+      color: #fff; padding: 13px 16px; font-size: .97rem; font-family: inherit; outline: none; width: 100%;
+      transition: border-color .2s, background .2s;
+    }
+    input::placeholder { color: rgba(255,255,255,0.26); }
+    input:focus { border-color: var(--gold); background: rgba(255,255,255,0.08); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+      padding: 14px 24px; border-radius: 999px; border: none; background: var(--gold); color: #090F1A;
+      font-weight: 700; font-size: .97rem; font-family: inherit; cursor: pointer;
+      box-shadow: 0 8px 28px rgba(196,164,72,0.25); transition: transform .2s, filter .2s;
+    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.07); }
+    .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .msg { font-size: .9rem; min-height: 1.2em; }
+    .msg.error { color: #ffb3b3; }
+    .msg.info { color: rgba(255,255,255,0.58); }
+    .check { width: 64px; height: 64px; border-radius: 50%; margin-bottom: 20px; background: rgba(196,164,72,0.12); border: 1px solid rgba(196,164,72,0.3); display: flex; align-items: center; justify-content: center; color: var(--gold); animation: pop .5s cubic-bezier(.3,1.4,.5,1) both; }
+    @keyframes pop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.12); border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; margin: 10px 0 24px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 520px) { .card { padding: 32px 22px; } h1 { font-size: 1.55rem; } }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo"><div class="logo-mark">AE</div><div class="logo-text">Applied Economics Club</div></div>
+
+    <!-- Checking the link -->
+    <section class="step active" id="s-loading">
+      <div class="spinner"></div>
+      <h1>One moment</h1>
+      <p class="sub">Checking your reset link.</p>
+    </section>
+
+    <!-- New password form -->
+    <section class="step" id="s-form">
+      <h1>Choose a new password</h1>
+      <p class="sub">For <b id="email"></b></p>
+      <form id="form">
+        <label>New password
+          <input type="password" id="pw" placeholder="At least 6 characters" minlength="6" autocomplete="new-password" required />
+        </label>
+        <label>Confirm password
+          <input type="password" id="pw2" placeholder="Type it again" minlength="6" autocomplete="new-password" required />
+        </label>
+        <div class="msg" id="msg"></div>
+        <button class="btn" id="save" type="submit">Save new password</button>
+      </form>
+    </section>
+
+    <!-- Done -->
+    <section class="step" id="s-done">
+      <div class="check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h1 id="done-title">Password updated</h1>
+      <p class="sub" id="done-sub">You can sign in with your new password now.</p>
+      <a class="btn" id="done-link" href="signin.html">Go to sign in</a>
+    </section>
+
+    <!-- Bad / expired link -->
+    <section class="step" id="s-error">
+      <h1>This link doesn't work</h1>
+      <p class="sub" id="err-sub">It may have expired or already been used. Request a fresh one from the sign-in page.</p>
+      <a class="btn" href="signin.html">Back to sign in</a>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const q = new URLSearchParams(location.search);
+      const mode = q.get('mode');
+      const code = q.get('oobCode');
+      // Only follow a continue link back to this site, never an outside URL.
+      let next = 'signin.html';
+      const cont = q.get('continueUrl');
+      if (cont) {
+        try {
+          const u = new URL(cont);
+          if (u.protocol === 'https:' && /(^|\.)ucsbaec\.com$/.test(u.hostname)) next = u.href;
+        } catch (e) {}
+      }
+      const auth = firebase.auth();
+      const $ = id => document.getElementById(id);
+
+      function show(id) {
+        document.querySelectorAll('.step').forEach(s => s.classList.toggle('active', s.id === id));
+      }
+      function fail(text) {
+        if (text) $('err-sub').textContent = text;
+        show('s-error');
+      }
+      function done(title, sub) {
+        $('done-title').textContent = title;
+        $('done-sub').textContent = sub;
+        $('done-link').href = next;
+        show('s-done');
+      }
+      function setMsg(text, kind) {
+        const m = $('msg'); m.textContent = text; m.className = 'msg ' + (kind || '');
+      }
+
+      if (!code) return fail('No reset code was found in this link. Open the link straight from your email.');
+
+      if (mode === 'resetPassword') {
+        auth.verifyPasswordResetCode(code).then(email => {
+          $('email').textContent = email;
+          show('s-form');
+          $('pw').focus();
+        }).catch(() => fail());
+
+        $('form').addEventListener('submit', async e => {
+          e.preventDefault();
+          const pw = $('pw').value, pw2 = $('pw2').value;
+          if (pw.length < 6) return setMsg('Use at least 6 characters.', 'error');
+          if (pw !== pw2) return setMsg('Those passwords don’t match.', 'error');
+          $('save').disabled = true; setMsg('Saving…', 'info');
+          try {
+            await auth.confirmPasswordReset(code, pw);
+            done('Password updated', 'You can sign in with your new password now.');
+          } catch (err) {
+            $('save').disabled = false;
+            if (err.code === 'auth/weak-password') setMsg('That password is too weak. Try something longer.', 'error');
+            else fail();
+          }
+        });
+
+      } else if (mode === 'verifyEmail') {
+        auth.applyActionCode(code)
+          .then(() => done('Email verified', 'Your address is confirmed.'))
+          .catch(() => fail());
+
+      } else if (mode === 'recoverEmail') {
+        auth.applyActionCode(code)
+          .then(() => done('Email restored', 'Your original sign-in email has been restored. Consider resetting your password too.'))
+          .catch(() => fail());
+
+      } else {
+        fail('Unknown action. Open the link straight from your email.');
+      }
+    })();
+  </script>
+</body>
+</html>

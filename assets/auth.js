@@ -122,8 +122,13 @@
     signUp: function (email, password) {
       return auth.createUserWithEmailAndPassword(email, password);
     },
+    // The reset link itself lands on reset.html (set as the action URL in
+    // Firebase console > Authentication > Templates). `url` is where the
+    // "continue" button goes once the new password is saved.
     sendReset: function (email) {
-      return auth.sendPasswordResetEmail(email);
+      return auth.sendPasswordResetEmail(email, {
+        url: 'https://www.ucsbaec.com/signin.html'
+      });
     },
     signOut: function () {
       try { localStorage.removeItem('aec-session'); } catch (e) {}
