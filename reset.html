@@ -119,10 +119,13 @@
       const code = q.get('oobCode');
       // Only follow a continue link back to this site, never an outside URL.
       let next = 'signin.html';
-      try {
-        const u = new URL(q.get('continueUrl') || '', location.href);
-        if (u.protocol === 'https:' && /(^|\.)ucsbaec\.com$/.test(u.hostname)) next = u.href;
-      } catch (e) {}
+      const cont = q.get('continueUrl');
+      if (cont) {
+        try {
+          const u = new URL(cont);
+          if (u.protocol === 'https:' && /(^|\.)ucsbaec\.com$/.test(u.hostname)) next = u.href;
+        } catch (e) {}
+      }
       const auth = firebase.auth();
       const $ = id => document.getElementById(id);
 
