@@ -117,7 +117,12 @@
       const q = new URLSearchParams(location.search);
       const mode = q.get('mode');
       const code = q.get('oobCode');
-      const next = q.get('continueUrl') || 'signin.html';
+      // Only follow a continue link back to this site, never an outside URL.
+      let next = 'signin.html';
+      try {
+        const u = new URL(q.get('continueUrl') || '', location.href);
+        if (u.protocol === 'https:' && /(^|\.)ucsbaec\.com$/.test(u.hostname)) next = u.href;
+      } catch (e) {}
       const auth = firebase.auth();
       const $ = id => document.getElementById(id);
 
