@@ -423,7 +423,11 @@
 
       <!-- Live vote counts -->
       <div class="admin-section" data-panel="panel-overview">
-        <h2>Live Vote Counts</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <h2 style="margin:0">Live Vote Counts</h2>
+          <button class="reset-pwd-btn" id="btn-new-round">Start New Vote Round</button>
+        </div>
+        <p class="admin-msg" id="round-msg"></p>
         <table class="counts-table">
           <thead><tr><th>Topic</th><th>Distribution</th></tr></thead>
           <tbody id="counts-tbody"></tbody>
@@ -1367,10 +1371,26 @@
     async function confirmReset(label, action) {
       if (!confirm(`Are you sure you want to ${label}? This cannot be undone.`)) return;
       setMsg('Working…');
-      await action();
+      const ok = await action();
       await settle();          // let the write propagate before re-reading
       await refresh();
-      setMsg(`Done, ${label}.`);
+      if (ok === false) setMsg(`Could not ${label}. Check that you are signed in as an admin and try again.`, true);
+      else setMsg(`Done, ${label}.`);
+      return ok !== false;
+    }
+
+    // Zero every count (permanent and custom topics) and clear who-voted-what,
+    // so everyone can vote again. Custom topics themselves stay on the page.
+    async function resetVoteRound() {
+      const custom = (await fbGet('custom-topics')) || {};
+      const zeros = {};
+      BASE_TOPICS.forEach(t => zeros[t] = 0);
+      const results = await Promise.all([
+        fbSet('vote-counts', zeros),
+        fbDelete('vote-records'),
+        ...Object.keys(custom).map(k => fbSet(`custom-topics/${k}/votes`, 0))
+      ]);
+      return results.every(Boolean);
     }
 
     // ── Vote Window ───────────────────────────────────────────
@@ -1502,21 +1522,29 @@
 
     document.getElementById('btn-reset-custom').addEventListener('click', () =>
       confirmReset('clear all member-submitted topics', async () => {
-        await fbDelete('custom-topics');
+        return fbDelete('custom-topics');
       })
     );
+
+    document.getElementById('btn-new-round').addEventListener('click', async () => {
+      const m = document.getElementById('round-msg');
+      const ok = await confirmReset('start a new vote round (all counts back to zero, everyone can vote again)', resetVoteRound);
+      if (ok === undefined) return;
+      m.textContent = ok ? 'New round started. All counts are at zero.' : 'Reset failed. Sign in again as an admin and retry.';
+      m.className = 'admin-msg' + (ok ? '' : ' error');
+    });
 
     document.getElementById('btn-reset-counts').addEventListener('click', () =>
       confirmReset('reset all vote counts to zero', async () => {
         const zeros = {};
         BASE_TOPICS.forEach(t => zeros[t] = 0);
-        await fbSet('vote-counts', zeros);
+        return fbSet('vote-counts', zeros);
       })
     );
 
     document.getElementById('btn-reset-records').addEventListener('click', () =>
       confirmReset('clear all vote records (everyone can vote again)', async () => {
-        await fbDelete('vote-records');
+        return fbDelete('vote-records');
       })
     );
 
@@ -1524,11 +1552,12 @@
       confirmReset('reset EVERYTHING (topics, counts, and vote records)', async () => {
         const zeros = {};
         BASE_TOPICS.forEach(t => zeros[t] = 0);
-        await Promise.all([
+        const results = await Promise.all([
           fbDelete('custom-topics'),
           fbSet('vote-counts', zeros),
           fbDelete('vote-records')
         ]);
+        return results.every(Boolean);
       })
     );
 
