@@ -147,6 +147,12 @@ async function reserveEmails(n) {
   });
   return granted;
 }
+// Hands back emails that were reserved but never sent (the send failed), so
+// a failing reminder can't drain the day's budget 15 minutes at a time.
+async function releaseEmails(n) {
+  await admin.database().ref(`admin/emailBudget/${budgetKey()}`)
+    .transaction((cur) => Math.max(0, (cur || 0) - n));
+}
 
 function eKey(email) {
   return String(email).replace(/[.@#$[\]/]/g, '_');
@@ -245,6 +251,7 @@ exports.sendUnreadEmailReminders = onSchedule(
         // Never remind someone about their own message.
         if (meta.lastFrom && eKey(meta.lastFrom) === key) continue;
 
+        let reserved = false;
         try {
           const memberSnap = await db.ref('members/' + key).get();
           const member = memberSnap.val();
@@ -262,11 +269,14 @@ exports.sendUnreadEmailReminders = onSchedule(
             (senderKey && meta.names && meta.names[senderKey]) || 'Another member';
 
           if (!(await reserveEmails(1))) { console.warn('daily email budget reached, reminders paused'); skipped++; continue; }
+          reserved = true;
           await sendEmail(apiKey, recipients, member.name, senderName, unread);
+          reserved = false;
           await db.ref(`dms/${convId}/meta/emailReminderAt_${key}`).set(now);
           sent++;
         } catch (err) {
           failed++;
+          if (reserved) await releaseEmails(1).catch(() => {});
           console.error(`reminder failed for ${key} in ${convId}:`, err.message);
         }
       }
